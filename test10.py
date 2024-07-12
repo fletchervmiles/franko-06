@@ -40,8 +40,8 @@ from deepgram import (
 # logging.getLogger().setLevel(logging.WARNING)  # Set root logger level
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# logger = logging.getLogger(__name__)
 
 # app = FastAPI(debug=True)
 
@@ -662,7 +662,7 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
 
 
 async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_statement_played=None):
-    logging.debug(f"{datetime.now()}: send_audio task started")
+    # logging.debug(f"{datetime.now()}: send_audio task started")
     
     try:
         samples = bytearray(audio_data)
@@ -700,10 +700,10 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
         if empathy_statement_played:
             empathy_statement_played.set()
             print(f"{datetime.now()}: Empathy statement playback completed")
-            logging.debug(f"Empathy statement playback completed")
+            # logging.debug(f"Empathy statement playback completed")
         
         
-        logging.debug(f"{datetime.now()}: send_audio task completed")
+        # logging.debug(f"{datetime.now()}: send_audio task completed")
     
     except Exception as e:
         logging.error(f"Error in send_audio: {e}")
@@ -877,7 +877,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         while True:
             try:
                 message = await websocket_manager.receive_message()
-                logger.debug(f"Received WebSocket message: {message}")
+                # logger.debug(f"Received WebSocket message: {message}")
                 if message["type"] == "websocket.receive":
                     if "text" in message:
                         # Handle JSON data
