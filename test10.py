@@ -328,30 +328,30 @@ def handle_transcription(result, shared_data):
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')} Appending partial transcript - {sentence}")
 
 
-# class TextToSpeech:
-#     # Set your Deepgram API Key and desired voice model
-#     DG_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-#     MODEL_NAME = "aura-asteria-en"  # Example model name, change as needed
+class TextToSpeech:
+    # Set your Deepgram API Key and desired voice model
+    DG_API_KEY = os.getenv("DEEPGRAM_API_KEY")
+    MODEL_NAME = "aura-asteria-en"  # Example model name, change as needed
 
 
-#     def generate_speech(self, text):
-#         start_time = time.time()
-#         DEEPGRAM_URL = f"https://api.deepgram.com/v1/speak?model={self.MODEL_NAME}&performance=some&encoding=linear16&sample_rate=16000&container=none"
-#         headers = {
-#             "Authorization": f"Token {self.DG_API_KEY}",
-#             "Content-Type": "application/json"
-#         }
-#         payload = {
-#             "text": text
-#         }
+    def generate_speech(self, text):
+        start_time = time.time()
+        DEEPGRAM_URL = f"https://api.deepgram.com/v1/speak?model={self.MODEL_NAME}&performance=some&encoding=linear16&sample_rate=16000&container=none"
+        headers = {
+            "Authorization": f"Token {self.DG_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "text": text
+        }
 
-#         response = requests.post(DEEPGRAM_URL, headers=headers, json=payload)
-#         response.raise_for_status()
-#         print(f"Time taken for Deepgram API request: {time.time() - start_time} seconds")
+        response = requests.post(DEEPGRAM_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        print(f"Time taken for Deepgram API request: {time.time() - start_time} seconds")
         
-#         duration = 5
+        duration = 2
 
-#         return response.content, duration
+        return response.content, duration
 
 # class TextToSpeech:
 #     # Set your ElevenLabs API Key and desired voice ID
@@ -384,40 +384,40 @@ def handle_transcription(result, shared_data):
 
 #         return response.content, duration
 
-class TextToSpeech:
+# class TextToSpeech:
 
-    # Set your ElevenLabs API Key and desired voice ID
-    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-    VOICE_ID = "TSsWwtgLq1gLBwl617e4"  # Replace with the desired voice ID
+#     # Set your ElevenLabs API Key and desired voice ID
+#     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+#     VOICE_ID = "TSsWwtgLq1gLBwl617e4"  # Replace with the desired voice ID
 
-    def generate_speech(self, text):
-        start_time = time.time()
-        ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
-        headers = {
-            "xi-api-key": self.ELEVENLABS_API_KEY,
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "seed": -1,
-            # "model_id": "eleven_turbo_v2",
-            "model_id": "eleven_multilingual_v2",
-            "text": text,
-            "voice_settings": {
-                "similarity_boost": 0.5,
-                "stability": 0.5
-            }
-        }
-        try:
-            response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)  # Added timeout
-            response.raise_for_status()  # This will raise an exception for HTTP error codes
-            print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-            return response.content, 5  # Assuming a fixed duration for simplicity
-        except requests.exceptions.HTTPError as e:
-            logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error during ElevenLabs API request: {e}")
-        print(f"Failed to generate speech for text: {text}")
-        return None, 0  # Indicate failure
+#     def generate_speech(self, text):
+#         start_time = time.time()
+#         ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
+#         headers = {
+#             "xi-api-key": self.ELEVENLABS_API_KEY,
+#             "Content-Type": "application/json"
+#         }
+#         payload = {
+#             "seed": -1,
+#             # "model_id": "eleven_turbo_v2",
+#             "model_id": "eleven_multilingual_v2",
+#             "text": text,
+#             "voice_settings": {
+#                 "similarity_boost": 0.5,
+#                 "stability": 0.5
+#             }
+#         }
+#         try:
+#             response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)  # Added timeout
+#             response.raise_for_status()  # This will raise an exception for HTTP error codes
+#             print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
+#             return response.content, 5  # Assuming a fixed duration for simplicity
+#         except requests.exceptions.HTTPError as e:
+#             logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
+#         except requests.exceptions.RequestException as e:
+#             logging.error(f"Error during ElevenLabs API request: {e}")
+#         print(f"Failed to generate speech for text: {text}")
+#         return None, 0  # Indicate failure
 
 
 
