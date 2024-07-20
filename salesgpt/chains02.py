@@ -1,6 +1,4 @@
-"""
-This is chains01.py file
-"""
+
 import replicate
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
@@ -22,15 +20,44 @@ from .prompts_folder.stage_analyzer import STAGE_ANALYZER_PROMPT
 # from .prompts_folder.transition import TRANSITION_PROMPT
 from .prompts_folder.goal_completeness_status import GOAL_COMPLETENESS_STATUS_PROMPT
 
+from langfuse import Langfuse
+
 ChatLiteLLM.set_verbose = True
+
+
+from langchain.chains import LLMChain
+from langfuse.callback import CallbackHandler
+
+# Initialize Langfuse handler with your credentials
+langfuse_handler = CallbackHandler(
+    secret_key="sk-lf-83505b90-4cca-4b63-a745-d3b73254d837",  # Replace with your actual secret key
+    public_key="pk-lf-27bdbd34-695c-4347-a253-e6adb06c926b",  # Replace with your actual public key
+    host="https://cloud.langfuse.com"  # Adjust the host if necessary
+)
 
 # import logging
 # logging.getLogger("requests").setLevel(logging.WARNING)
 # logging.basicConfig(level=logging.WARNING)  # Set global logging level
 # logging.getLogger().setLevel(logging.WARNING)  # Set root logger level
 
+
+class TracedLLMChain(LLMChain):
+    """Base chain class with Langfuse tracing integrated."""
+    
+    async def ainvoke(self, input_data: dict, **kwargs) -> dict:
+        # Ensure that Langfuse handler is included in the callbacks
+        config = kwargs.get('config', {})
+        callbacks = config.get('callbacks', [])
+        callbacks.append(langfuse_handler)
+        config['callbacks'] = callbacks
+        kwargs['config'] = config
+        
+        # Call the superclass ainvoke with the updated config
+        return await super().ainvoke(input_data, **kwargs)
+
+
 # IN USE
-class SalesConversationChain(LLMChain):
+class SalesConversationChain(TracedLLMChain):
     """Chain to generate the next utterance for the conversation."""
 
     @classmethod
@@ -126,7 +153,7 @@ class SalesConversationChain(LLMChain):
 
 
 # IN USE
-class KeyPointsChain(LLMChain):
+class KeyPointsChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         prompt = PromptTemplate(
@@ -143,7 +170,7 @@ class KeyPointsChain(LLMChain):
 
 
 # IN USE
-class EmpathyStatementChain(LLMChain):
+class EmpathyStatementChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         # llm_alt = ChatLiteLLM(temperature=0, model_name="groq/llama3-70b-8192", api_key=os.getenv("GROQ_API_KEY", ""))
@@ -163,7 +190,7 @@ class EmpathyStatementChain(LLMChain):
 
 
 # IN USE
-class GoalCompletenessChain(LLMChain):
+class GoalCompletenessChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-opus-20240229", api_key=os.getenv("ANTHROPIC_API_KEY", ""))
@@ -183,7 +210,7 @@ class GoalCompletenessChain(LLMChain):
 
 # IN USE
 # @time_logger
-class CurrentGoalReviewChain(LLMChain):
+class CurrentGoalReviewChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         prompt = PromptTemplate(
@@ -201,7 +228,7 @@ class CurrentGoalReviewChain(LLMChain):
 
 
 # IN USE
-class StageAnalyzerChain(LLMChain):
+class StageAnalyzerChain(TracedLLMChain):
     """Chain to analyze which conversation stage should the conversation move into."""
 
     @classmethod
@@ -224,7 +251,7 @@ class StageAnalyzerChain(LLMChain):
         return cls(prompt=prompt, llm=llm, verbose=verbose)
 
 # IN USE
-class QuestionCountChain(LLMChain):
+class QuestionCountChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         prompt = PromptTemplate(

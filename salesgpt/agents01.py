@@ -6,6 +6,9 @@ from copy import deepcopy
 import asyncio
 import logging
 from typing import Any, Callable, Dict, List, Union
+import time
+from pydantic import Field
+from datetime import datetime
 
 from langchain.agents import (AgentExecutor, LLMSingleActionAgent,
                               create_openai_tools_agent)
@@ -17,24 +20,23 @@ from litellm import acompletion
 from pydantic import Field
 from langchain_core.agents import _convert_agent_action_to_messages,_convert_agent_observation_to_messages
 
-from salesgpt.chains01 import (
+from salesgpt.chains02 import (
     SalesConversationChain,
     StageAnalyzerChain, 
-    ConversationSummaryChain, 
+    # ConversationSummaryChain, 
     KeyPointsChain, 
     EmpathyStatementChain, 
-    SpecificContextChain, 
     CurrentGoalReviewChain,
     QuestionCountChain,
     GoalCompletenessChain,
-    TransitionChain,
+    # TransitionChain,
 )
 
 
 # from salesgpt.logger import time_logger, logger
 from salesgpt.parsers import SalesConvoOutputParser
 from salesgpt.prompts import SALES_AGENT_TOOLS_PROMPT
-from salesgpt.stages02 import CONVERSATION_STAGES, GOAL_TARGET_QUESTION_COUNTS
+from salesgpt.stages02 import CONVERSATION_STAGES, GOAL_TARGET_NUMBERS
 from salesgpt.templates import CustomPromptTemplateForTools
 from salesgpt.tools import get_tools, setup_knowledge_base
 
@@ -64,17 +66,17 @@ def _create_retry_decorator(llm: Any) -> Callable[[Any], Any]:
     ]
     return create_base_retry_decorator(error_types=errors, max_retries=llm.max_retries)
 
-# logging.basicConfig(
-#     level=logging.ERROR,
-#     format='%(asctime)s - %(levelname)s - %(message)s',
-#     handlers=[logging.StreamHandler()]
-# )
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
 
 
 
-# logging.getLogger("requests").setLevel(logging.WARNING)
-# logging.basicConfig(level=logging.WARNING)  # Set global logging level
-# logging.getLogger().setLevel(logging.WARNING)  # Set root logger level
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.basicConfig(level=logging.WARNING)  # Set global logging level
+logging.getLogger().setLevel(logging.WARNING)  # Set root logger level
 
 
 # ChatLiteLLM.set_verbose = True
@@ -92,21 +94,29 @@ class SalesGPT(Chain):
     sales_agent_executor: Union[CustomAgentExecutor, None] = Field(...)
     knowledge_base: Union[RetrievalQA, None] = Field(...)
     sales_conversation_utterance_chain: SalesConversationChain = Field(...)
-    conversation_summary_chain: ConversationSummaryChain = Field(...)
+    # conversation_summary_chain: ConversationSummaryChain = Field(...)
     conversation_stage_dict: Dict = CONVERSATION_STAGES
-    conversation_goal_target_question_counts: Dict = GOAL_TARGET_QUESTION_COUNTS
+    # conversation_goal_target_question_counts: Dict = GOAL_TARGET_QUESTION_COUNTS
     key_points_chain: KeyPointsChain = Field(...)
     empathy_statement_chain: EmpathyStatementChain = Field(...)
-    specific_context_chain: SpecificContextChain = Field(...)
     current_goal_review_chain: CurrentGoalReviewChain = Field(...)
 
     question_count_chain: QuestionCountChain = Field(...)
     goal_completeness_chain: GoalCompletenessChain = Field(...)
-    transition_chain: TransitionChain = Field(...)
+    # transition_chain: TransitionChain = Field(...)
 
     conversation_stage_history: List[str] = []
     stage_counts: Dict[str, int] = {}
     has_progressed: bool = False
+
+    # Add the new attributes here
+    turns_per_story_component: Dict[str, int] = {}
+    GOAL_TARGET_NUMBERS: Dict[str, List[int]] = GOAL_TARGET_NUMBERS
+
+    time_per_story_component: Dict[str, float] = {}
+    story_component_start_time: float = 0.0
+    current_stage_start_time: float = 0.0
+    interview_start_time: float = Field(default_factory=time.time)  # Add this line
 
     model_name: str = "gpt-4o" # TODO - make this an env variable
     # model_name: str = "gpt-3.5-turbo-0613" # TODO - make this an env variable
@@ -117,13 +127,11 @@ class SalesGPT(Chain):
     # model_name: str = "groq/mixtral-8x7b-32768" # TODO
 
     key_points: str = "This is the start of the conversation. There is no conversation history."
-    conversation_summary: str = "This is the start of the conversation. There is no conversation history."
+    # conversation_summary: str = "This is the start of the conversation. There is no conversation history."
     empathy_statement: str = "N/A"
-    specific_context: str = "N/A"
     current_goal_review: str = "N/A"
     goal_completeness_status: str = "N/A"
     question_count_summary: str = "N/A"
-    transition_statement_status: str = "N/A"
 
     client_name: str = "Cursor"
     client_product_summary: str = "Cursor is an AI-powered coding assistant designed to help developers write code more efficiently. It provides code suggestions, error diagnostics, and refactoring tools, facilitating faster and more accurate coding across various programming languages. Cursor integrates into development environments, enhancing productivity by automating routine tasks and suggesting optimizations."
@@ -196,63 +204,23 @@ class SalesGPT(Chain):
         self.conversation_stage_history = []
         self.stage_counts = {}
         self.has_progressed = False
+        self.interview_start_time = time.time()
+        self.start_call()  # Initialize the timer and reset time-related attributes
         
         print(f"Goal Completeness Status CHECK: {self.goal_completeness_status}")
 
-
-    # async def async_chain_runner(self):
-    #     print(f"Goal Completeness Status CHECK: {self.goal_completeness_status}")
-    #     chain_results = await asyncio.gather(
-    #         self.conversation_summary_chain.ainvoke({
-    #             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-    #             "client_name": self.client_name,
-    #             "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
-    #             "current_conversation_stage": self.current_conversation_stage,
-    #         }),
-    #         self.key_points_chain.ainvoke({
-    #             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-    #             "client_name": self.client_name,
-    #             "human_response": self.human_response,
-    #             "agent_response": self.agent_response, 
-    #         }),
-    #         self.specific_context_chain.ainvoke({
-    #             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-    #             "client_name": self.client_name,
-    #             "client_product_summary": self.client_product_summary
-    #         }),
-    #         self.current_goal_review_chain.ainvoke({
-    #             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-    #             "current_conversation_stage": self.current_conversation_stage,
-    #             "client_name": self.client_name,
-    #             "interviewee_name": self.interviewee_name,
-    #             "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
-    #             "customer_type": self.customer_type,
-    #         }),
-    #     )
-
-    #     self.conversation_summary = chain_results[0]["text"]
-    #     self.key_points = chain_results[1]["text"]
-    #     self.specific_context = chain_results[2]["text"]
-    #     self.current_goal_review = chain_results[3]["text"]
-
-    #     return {
-    #         "conversation_summary": self.conversation_summary,
-    #         "key_points": self.key_points,
-    #         "specific_context": self.specific_context,
-    #         "current_goal_review": self.current_goal_review,
-    #     }
 
     async def async_chain_runner(self):
         try:
             print(f"Goal Completeness Status CHECK: {self.goal_completeness_status}")
             chain_results = await asyncio.gather(
-                self.conversation_summary_chain.ainvoke({
-                    "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-                    "client_name": self.client_name,
-                    "conversation_summary": self.conversation_summary,
-                    "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
-                    "current_conversation_stage": self.current_conversation_stage,
-                }),
+            #     self.conversation_summary_chain.ainvoke({
+            #         "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
+            #         "client_name": self.client_name,
+            #         "conversation_summary": self.conversation_summary,
+            #         "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
+            #         "current_conversation_stage": self.current_conversation_stage,
+            #     }),
 
                 self.key_points_chain.ainvoke({
                     "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
@@ -260,14 +228,6 @@ class SalesGPT(Chain):
                     "human_response": self.human_response,
                     "agent_response": self.agent_response,
                     "current_conversation_stage": self.current_conversation_stage, 
-                }),
-
-                self.specific_context_chain.ainvoke({
-                    "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-                    "client_name": self.client_name,
-                    "client_product_summary": self.client_product_summary,
-                    "current_conversation_stage": self.current_conversation_stage,
-                    "human_response": self.human_response,
                 }),
                 
                 self.current_goal_review_chain.ainvoke({
@@ -277,18 +237,18 @@ class SalesGPT(Chain):
                     "interviewee_name": self.interviewee_name,
                     "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
                     "customer_type": self.customer_type,
+                    "has_progressed": self.has_progressed,
+                    "human_response": self.human_response,
                 }),
             )
 
-            self.conversation_summary = chain_results[0]["text"]
-            self.key_points = chain_results[1]["text"]
-            self.specific_context = chain_results[2]["text"]
-            self.current_goal_review = chain_results[3]["text"]
+            # self.conversation_summary = chain_results[0]["text"]
+            self.key_points = chain_results[0]["text"]
+            self.current_goal_review = chain_results[1]["text"]
 
             return {
-                "conversation_summary": self.conversation_summary,
+                # "conversation_summary": self.conversation_summary,
                 "key_points": self.key_points,
-                "specific_context": self.specific_context,
                 "current_goal_review": self.current_goal_review,
             }
 
@@ -327,12 +287,17 @@ class SalesGPT(Chain):
 
     async def determine_conversation_stage(self):
         try:
-            # This runs the chain and returns question_count_summary
-            self.run_question_count_chain()
 
+            # Increment turn count for current story component
+            self.increment_story_component_turn_count()
+            
             # This runs the chain and returns goal_completeness_status
             self.run_goal_completeness_chain()
 
+            # This runs the chain and returns question_count_summary
+            self.run_question_count_chain()
+
+            previous_stage_id = self.conversation_stage_id
             stage_analyzer_output = await self.stage_analyzer_chain.ainvoke(
                 input={
                     "conversation_history": "\n".join(self.conversation_history).rstrip("\n"),
@@ -343,7 +308,7 @@ class SalesGPT(Chain):
                             for key, value in CONVERSATION_STAGES.items()
                         ]
                     ),
-                    "conversation_summary": self.conversation_summary,
+                    # "conversation_summary": self.conversation_summary,
                     "interviewee_name": self.interviewee_name,
                     "customer_type": self.customer_type,
                     "goal_completeness_status": self.goal_completeness_status,
@@ -355,6 +320,10 @@ class SalesGPT(Chain):
             # This sets the new conversation_stage_id - the main output
             self.conversation_stage_id = stage_analyzer_output.get("text")
 
+            if self.conversation_stage_id != previous_stage_id:
+                self.update_story_component_time()  # Update time for the previous stage
+                self.current_stage_start_time = time.time()  # Reset timer for the new stage
+
             # This adds it to the conversation_stage_history which is an input for the conversation stage counts
             self.conversation_stage_history.append(self.conversation_stage_id)
 
@@ -365,29 +334,40 @@ class SalesGPT(Chain):
 
             # 
             self.stage_counts = self.count_conversation_stages()
-            self.has_progressed = self.transition_statement()  
-            self.run_transition_chain()
+            self.has_progressed = self.has_progressed_analysis()  
+            # self.run_transition_chain() - TO BE DELETED
 
             print(f"Current Conversation Stage: {self.current_conversation_stage}")
             print(f"Conversation Stage History: {self.conversation_stage_history}")
             print(f"Stage Counts: {self.stage_counts}")
             print(f"Has Progressed: {self.has_progressed}")
+        
+        except AttributeError as e:
+            print(f"AttributeError in determine_conversation_stage: {e}")
+        # Handle the error appropriately
+        except KeyError as e:
+            print(f"KeyError in determine_conversation_stage: {e}")
+        # Handle the error appropriately    
         except Exception as e:
             print(f"An error occurred in determine_conversation_stage: {e}")
 
-    # This returns a boolean, it is run above by self.has_progressed and the boolean is assigned as the result
-    def transition_statement(self):
+    # # This returns a boolean, it is run above by self.has_progressed and the boolean is assigned as the result
+    # def has_progressed_analysis(self):
+    #     if len(self.conversation_stage_history) > 1:
+    #         current_stage_id = int(self.conversation_stage_id)
+    #         previous_stage_id = int(self.conversation_stage_history[-2])
+    #         result = current_stage_id > previous_stage_id
+    #         print(f"Has Progressed Boolean: Current Stage ID: {current_stage_id}, Previous Stage ID: {previous_stage_id}, Has Progressed: {result}")
+    #         return result
+    #     return False
+    
+    def has_progressed_analysis(self):
         if len(self.conversation_stage_history) > 1:
-            current_stage_id = int(self.conversation_stage_id)
-            previous_stage_id = int(self.conversation_stage_history[-2])
-            result = current_stage_id > previous_stage_id
-            print(f"Transition Statement: Current Stage ID: {current_stage_id}, Previous Stage ID: {previous_stage_id}, Has Progressed: {result}")
-            
-            if result:  # If has_progressed is True
-                self.goal_completeness_status = "N/A - The conversation has just transitioned to a new goal, having completed the last goal."  # Update goal_completeness_status to "N/A"
-            
+            current_stage = self.conversation_stage_history[-1]
+            previous_stage = self.conversation_stage_history[-2]
+            result = int(current_stage) == int(previous_stage) + 1
+            print(f"Has Progressed Boolean: Current Stage: {current_stage}, Previous Stage: {previous_stage}, Has Progressed: {result}")
             return result
-        print("Transition Statement: Not enough conversation stages to determine progression")
         return False
 
 
@@ -398,24 +378,76 @@ class SalesGPT(Chain):
                 stage_counts[stage_id] = 0
             stage_counts[stage_id] += 1
         print(f"Count Conversation Stages: {stage_counts}")
+        print(f"Conversation Stage History: {self.conversation_stage_history}")
         return stage_counts
 
 
+    # def run_question_count_chain(self):
+    #     question_count_result = self.question_count_chain.invoke(
+    #         input={
+    #             "conversation_history": "\n".join(self.conversation_history),
+    #             "client_name": self.client_name,
+    #             "conversation_stage_id": self.conversation_stage_id,
+    #             "interviewee_name": self.interviewee_name,
+    #             "lead_interviewer": self.lead_interviewer,
+    #             "goal_target_question_counts": self.conversation_goal_target_question_counts,
+    #             "stage_counts": self.stage_counts, 
+    #         }
+    #     )
+    #     self.question_count_summary = question_count_result["text"]
+    #     print(f"Question Count Summary: {self.question_count_summary}")
+
     def run_question_count_chain(self):
-        question_count_result = self.question_count_chain.invoke(
-            input={
-                "conversation_history": "\n".join(self.conversation_history),
-                "client_name": self.client_name,
-                "conversation_stage_id": self.conversation_stage_id,
-                "interviewee_name": self.interviewee_name,
-                "lead_interviewer": self.lead_interviewer,
-                "goal_target_question_counts": self.conversation_goal_target_question_counts,
-                "stage_counts": self.stage_counts, 
-            }
-        )
-        self.question_count_summary = question_count_result["text"]
-        print(f"Question Count Summary: {self.question_count_summary}")
-    
+        try:
+            question_metrics = self.get_question_count_metrics()
+            time_metrics = self.get_time_metrics()
+            overall_time_metrics = self.track_overall_interview_time()
+            
+            question_count_result = self.question_count_chain.invoke(
+                input={
+                    "conversation_history": "\n".join(self.conversation_history),
+                    "client_name": self.client_name,
+                    "conversation_stage_id": self.conversation_stage_id,
+                    "interviewee_name": self.interviewee_name,
+                    "lead_interviewer": self.lead_interviewer,
+                    "stage_counts": self.stage_counts, 
+                    "current_question_count": question_metrics["current_count"],
+                    "min_question_count": question_metrics["min_count"],
+                    "target_question_count": question_metrics["target_count"],
+                    "min_question_count_met": question_metrics["min_met"],
+                    "target_question_count_met": question_metrics["target_met"],
+                    "current_time": time_metrics["current_time"],
+                    "min_time": time_metrics["min_time"],
+                    "target_time": time_metrics["target_time"],
+                    "min_time_met": time_metrics["min_time_met"],
+                    "target_time_met": time_metrics["target_time_met"],
+                    "overall_time_met": overall_time_metrics["overall_time_met"],
+                    "overall_elapsed_time": overall_time_metrics["overall_elapsed_time"],
+                    "overall_target_time": overall_time_metrics["overall_target_time"],
+                    "goal_completeness_status": self.goal_completeness_status
+                }
+            )
+            self.question_count_summary = question_count_result["text"]
+            
+            # Print metrics (you can keep or remove this based on your debugging needs)
+            print(f"Question Count Summary: {self.question_count_summary}")
+            print(f"Current Question Count: {question_metrics['current_count']}")
+            print(f"Minimum Question Count: {question_metrics['min_count']}")
+            print(f"Target Question Count: {question_metrics['target_count']}")
+            print(f"Minimum Question Count Met: {question_metrics['min_met']}")
+            print(f"Target Question Count Met: {question_metrics['target_met']}")
+            print(f"Current Time: {time_metrics['current_time']:.2f} seconds")
+            print(f"Minimum Time: {time_metrics['min_time']} seconds")
+            print(f"Target Time: {time_metrics['target_time']} seconds")
+            print(f"Minimum Time Met: {time_metrics['min_time_met']}")
+            print(f"Target Time Met: {time_metrics['target_time_met']}")
+            print(f"Overall Time Met: {overall_time_metrics['overall_time_met']}")
+            print(f"Overall Elapsed Time: {overall_time_metrics['overall_elapsed_time']:.2f} seconds")
+            print(f"Overall Target Time: {overall_time_metrics['overall_target_time']} seconds")
+            print(f"Goal Completeness Status: {self.goal_completeness_status}") 
+
+        except Exception as e:
+            print(f"An error occurred in run_question_count_chain: {e}")
 
     def run_goal_completeness_chain(self):
         goal_completeness_result = self.goal_completeness_chain.invoke(
@@ -423,23 +455,98 @@ class SalesGPT(Chain):
                 "client_name": self.client_name,
                 "conversation_history": "\n".join(self.conversation_history),
                 "current_conversation_stage": self.current_conversation_stage,
+                "has_progressed": self.has_progressed,
+                "human_response": self.human_response,
             }
         )
         self.goal_completeness_status = goal_completeness_result["text"]
         print(f"Goal Completeness Status: {self.goal_completeness_status}")
 
 
-    def run_transition_chain(self):
-        transition_result = self.transition_chain.invoke(
-            input={
-                "interviewee_name": self.interviewee_name,
-                "has_progressed": self.has_progressed,
-                "current_conversation_stage": self.current_conversation_stage,
-                "client_name": self.client_name,
-                "lead_interviewer": self.lead_interviewer,
-            }
-        )
-        self.transition_statement_status = transition_result["text"]
+    def update_story_component_time(self):
+        current_time = time.time()
+        if self.current_stage_start_time > 0:
+            elapsed_time = current_time - self.current_stage_start_time
+            self.time_per_story_component[self.conversation_stage_id] = elapsed_time
+    
+    def start_call(self):
+        self.current_stage_start_time = time.time()
+        self.time_per_story_component = {}
+        self.story_component_start_time = 0.0
+
+
+    def get_question_count_metrics(self):
+        story_component_stage_id = self.conversation_stage_id
+        current_count = self.turns_per_story_component.get(story_component_stage_id, 0)
+        min_count, target_count, _, _, _ = self.GOAL_TARGET_NUMBERS.get(story_component_stage_id, [0, 0, 0, 0, 0])
+        min_met = current_count >= min_count
+        target_met = current_count >= target_count
+        return {
+            "current_count": current_count,
+            "min_count": min_count,
+            "target_count": target_count,
+            "min_met": min_met,
+            "target_met": target_met
+        }
+
+
+    def update_story_component_time(self):
+        current_time = time.time()
+        if self.story_component_start_time > 0:
+            elapsed_time = current_time - self.story_component_start_time
+            story_component_stage_id = self.conversation_stage_id
+            self.time_per_story_component[story_component_stage_id] = self.time_per_story_component.get(story_component_stage_id, 0) + elapsed_time
+        self.story_component_start_time = current_time
+
+
+    def get_time_metrics(self):
+        story_component_stage_id = self.conversation_stage_id
+        current_time = time.time()
+        elapsed_time = current_time - self.current_stage_start_time
+        _, _, min_time, target_time, _ = self.GOAL_TARGET_NUMBERS.get(story_component_stage_id, (0, 0, 0, 0, 0))
+        min_met = elapsed_time >= min_time
+        target_met = elapsed_time >= target_time
+        return {
+            "current_time": elapsed_time,
+            "min_time": min_time,
+            "target_time": target_time,
+            "min_time_met": min_met,
+            "target_time_met": target_met
+        }
+
+    def increment_story_component_turn_count(self):
+        story_component_stage_id = self.conversation_stage_id
+        if story_component_stage_id not in self.turns_per_story_component:
+            self.turns_per_story_component[story_component_stage_id] = 0
+        else:
+            self.turns_per_story_component[story_component_stage_id] += 1
+        print(f"Turn count for story component {story_component_stage_id}: {self.turns_per_story_component[story_component_stage_id]}")
+
+
+    def track_overall_interview_time(self):
+        current_time = time.time()
+        overall_elapsed_time = current_time - self.interview_start_time
+        story_component_stage_id = self.conversation_stage_id
+        _, _, _, _, overall_target_time = self.GOAL_TARGET_NUMBERS.get(story_component_stage_id, (0, 0, 0, 0, 0))
+        overall_time_met = overall_elapsed_time >= overall_target_time
+        return {
+            "overall_elapsed_time": overall_elapsed_time,
+            "overall_target_time": overall_target_time,
+            "overall_time_met": overall_time_met
+        }
+
+    # TO BE DELETED
+    # def run_transition_chain(self):
+    #     transition_result = self.transition_chain.invoke(
+    #         input={
+    #             "interviewee_name": self.interviewee_name,
+    #             "has_progressed": self.has_progressed,
+    #             "current_conversation_stage": self.current_conversation_stage,
+    #             "client_name": self.client_name,
+    #             "lead_interviewer": self.lead_interviewer,
+    #         }
+    #     )
+    #     self.transition_statement_status = transition_result["text"]
         
 
 
@@ -514,14 +621,14 @@ class SalesGPT(Chain):
             "conversation_purpose": self.conversation_purpose,
             "conversation_type": self.conversation_type,
             "empathy_statement": inputs.get("empathy_statement", self.empathy_statement),
-            "conversation_summary": inputs.get("conversation_summary", self.conversation_summary),
+            # "conversation_summary": inputs.get("conversation_summary", self.conversation_summary),
             "key_points": inputs.get("key_points", self.key_points),
-            "specific_context": inputs.get("specific_context", self.specific_context),
             "current_goal_review": inputs.get("current_goal_review", self.current_goal_review),
             "client_name": self.client_name,
-            "transition_statement_status": self.transition_statement_status,
             "agent_response": self.agent_response,
             "human_response": self.human_response,
+            "has_progressed": self.has_progressed,
+            "current_conversation_stage": self.current_conversation_stage,
         }
 
         # Generate agent's utterance
@@ -571,14 +678,13 @@ class SalesGPT(Chain):
         """
         question_count_chain = QuestionCountChain.from_llm(llm, verbose=verbose)
         goal_completeness_chain = GoalCompletenessChain.from_llm(llm, verbose=verbose)
-        transition_chain = TransitionChain.from_llm(llm, verbose=verbose)
+        # transition_chain = TransitionChain.from_llm(llm, verbose=verbose)
         
         stage_analyzer_chain = StageAnalyzerChain.from_llm(llm, verbose=verbose)
         sales_conversation_utterance_chain = SalesConversationChain.from_llm(llm, verbose=verbose)
-        conversation_summary_chain = ConversationSummaryChain.from_llm(llm, verbose=verbose)
+        # conversation_summary_chain = ConversationSummaryChain.from_llm(llm, verbose=verbose)
         key_points_chain = KeyPointsChain.from_llm(llm, verbose=verbose)
         empathy_statement_chain = EmpathyStatementChain.from_llm(llm, verbose=verbose)
-        specific_context_chain = SpecificContextChain.from_llm(llm, verbose=verbose)
         current_goal_review_chain = CurrentGoalReviewChain.from_llm(llm, verbose=verbose)
 
         # Handle custom prompts
@@ -640,35 +746,16 @@ class SalesGPT(Chain):
                 agent=sales_agent_with_tools, tools=tools, verbose=verbose, return_intermediate_steps=True
             )
 
-        # return cls(
-        #     question_count_chain=question_count_chain,
-        #     goal_completeness_chain=goal_completeness_chain,
-        #     transition_chain=transition_chain,
-        #     stage_analyzer_chain=stage_analyzer_chain,
-        #     sales_conversation_utterance_chain=sales_conversation_utterance_chain,
-        #     conversation_summary_chain=conversation_summary_chain,
-        #     key_points_chain=key_points_chain,
-        #     empathy_statement_chain=empathy_statement_chain,
-        #     specific_context_chain=specific_context_chain,
-        #     current_goal_review_chain=current_goal_review_chain,
-        #     sales_agent_executor=sales_agent_executor,
-        #     knowledge_base=knowledge_base,
-        #     model_name=llm.model,
-        #     verbose=verbose,
-        #     use_tools=use_tools,
-        #     **kwargs,
-        # )
 
         sales_gpt_instance = cls(
             question_count_chain=question_count_chain,
             goal_completeness_chain=goal_completeness_chain,
-            transition_chain=transition_chain,
+            # transition_chain=transition_chain,
             stage_analyzer_chain=stage_analyzer_chain,
             sales_conversation_utterance_chain=sales_conversation_utterance_chain,
-            conversation_summary_chain=conversation_summary_chain,
+            # conversation_summary_chain=conversation_summary_chain,
             key_points_chain=key_points_chain,
             empathy_statement_chain=empathy_statement_chain,
-            specific_context_chain=specific_context_chain,
             current_goal_review_chain=current_goal_review_chain,
             sales_agent_executor=sales_agent_executor,
             knowledge_base=knowledge_base,

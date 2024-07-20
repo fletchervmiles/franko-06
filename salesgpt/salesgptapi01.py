@@ -90,62 +90,6 @@ class SalesGPTAPI:
 
 
 
-    # async def run_chains(self, conversation_history, human_response, agent_response):
-        
-    #     # Update the sales agent's conversation history with the provided conversation_history
-    #     self.sales_agent.conversation_history = conversation_history if isinstance(conversation_history, list) else []
-    #     print("Updated conversation history going into running the chains:", conversation_history)
-
-    #     self.sales_agent.human_response = human_response
-    #     print("Updated human response going into running the chains:", human_response)
-
-    #     self.sales_agent.agent_response = agent_response
-    #     print("Updated agent response going into running the chains:", agent_response)
-
-    #     # Set goal_completeness_status before running async_chain_runner
-    #     self.sales_agent.goal_completeness_status = self.sales_agent.goal_completeness_status or "N/A"
-
-    #     print(f"EMPATHY STATEMENT 1 - Starting generating the empathy statement text: {datetime.now()}")
-    #     empathy_statement_task = asyncio.create_task(self.sales_agent.run_empathy_statement_chain())
-        
-
-    #     if not self.first_turn:
-    #         print(f"FEEDER CHAINS 1 - Starting generating the feeder chain results task text: {datetime.now()}")
-    #         chain_results_task = asyncio.create_task(self.sales_agent.async_chain_runner())
-    #     else:
-    #         chain_results_task = None
-
-    #     empathy_statement = await empathy_statement_task
-    #     self.sales_agent.empathy_statement = empathy_statement
-
-    #     # Return empathy_statement immediately
-    #     print(f"EMPATHY STATEMENT 2 - Finished generating the empathy statement text: {datetime.now()}")
-    #     yield empathy_statement
-
-    #     if chain_results_task:
-    #         chain_results = await chain_results_task
-
-    #         # Unpack the chain results
-    #         self.sales_agent.conversation_summary = chain_results["conversation_summary"]
-    #         self.sales_agent.key_points = chain_results["key_points"]
-    #         self.sales_agent.specific_context = chain_results["specific_context"]
-    #         self.sales_agent.current_goal_review = chain_results["current_goal_review"]
-    #     else:
-    #         # If it's the first turn, use the existing values
-    #         chain_results = {
-    #             "conversation_summary": self.sales_agent.conversation_summary,
-    #             "key_points": self.sales_agent.key_points,
-    #             "specific_context": self.sales_agent.specific_context,
-    #             "current_goal_review": self.sales_agent.current_goal_review,
-    #         }
-
-    #     # Return the rest of the results
-        
-    #     print(f"FEEDER CHAINS 2 - Finished generating the feeder chain results task text: {datetime.now()}")
-    #     yield chain_results
-
-    #     self.first_turn = False
-
 
     async def run_chains(self, conversation_history, human_response, agent_response):
         try:
@@ -184,16 +128,14 @@ class SalesGPTAPI:
                 chain_results = await chain_results_task
 
                 # Unpack the chain results
-                self.sales_agent.conversation_summary = chain_results["conversation_summary"]
+                # self.sales_agent.conversation_summary = chain_results["conversation_summary"]
                 self.sales_agent.key_points = chain_results["key_points"]
-                self.sales_agent.specific_context = chain_results["specific_context"]
                 self.sales_agent.current_goal_review = chain_results["current_goal_review"]
             else:
                 # If it's the first turn, use the existing values
                 chain_results = {
-                    "conversation_summary": self.sales_agent.conversation_summary,
+                    # "conversation_summary": self.sales_agent.conversation_summary,
                     "key_points": self.sales_agent.key_points,
-                    "specific_context": self.sales_agent.specific_context,
                     "current_goal_review": self.sales_agent.current_goal_review,
                 }
 
@@ -214,18 +156,16 @@ class SalesGPTAPI:
         await self.sales_agent.determine_conversation_stage()
 
     # This do method essentially just runs the standard non-stream response
-    async def do(self, conversation_history: list, human_input=None, empathy_statement=None, conversation_summary=None, key_points=None, specific_context=None, current_goal_review=None, transition_statement_status=None):
+    async def do(self, conversation_history: list, human_input=None, empathy_statement=None, key_points=None, current_goal_review=None):
         print("do() method empathy_statement argument:", empathy_statement)
         print("SalesGPTAPI.empathy_statement attribute:", getattr(self, "empathy_statement", None))
         print("SalesGPTAPI.sales_agent.empathy_statement attribute:", getattr(self.sales_agent, "empathy_statement", None))
 
         ai_log = await self.sales_agent._call({
             "empathy_statement": empathy_statement,
-            "conversation_summary": conversation_summary,
+            # "conversation_summary": conversation_summary,
             "key_points": key_points,
-            "specific_context": specific_context,
             "current_goal_review": current_goal_review,
-            "transition_statement_status": transition_statement_status,
         })
 
         return ai_log["text"].rstrip('<END_OF_TURN>')
