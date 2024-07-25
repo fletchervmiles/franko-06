@@ -18,7 +18,7 @@ from datetime import datetime
 # logging.getLogger().setLevel(logging.WARNING)  # Set root logger level
 
 # GPT_MODEL = "gpt-3.5-turbo"
-GPT_MODEL = "gpt-4o"
+GPT_MODEL = "gpt-4o" 
 # GPT_MODEL = "claude-2"
 # GPT_MODEL = "claude-3-haiku-20240307"
 # GPT_MODEL = "claude-3-opus-20240229"
@@ -91,9 +91,69 @@ class SalesGPTAPI:
 
 
 
+    # async def run_chains(self, conversation_history, human_response, agent_response):
+    #     try:
+    
+    #         # Update the sales agent's conversation history with the provided conversation_history
+    #         self.sales_agent.conversation_history = conversation_history if isinstance(conversation_history, list) else []
+    #         print("Updated conversation history going into running the chains:", conversation_history)
+
+    #         self.sales_agent.human_response = human_response
+    #         print("Updated human response going into running the chains:", human_response)
+
+    #         self.sales_agent.agent_response = agent_response
+    #         print("Updated agent response going into running the chains:", agent_response)
+
+    #         # Set goal_completeness_status before running async_chain_runner
+    #         self.sales_agent.goal_completeness_status = self.sales_agent.goal_completeness_status or "N/A"
+
+    #         print(f"EMPATHY STATEMENT 1 - Starting generating the empathy statement text: {datetime.now()}")
+    #         empathy_statement_task = asyncio.create_task(self.sales_agent.run_empathy_statement_chain())
+
+    #         # if not self.first_turn:
+    #         print(f"FEEDER CHAINS 1 - Starting generating the feeder chain results task text: {datetime.now()}")
+    #         chain_results_task = asyncio.create_task(self.sales_agent.async_chain_runner())
+    #         # else:
+    #         #     await asyncio.sleep(2)
+    #         #     chain_results_task = None
+
+    #         empathy_statement = await empathy_statement_task
+    #         self.sales_agent.empathy_statement = empathy_statement
+
+    #         # Return empathy_statement immediately
+    #         print(f"EMPATHY STATEMENT 2 - Finished generating the empathy statement text: {datetime.now()}")
+    #         yield empathy_statement
+
+    #         if chain_results_task:
+    #             chain_results = await chain_results_task
+
+    #             # Unpack the chain results
+    #             # self.sales_agent.conversation_summary = chain_results["conversation_summary"]
+    #             self.sales_agent.key_points = chain_results["key_points"]
+    #             self.sales_agent.current_goal_review = chain_results["current_goal_review"]
+    #         else:
+    #             # If it's the first turn, use the existing values
+    #             chain_results = {
+    #                 # "conversation_summary": self.sales_agent.conversation_summary,
+    #                 "key_points": self.sales_agent.key_points,
+    #                 "current_goal_review": self.sales_agent.current_goal_review,
+    #             }
+
+    #         # Return the rest of the results
+    #         print(f"FEEDER CHAINS 2 - Finished generating the feeder chain results task text: {datetime.now()}")
+    #         yield chain_results
+
+    #         self.first_turn = False
+
+    #     except Exception as e:
+    #         print(f"Error in run_chains: {e}")
+    #         print(f"Error in run_chains: {type(e).__name__}: {e}")
+    #         print(traceback.format_exc())
+    #         raise  # Re-raise the exception for the caller to handle
+
+
     async def run_chains(self, conversation_history, human_response, agent_response):
         try:
-    
             # Update the sales agent's conversation history with the provided conversation_history
             self.sales_agent.conversation_history = conversation_history if isinstance(conversation_history, list) else []
             print("Updated conversation history going into running the chains:", conversation_history)
@@ -107,37 +167,30 @@ class SalesGPTAPI:
             # Set goal_completeness_status before running async_chain_runner
             self.sales_agent.goal_completeness_status = self.sales_agent.goal_completeness_status or "N/A"
 
-            print(f"EMPATHY STATEMENT 1 - Starting generating the empathy statement text: {datetime.now()}")
-            empathy_statement_task = asyncio.create_task(self.sales_agent.run_empathy_statement_chain())
+            if self.first_turn:
+                # On the first turn, use existing values
+                empathy_statement = "Hi there, this is Franko! I'm super excited to chat with you today!"
+                chain_results = {
+                    "key_points": "",
+                    "current_goal_review": "This is the very turn of the interview conversation. Focus on introducing the interview. Here's an example Lead Interviewer response to get started, \"The purpose of our call will be to discuss your experience with [client_name]. It will be recorded and shared with the team, I know they'll appreciate your insights! The interview will take approximately 45 minutes. Are you in a quiet place and ready to get started?\"",
+                }
+            else:
+                # Run chains for subsequent turns
+                print(f"EMPATHY STATEMENT 1 - Starting generating the empathy statement text: {datetime.now()}")
+                empathy_statement = await self.sales_agent.run_empathy_statement_chain()
 
-            # if not self.first_turn:
-            print(f"FEEDER CHAINS 1 - Starting generating the feeder chain results task text: {datetime.now()}")
-            chain_results_task = asyncio.create_task(self.sales_agent.async_chain_runner())
-            # else:
-            #     await asyncio.sleep(2)
-            #     chain_results_task = None
+                print(f"FEEDER CHAINS 1 - Starting generating the feeder chain results task text: {datetime.now()}")
+                chain_results = await self.sales_agent.async_chain_runner()
 
-            empathy_statement = await empathy_statement_task
             self.sales_agent.empathy_statement = empathy_statement
 
             # Return empathy_statement immediately
             print(f"EMPATHY STATEMENT 2 - Finished generating the empathy statement text: {datetime.now()}")
             yield empathy_statement
 
-            if chain_results_task:
-                chain_results = await chain_results_task
-
-                # Unpack the chain results
-                # self.sales_agent.conversation_summary = chain_results["conversation_summary"]
-                self.sales_agent.key_points = chain_results["key_points"]
-                self.sales_agent.current_goal_review = chain_results["current_goal_review"]
-            else:
-                # If it's the first turn, use the existing values
-                chain_results = {
-                    # "conversation_summary": self.sales_agent.conversation_summary,
-                    "key_points": self.sales_agent.key_points,
-                    "current_goal_review": self.sales_agent.current_goal_review,
-                }
+            # Update sales_agent attributes
+            self.sales_agent.key_points = chain_results["key_points"]
+            self.sales_agent.current_goal_review = chain_results["current_goal_review"]
 
             # Return the rest of the results
             print(f"FEEDER CHAINS 2 - Finished generating the feeder chain results task text: {datetime.now()}")
@@ -150,6 +203,7 @@ class SalesGPTAPI:
             print(f"Error in run_chains: {type(e).__name__}: {e}")
             print(traceback.format_exc())
             raise  # Re-raise the exception for the caller to handle
+
 
 
     async def update_conversation_stage(self):

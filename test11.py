@@ -3,10 +3,6 @@ This is test02.py file
 """
 
 from fastapi import FastAPI, HTTPException, Query, Body, WebSocket, Request, WebSocketDisconnect
-from starlette.websockets import WebSocketState
-
-
-
 from vonage import Client as VonageClient, Voice
 import os
 import io
@@ -215,15 +211,14 @@ class StateMachine:
             agent_response = agent_response.decode("utf-8") if agent_response else "N/A"
 
             # Pass the websocket object and conversation data to the generate_and_send_speech function
-            empathy_statement, sales_utterance_response, sales_utterance_duration = await generate_and_send_speech(
+            empathy_statement, extracted_response, sales_utterance_duration = await generate_and_send_speech(
                 self.shared_data.get_websocket(), conversation_history, human_response, agent_response
             )
 
             print(f"TIMING - Conversation History Updated {datetime.now()}")
             # Update the Conversation History, save the response to Redis
             agent_name = "Franko"
-            generated_text = sales_utterance_response
-            ai_message = f"{agent_name}: {empathy_statement} {sales_utterance_response}"
+            ai_message = f"{agent_name}: {empathy_statement} {extracted_response}"
             self.r.set(f'{self.call_id}_agent_response', ai_message)
             conversation_history.append(ai_message)
             self.r.set(f'{self.call_id}_conversation_history', json.dumps(conversation_history))
@@ -402,7 +397,7 @@ class TextToSpeech:
             "Content-Type": "application/json"
         }
         payload = {
-            "model_id": "eleven_turbo_v2",
+            "model_id": "eleven_turbo_v2_5",
             # "model_id": "eleven_multilingual_v2",
             # "model_id": "eleven_monolingual_v1",
             "text": text,
@@ -462,7 +457,7 @@ async def make_outgoing_call():
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://c90f-58-136-115-185.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://e015-58-136-106-56.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -470,7 +465,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://c90f-58-136-115-185.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://e015-58-136-106-56.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -480,7 +475,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://c90f-58-136-115-185.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://e015-58-136-106-56.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -636,23 +631,25 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
             current_goal_review=results["current_goal_review"],
         )
 
+        # Extract the desired part of the response
+        extracted_response = extract_desired_response(sales_utterance_response)
+
+        print(f"\nExtracted Lead Interviewer Response:\n{extracted_response}\n")
+
         print(f"LEAD INTERVIEWER 2 - Starting generating audio data: {datetime.now()}")
-        # Generate speech for the sales_utterance_response
-        sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(sales_utterance_response + " ...!")
+        # Generate speech for the extracted_response
+        sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response + " ...!")
         print(f"LEAD INTERVIEWER 3 - Finished generating audio data: {datetime.now()}")
 
-        
         await empathy_statement_played.wait()
         print(f"Empathy statement awaited: {datetime.now()}")
 
-        # await asyncio.sleep(1)
-        # print(f"1 second break - sending new audio: {datetime.now()}")
         print(f"Send AUDIO start: {datetime.now()}")
         await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration)
         print(f"Send AUDIO finish: {datetime.now()}")
 
         print(f"GENERATE AND SEND SPEECH COMPLETE {datetime.now()}")
-        return results["empathy_statement"], sales_utterance_response, sales_utterance_duration
+        return results["empathy_statement"], extracted_response, sales_utterance_duration
 
     except Exception as e:
         print(f"Error in generate_and_send_speech: {e}")
@@ -660,7 +657,18 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
         print(traceback.format_exc())
 
 
-
+def extract_desired_response(response):
+    # Find the start and end of the desired section
+    start = response.find("***")
+    end = response.rfind("***")
+    
+    if start != -1 and end != -1 and start < end:
+        # Extract the content between the *** markers
+        extracted = response[start+3:end].strip()
+        return extracted
+    else:
+        # If the markers are not found, return the original response
+        return response
 
 
 
@@ -715,6 +723,18 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
 
 
 
+async def send_keepalive(websocket, dg_connection):
+    while not shared_data.call_completed:
+        await asyncio.sleep(1)  # Send keep-alive every 1 second
+        try:
+            await websocket.send_json({"type": "keepalive"})  # Send a JSON keep-alive message
+            await dg_connection.send(b'{"type": "keepalive"}')  # Send a JSON keep-alive message as bytes
+        except websockets.exceptions.ConnectionClosedError as e:
+            print(f"WebSocket connection closed: {e}")
+            # Handle reconnection logic here if needed
+        except Exception as e:
+            print(f"Error sending keep-alive: {e}")
+            # Handle other exceptions as needed
 
 
 
@@ -754,50 +774,39 @@ class WebSocketManager:
             print(f"WebSocket disconnected: code={e.code}, reason={e.reason}")
             raise
 
-
-    async def create_new_connection(self):
-        new_websocket = WebSocket()
-        await new_websocket.accept()
-        return new_websocket
-
-
     async def reconnect(self):
         if self.is_reconnecting:
-            return False
+            return
 
         self.is_reconnecting = True
         self.reconnect_attempts = 0
-        max_delay = 60  # Maximum delay of 60 seconds
 
         while self.reconnect_attempts < self.max_reconnect_attempts:
             try:
                 self.reconnect_attempts += 1
-                logging.info(f"Attempting to reconnect WebSocket (Attempt {self.reconnect_attempts})...")
+                print(f"Attempting to reconnect WebSocket (Attempt {self.reconnect_attempts})...")
 
-                if self.websocket.client_state == WebSocketState.CONNECTED:
-                    await self.websocket.close()
-                    logging.info("Closed existing WebSocket connection")
+                # Create a new WebSocket connection with the same URI
+                new_websocket = await WebSocket.connect(self.websocket.url)
 
-                new_websocket = await self.create_new_connection()
-                self.websocket = new_websocket
+                # Update the shared data with the new WebSocket connection
                 self.shared_data.set_websocket(new_websocket)
-                self.shared_data.websocket_ready.set()
 
-                logging.info("WebSocket reconnected successfully.")
+                # Update the WebSocketManager instance with the new WebSocket connection
+                self.websocket = new_websocket
+
+                print("WebSocket reconnected successfully.")
                 self.is_reconnecting = False
-                return True
+                return
 
             except Exception as e:
-                logging.error(f"Failed to reconnect WebSocket: {e}")
-                delay = min(self.reconnect_delay * (2 ** (self.reconnect_attempts - 1)), max_delay)
-                logging.info(f"Waiting {delay} seconds before next attempt")
-                await asyncio.sleep(delay)
+                print(f"Failed to reconnect WebSocket: {e}")
+                # Implement exponential backoff for retry delay
+                await asyncio.sleep(self.reconnect_delay)
+                self.reconnect_delay *= 2  # Double the delay for the next attempt
 
-        logging.error("Max reconnect attempts reached. WebSocket reconnection failed.")
+        print("Max reconnect attempts reached. WebSocket reconnection failed.")
         self.is_reconnecting = False
-        return False
-
-
 
     async def should_reconnect(self):
         # Check if the call is still active in the shared data
@@ -840,95 +849,105 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
 
     try:
         # Initialize Deepgram client
-        dg_connection = await setup_deepgram_connection(shared_data)
+        config = DeepgramClientOptions(options={"keepalive": "true"})
+        deepgram: DeepgramClient = DeepgramClient(os.environ["DEEPGRAM_API_KEY"], config)
+        dg_connection = deepgram.listen.asynclive.v("1")
 
-        # Start the keepalive task
-        keepalive_task = asyncio.create_task(send_keepalive(websocket, dg_connection))
 
-        while not shared_data.call_completed:
+        async def on_message(self, result, **kwargs):
+            if result.channel.alternatives[0].words:
+                shared_data.update_word_timestamp()
+            else:
+                shared_data.update_no_word_timestamp()
+            handle_transcription(result, shared_data)
+
+
+        # Define the error event handler
+        async def on_error(self, error, **kwargs):
+            print(f"Error: {error}")
+
+        # Register the event handlers
+        dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+        dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+
+        # Set the transcription options
+        options = LiveOptions(
+            model="nova-2",
+            filler_words=True,
+            language="en-US",
+            punctuate=True,
+            encoding="linear16",
+            channels=1,
+            sample_rate=16000,
+            interim_results=True,
+        )
+
+        # Start the Deepgram connection
+        await dg_connection.start(options)
+
+        while True:
             try:
                 message = await websocket_manager.receive_message()
+                # logger.debug(f"Received WebSocket message: {message}")
                 if message["type"] == "websocket.receive":
-                    if "bytes" in message:
+                    if "text" in message:
+                        # Handle JSON data
+                        data = json.loads(message["text"])
+                        # Process the JSON data as needed
+                    elif "bytes" in message:
+                        # Handle binary data
                         audio_data = message["bytes"]
                         await dg_connection.send(audio_data)
-                
+                        
             except WebSocketDisconnect as e:
-                print(f"WebSocket disconnected: code={e.code}, reason={e.reason}")
-                
-                reconnection_successful = await websocket_manager.reconnect()
-                if not reconnection_successful:
-                    print("Failed to reconnect. Terminating connection.")
-                    break
+                logger.error(f"WebSocket disconnected: code={e.code}")
+                if hasattr(e, 'reason'):
+                    logger.error(f"Disconnection reason: {e.reason}")
+                else:
+                    logger.error("Disconnection reason not provided")
 
-                # Restart Deepgram connection
-                dg_connection = await setup_deepgram_connection(shared_data)
+                print(f"WebSocket disconnected: code={e.code}, reason={e.reason}")
+                if await websocket_manager.should_reconnect():
+                    print("Attempting to reconnect...")
+                    await reconnect_deepgram(dg_connection, shared_data, websocket)
+                    if not shared_data.is_reconnecting:
+                        continue  # If reconnection was successful, continue with the next iteration
+                    else:
+                        print("Call terminated. WebSocket will not reconnect.")
+                        break
+
+            # except WebSocketDisconnect as e:
+            #     logger.error(f"WebSocket disconnected: code={e.code}")
+            #     if hasattr(e, 'reason'):
+            #         logger.error(f"Disconnection reason: {e.reason}")
+            #     else:
+            #         logger.error("Disconnection reason not provided")
+
+
+            #     print(f"WebSocket disconnected: code={e.code}, reason={e.reason}")
+            #     if await websocket_manager.should_reconnect():
+            #         print("Attempting to reconnect...")
+            #         await websocket_manager.reconnect()
+            #     else:
+            #         print("Call terminated. WebSocket will not reconnect.")
+            #         break
 
     except Exception as e:
         print(f"Error in WebSocket endpoint: {e}")
         print(traceback.format_exc())
 
     finally:
-        keepalive_task.cancel()
+        # Close the Deepgram connection
         await dg_connection.finish()
-        await websocket_manager.disconnect()
-        print(f"WebSocket connection closed for call_id: {call_id}")
 
-
-
-async def setup_deepgram_connection(shared_data):
-    config = DeepgramClientOptions(options={"keepalive": "true"})
-    deepgram: DeepgramClient = DeepgramClient(os.environ["DEEPGRAM_API_KEY"], config)
-    dg_connection = deepgram.listen.asynclive.v("1")
-
-    async def on_message(self, result, **kwargs):
-        if result.channel.alternatives[0].words:
-            shared_data.update_word_timestamp()
-        else:
-            shared_data.update_no_word_timestamp()
-        handle_transcription(result, shared_data)
-
-    async def on_error(self, error, **kwargs):
-        print(f"Deepgram Error: {error}")
-
-    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
-
-    options = LiveOptions(
-        model="nova-2",
-        filler_words=True,
-        language="en-US",
-        punctuate=True,
-        encoding="linear16",
-        channels=1,
-        sample_rate=16000,
-        interim_results=True,
-    )
-
-    await dg_connection.start(options)
-    return dg_connection
-
-
-
-async def send_keepalive(websocket, dg_connection):
-    keepalive_count = 0
-    while True:
         try:
-            await asyncio.sleep(5)  # Send keepalive every 5 seconds
-            if websocket.client_state == WebSocketState.CONNECTED:
-                await websocket.send_json({"type": "keepalive"})
-                await dg_connection.send(b'{"type": "keepalive"}')
-                keepalive_count += 1
-                print(f"Keepalive sent (count: {keepalive_count})")
-            else:
-                print("WebSocket not connected, stopping keepalive")
-                break
-        except websockets.exceptions.ConnectionClosed:
-            print("WebSocket connection closed, stopping keepalive")
-            break
+            if websocket_manager.websocket.client_state.name != "DISCONNECTED":
+                # Close the WebSocket connection if it's not already closed
+                await websocket_manager.disconnect()
         except Exception as e:
-            print(f"Error in send_keepalive: {e}")
-            # Don't break here, try to continue sending keepalives
+            print(f"Error closing WebSocket connection: {e}")
+            print(traceback.format_exc())
+
 
 if __name__ == "__main__":
     import uvicorn

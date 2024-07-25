@@ -126,8 +126,6 @@ Based on the last responses:
 
 3) Only return the response text. Do not return any explanatory text or quotations, just the text response.
 
-4) If Franko and the interviewee response are N/A, return "Hi there, this is Franko! I'm excited to get chatting with you! …"
-
 **Response:**
 
 """

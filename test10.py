@@ -398,7 +398,7 @@ class TextToSpeech:
             "Content-Type": "application/json"
         }
         payload = {
-            "model_id": "eleven_turbo_v2",
+            "model_id": "eleven_turbo_v2_5",
             # "model_id": "eleven_multilingual_v2",
             # "model_id": "eleven_monolingual_v1",
             "text": text,
@@ -458,7 +458,7 @@ async def make_outgoing_call():
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://e015-58-136-106-56.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -466,7 +466,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
+                            'uri': f'wss://e015-58-136-106-56.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -476,7 +476,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://e015-58-136-106-56.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
