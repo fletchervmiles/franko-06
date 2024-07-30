@@ -714,6 +714,14 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
         
         results = {}
         empathy_statement_processed = False
+
+        # Check if it's the first turn in the conversation
+        is_first_turn = len(conversation_history) == 0
+
+        # Only play the audio file if it's not the first turn
+        if not is_first_turn:
+            # Start playing the audio file asynchronously without awaiting
+            asyncio.create_task(play_audio_file(websocket))
         
         async for partial_result in sales_api.run_chains(conversation_history, human_response, agent_response):
             results.update(partial_result)
