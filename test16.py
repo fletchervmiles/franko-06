@@ -149,11 +149,11 @@ class SharedData:
 
     def update_word_timestamp(self):
         self.last_word_time = datetime.now()
-        print(f"[{self.last_word_time}] Word timestamp updated")
+        # print(f"[{self.last_word_time}] Word timestamp updated")
 
     def update_no_word_timestamp(self):
         self.last_no_word_time = datetime.now()
-        print(f"[{self.last_no_word_time}] No word timestamp updated")
+        # print(f"[{self.last_no_word_time}] No word timestamp updated")
 
 
     def reset(self):
@@ -630,6 +630,82 @@ async def play_audio_file(websocket: WebSocket):
         print(f"Error playing audio file: {e}")
         
 
+# async def generate_and_send_speech(websocket: WebSocket, conversation_history: list, human_response: str, agent_response: str):
+#     try:
+#         results = {}
+#         empathy_statement_generated = False
+#         empathy_statement_played = asyncio.Event()
+
+#         print(f"{datetime.now()} Generate and Send Speech Begun")
+        
+#         # Check if it's the first turn in the conversation
+#         is_first_turn = len(conversation_history) == 0
+
+#         # Only play the audio file if it's not the first turn
+#         if not is_first_turn:
+#             # Start playing the audio file asynchronously without awaiting
+#             asyncio.create_task(play_audio_file(websocket))
+
+#         async for result in sales_api.run_chains(conversation_history, human_response, agent_response):
+#             if isinstance(result, str):
+#                 # This looks for a string which is the empathy statement
+#                 results["empathy_statement"] = result
+#                 if not empathy_statement_generated:
+#                     print(f"{datetime.now()} Empathy Statement Audio Generation Begun")
+#                     # Generate speech for the empathy_statement and send it
+#                     # empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"] + " ...!")
+#                     empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"])
+#                     print(f"{datetime.now()} Empathy Statement Audio Generation Returned")
+#                     # asyncio.create_task(send_audio(websocket, empathy_audio_data))
+#                     print(f"{datetime.now()} Empathy Statement Audio to Websocket Begun")
+#                     asyncio.create_task(send_audio(websocket, empathy_audio_data, empathy_duration, empathy_statement_played))
+#                     print(f"{datetime.now()} Empathy Statement Audio to Websocket Returned")
+#                     empathy_statement_generated = True
+#             # This looks whether the results dictionary has been updated - i.e. the other chains
+#             elif isinstance(result, dict):
+#                 results.update(result)
+
+#         # Wait until all the required chain results are available
+#         while not all(key in results for key in ["key_points", "current_goal_review"]):
+#             await asyncio.sleep(0.1)  # Wait for a short interval before checking again
+
+#         print(f"{datetime.now()} Lead Interviewer Statement Generation Begun")
+
+#         sales_utterance_response = await sales_api.do(
+#             conversation_history,
+#             human_response,
+#             # agent_response,
+#             empathy_statement=results["empathy_statement"],
+#             # conversation_summary=results["conversation_summary"],
+#             key_points=results["key_points"],
+#             current_goal_review=results["current_goal_review"],
+#         )
+
+#         print(f"{datetime.now()} Lead Interviewer Statement Generation Returned")
+#         # Extract the desired part of the response
+#         extracted_response = extract_desired_response(sales_utterance_response)
+
+#         # print(f"\nExtracted Lead Interviewer Response:\n{extracted_response}\n")
+
+#         print(f"{datetime.now()} Lead Interviewer Audio Generation Begun")
+#         # Generate speech for the extracted_response
+#         sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response + " ...!")
+#         print(f"{datetime.now()} Lead Interviewer Audio Generation Begun")
+
+#         await empathy_statement_played.wait()
+#         print(f"Empathy statement awaited: {datetime.now()}")
+
+#         print(f"{datetime.now()} Lead Interviewer Audio to Websocket Begun")
+#         await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration)
+#         print(f"{datetime.now()} Lead Interviewer Audio to Websocket Returned")
+
+#         print(f"{datetime.now()} Generate and Send Speech Returned")
+#         return results["empathy_statement"], extracted_response, sales_utterance_duration
+
+#     except Exception as e:
+#         print(f"Error in generate_and_send_speech: {e}")
+#         print(f"Error in generate_and_send_speech: {type(e).__name__}: {e}")
+#         print(traceback.format_exc())
 
 
 async def generate_and_send_speech(websocket: WebSocket, conversation_history: list, human_response: str, agent_response: str):
@@ -712,7 +788,7 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
     try:
         samples = bytearray(audio_data)
         # Set the buffer size to 6 chunks of 20ms audio (320 * 2 bytes per chunk)
-        buffer_size = int(2 / 0.02)
+        buffer_size = int(4 / 0.02)
         chunk_size = 320 * 2
 
         print(f"{datetime.now()} Sending Audio Stream - Begun")
@@ -722,7 +798,7 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
                 await vonage_websocket.send_bytes(chunk)
                 # print(f"Sent audio chunk of size {len(chunk)} bytes")
             samples = samples[buffer_size*chunk_size:]
-            await asyncio.sleep(0.02)
+            await asyncio.sleep(0.018)
         
         # Send the remaining audio data only if it forms complete chunks of 640 bytes
         while len(samples) >= chunk_size:
@@ -730,14 +806,14 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
             await vonage_websocket.send_bytes(chunk)
             # print(f"Sent remaining audio chunk of size {len(chunk)} bytes")
             samples = samples[chunk_size:]
-            await asyncio.sleep(0.02)
+            await asyncio.sleep(0.018)
         
         # If there are any remaining bytes that don't form a complete chunk, send an empty chunk
         if len(samples) > 0:
             await vonage_websocket.send_bytes(bytearray())
-            print(f"{datetime.now()} Sending Audio Stream - Finished")
 
 
+        print(f"{datetime.now()} Sending Audio Stream - Finished")
 
         # # Wait for the duration of the audio
         # await asyncio.sleep(duration)
@@ -745,10 +821,9 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
         # Set the event to indicate that the empathy statement has been played
         if empathy_statement_played:
             empathy_statement_played.set()
-            print(f"{datetime.now()}: Empathy statement playback completed")
+            # print(f"{datetime.now()}: Empathy statement playback completed")
             # logging.debug(f"Empathy statement playback completed")
-        
-        
+                
         # logging.debug(f"{datetime.now()}: send_audio task completed")
     
     except Exception as e:
