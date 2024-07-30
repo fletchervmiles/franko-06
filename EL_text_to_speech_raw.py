@@ -1,6 +1,8 @@
-    
-
 import os
+import requests
+import time
+import logging
+from dotenv import load_dotenv
 import requests
 import shutil
 from dotenv import load_dotenv
@@ -39,29 +41,51 @@ class CallStatus(BaseModel):
     timestamp: str
 
 class TextToSpeech:
-    # Set your Deepgram API Key and desired voice model
-    DG_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-    MODEL_NAME = "aura-asteria-en"  # Example model name, change as needed
+    # Set your ElevenLabs API Key and desired voice ID
+    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+    VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
 
-    @staticmethod
-    def is_installed(lib_name: str) -> bool:
-        lib = shutil.which(lib_name)
-        return lib is not None
-
-    def generate_speech(self, text):
-        DEEPGRAM_URL = f"https://api.deepgram.com/v1/speak?model={self.MODEL_NAME}&performance=some&encoding=linear16&sample_rate=16000"
+    def generate_speech(self, text, save_path=None):
+        start_time = time.time()
+        ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
         headers = {
-            "Authorization": f"Token {self.DG_API_KEY}",
+            "xi-api-key": self.ELEVENLABS_API_KEY,
             "Content-Type": "application/json"
         }
         payload = {
-            "text": text
+            "model_id": "eleven_turbo_v2_5",
+            "text": text,
+            "voice_settings": {
+                "similarity_boost": 1,
+                "stability": 1
+            }
         }
+        try:
+            response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)
+            response.raise_for_status()
+            audio_content = response.content
+            print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
 
-        response = requests.post(DEEPGRAM_URL, headers=headers, json=payload)
-        response.raise_for_status()
+            if save_path:
+                self.save_audio(audio_content, save_path)
 
-        return response.content
+            return audio_content
+        except requests.exceptions.HTTPError as e:
+            logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error during ElevenLabs API request: {e}")
+        print(f"Failed to generate speech for text: {text}")
+        return None
+
+    def save_audio(self, audio_content, save_path):
+        try:
+            with open(save_path, 'wb') as f:
+                f.write(audio_content)
+            print(f"Raw audio saved to {save_path}")
+        except Exception as e:
+            logging.error(f"Error saving audio file: {e}")
+
+
 
 @app.post("/call")
 async def make_outgoing_call():
@@ -78,7 +102,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://c78b-146-70-186-190.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://1fed-184-82-29-142.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -88,7 +112,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://c78b-146-70-186-190.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -142,13 +166,17 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     print(f"WebSocket connection opened for call_id: {call_id}")
 
     try:
-        # Generate speech using TextToSpeech
-        tts = TextToSpeech()
-        text = "Hey, how are you?"
-        audio_data = tts.generate_speech(text)
+        # Specify the path to your audio file
+        audio_file_path = r"https://cedxguhjiaxatqwsccrp.supabase.co/storage/v1/object/public/recordings/recordings/01_buffer.raw"
 
-        # Send the audio data to the connected call
-        await listen(websocket, audio_data)
+        if os.path.exists(audio_file_path):
+            with open(audio_file_path, 'rb') as f:
+                audio_data = f.read()
+            
+            # Send the audio data using the existing listen method
+            await listen(websocket, audio_data)
+        else:
+            print(f"Audio file not found: {audio_file_path}")
 
         # Keep the WebSocket connection open for further communication if needed
         while True:

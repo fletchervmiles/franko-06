@@ -17,6 +17,7 @@ import asyncio
 from salesgpt.salesgptapi01 import SalesGPTAPI
 import redis
 import json
+from pprint import pprint
 from enum import Enum
 import requests
 import time
@@ -27,14 +28,15 @@ import logging
 import tracemalloc
 import traceback
 import psutil
+import random
 import aiohttp
 from deepgram import (
     DeepgramClient,
     DeepgramClientOptions,
     LiveTranscriptionEvents,
     LiveOptions,
-    Microphone,
 )
+
 
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -135,7 +137,7 @@ class SharedData:
 
     def set_state_machine(self, state_machine):
         self.state_machine = state_machine
-        print("State machine set.")
+        # print("State machine set.")
 
 
     # These four methods are for the listening functionality
@@ -147,9 +149,11 @@ class SharedData:
 
     def update_word_timestamp(self):
         self.last_word_time = datetime.now()
+        print(f"[{self.last_word_time}] Word timestamp updated")
 
     def update_no_word_timestamp(self):
         self.last_no_word_time = datetime.now()
+        print(f"[{self.last_no_word_time}] No word timestamp updated")
 
 
     def reset(self):
@@ -187,22 +191,22 @@ class StateMachine:
         self.shared_data.set_state_machine(self)
 
     async def call_setup(self):
-        print("Setting up the call...")
+        # print("Setting up the call...")
 
         # Wait until the call is answered
         while r.get(f'{self.call_id}_call_answered').decode("utf-8") == 'False':
             await asyncio.sleep(0.1)
 
         await self.shared_data.websocket_ready.wait()
-        print(f"WebSocket in call_setup: {self.shared_data.get_websocket()}")
-        print("WebSocket Open")
+        # print(f"WebSocket in call_setup: {self.shared_data.get_websocket()}")
+        # print("WebSocket Open")
 
         await self.event_queue.put(CallState.GENERATE_FRANKO_RESPONSE)
 
 
     async def generate_franko_response(self):
         try:
-            print(f"STATE PROGRESSED TO GENERATE FRANKO RESPONSE: {datetime.now()}")
+            print(f"{datetime.now()} Generate Franko Response Begun")
 
 
             # Get conversation history and human response from Redis
@@ -217,7 +221,7 @@ class StateMachine:
                 self.shared_data.get_websocket(), conversation_history, human_response, agent_response
             )
 
-            print(f"TIMING - Conversation History Updated {datetime.now()}")
+            # print(f"TIMING - Conversation History Updated {datetime.now()}")
             # Update the Conversation History, save the response to Redis
             agent_name = "Franko"
             ai_message = f"{agent_name}: {empathy_statement} {extracted_response}"
@@ -226,20 +230,21 @@ class StateMachine:
             self.r.set(f'{self.call_id}_conversation_history', json.dumps(conversation_history))
 
             # Run the update_conversation_stage method as a separate task
+            print(f"{datetime.now()} Update Conversation Stage (same as determine but in test14 file) Begun")
             asyncio.create_task(self.update_conversation_stage())
-            print(f"Updating conversation stage in the background")
+            # print(f"Updating conversation stage in the background")
 
             # Print the appended message and the updated conversation history
-            print(f"Appended Agent Response: {ai_message}")
-            print(f"Updated Conversation History: {conversation_history}")
+            # print(f"Appended Agent Response: {ai_message}")
+            # print(f"Updated Conversation History: {conversation_history}")
 
-            print(f"Sleep to allow audio to play starting...")
+            # print(f"Sleep to allow audio to play starting...")
             await asyncio.sleep(max(sales_utterance_duration - 2, 0))
-            print(f"Sleep to allow audio to play ending...")
+            # print(f"Sleep to allow audio to play ending...")
 
+            print(f"{datetime.now()} Generate Franko Response Returned")
             # Transition to the LISTEN_FOR_USER_RESPONSE state
             await self.event_queue.put(CallState.LISTEN_FOR_USER_RESPONSE)
-            print(f"STATE FINISHED GENERATE FRANKO RESPONSE: {datetime.now()}")
 
         except Exception as e:
             logger.exception("An error occurred in generate_franko_response: %s", str(e))
@@ -251,10 +256,12 @@ class StateMachine:
 
 
     async def listen_for_user_response(self):
-        print(f"STATE PROGRESSED TO LISTEN FOR USER RESPONSE {datetime.now()}")
+        print(f"{datetime.now()} Listen for User Response Begun")
 
+        # This resets the transcripts before checking again
         self.shared_data.reset_transcripts()
 
+        print(f"[{datetime.now()}] Entering Interviewee Response Time Checker Loop")
         while True:
             if check_for_silence(self.shared_data.last_word_time, self.shared_data.last_no_word_time):
                 full_transcript = self.shared_data.get_full_transcript()
@@ -264,24 +271,26 @@ class StateMachine:
 
             await asyncio.sleep(0.1)
 
+        print(f"[{datetime.now()}] Exiting Interviewee Response Time Checker Loop")
         self.shared_data.reset_transcripts()
-
+        print(f"[{datetime.now()}] Transcripts Reset")
 
         interviewee_name = "Fletcher"
         human_input = f"{interviewee_name}: " + full_transcript.strip()
-        print(f"Appended Human Input: {human_input}")
+        # print(f"[{datetime.now()}] Appended Human Input: {human_input}")
         conversation_history = json.loads(self.r.get(f'{self.call_id}_conversation_history').decode("utf-8"))
         conversation_history.append(human_input)
         self.r.set(f'{self.call_id}_conversation_history', json.dumps(conversation_history))
-        print(f"Updated Conversation History: {conversation_history}")
+        # print(f"Updated Conversation History: {conversation_history}")
 
         self.r.set(f'{self.call_id}_human_response', full_transcript.strip())
+        print(f"{datetime.now()} Listen for User Response Returned")
         await self.event_queue.put(CallState.GENERATE_FRANKO_RESPONSE)
-        print(f"STATE FINISHED FOR TO LISTEN FOR USER RESPONSE {datetime.now()}")
+
 
 
     async def listen(self):
-        print(f"{datetime.now()}: Starting to listen for states...")
+        # print(f"{datetime.now()}: Starting to listen for states...")
         try:
             while True:
                 # print(f"{datetime.now()}: Waiting for next state...")
@@ -309,14 +318,13 @@ class StateMachine:
         await self.call_setup()  # Start with the initial state
         await self.listen()  # Start the event loop/listener
 
-
-
+# So this runs every 0.1 seconds
 def check_for_silence(last_word_time, last_no_word_time):
     if last_word_time and last_no_word_time:
         time_diff = last_no_word_time - last_word_time
-        if time_diff > timedelta(seconds=2):
+        if time_diff > timedelta(seconds=3):
             return True
-            print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')} - Time Condition Met")
+            print(f"{datetime.now()}: - Interviewee Response Time Checker Loop Condition Met")
     return False
 
 
@@ -326,7 +334,11 @@ def handle_transcription(result, shared_data):
 
     if result.is_final and result.channel.alternatives[0].words:
         shared_data.add_part(sentence)
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')} Appending partial transcript - {sentence}")
+        print(f"{datetime.now()}: Appending partial transcript - {sentence}")
+
+
+
+
 
 
 # class TextToSpeech:
@@ -389,7 +401,7 @@ class TextToSpeech:
 
     # Set your ElevenLabs API Key and desired voice ID
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-    VOICE_ID = "TSsWwtgLq1gLBwl617e4"  # Replace with the desired voice ID
+    VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
 
     def generate_speech(self, text):
         start_time = time.time()
@@ -412,7 +424,7 @@ class TextToSpeech:
             response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)  # Added timeout
             response.raise_for_status()  # This will raise an exception for HTTP error codes
             print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-            return response.content, 5  # Assuming a fixed duration for simplicity
+            return response.content, 0  # Assuming a fixed duration for simplicity
         except requests.exceptions.HTTPError as e:
             logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
         except requests.exceptions.RequestException as e:
@@ -426,7 +438,7 @@ class TextToSpeech:
 async def make_outgoing_call():
     try:
         call_id = str(uuid4())
-        print(f"Call initiated with call_id: {call_id}")
+        print(f"{datetime.now()}: Call initiated with call_id: {call_id}")
 
         # Create a new SharedData instance
         shared_data = SharedData()
@@ -451,7 +463,7 @@ async def make_outgoing_call():
 
         # Start the state machine asynchronously
         asyncio.create_task(state_machine.start())
-        print(f'State machine started!')
+        # print(f'State machine started!')
 
         response = vonage_client.voice.create_call({
             'to': [{'type': 'phone', 'number': TO_NUMBER}],
@@ -459,7 +471,7 @@ async def make_outgoing_call():
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://e015-58-136-106-56.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -467,7 +479,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://e015-58-136-106-56.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -477,7 +489,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://e015-58-136-106-56.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -593,65 +605,153 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
+
+async def play_audio_file(websocket: WebSocket):
+    # audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
+    audio_folder_path = "/mnt/buffer_audio" 
+    audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
+    
+    if not audio_files:
+        print("No audio files found in the buffer folder.")
+        return
+
+    try:
+        # Randomly select one of the audio files
+        selected_file = random.choice(audio_files)
+        audio_file_path = os.path.join(audio_folder_path, selected_file)
+        
+        print(f"[{datetime.now()}] - Sending Audio Buffer File Begun: {selected_file}")
+        
+        with open(audio_file_path, 'rb') as f:
+            audio_data = f.read()
+        await send_audio(websocket, audio_data, 0)  # Assume 3 seconds duration, adjust as needed
+        print(f"[{datetime.now()}] - Sending Audio Buffer File Returned")
+    except Exception as e:
+        print(f"Error playing audio file: {e}")
+        
+
+# async def generate_and_send_speech(websocket: WebSocket, conversation_history: list, human_response: str, agent_response: str):
+#     try:
+#         results = {}
+#         empathy_statement_generated = False
+#         empathy_statement_played = asyncio.Event()
+
+#         print(f"{datetime.now()} Generate and Send Speech Begun")
+        
+#         # Check if it's the first turn in the conversation
+#         is_first_turn = len(conversation_history) == 0
+
+#         # Only play the audio file if it's not the first turn
+#         if not is_first_turn:
+#             # Start playing the audio file asynchronously without awaiting
+#             asyncio.create_task(play_audio_file(websocket))
+
+#         async for result in sales_api.run_chains(conversation_history, human_response, agent_response):
+#             if isinstance(result, str):
+#                 # This looks for a string which is the empathy statement
+#                 results["empathy_statement"] = result
+#                 if not empathy_statement_generated:
+#                     print(f"{datetime.now()} Empathy Statement Audio Generation Begun")
+#                     # Generate speech for the empathy_statement and send it
+#                     # empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"] + " ...!")
+#                     empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"])
+#                     print(f"{datetime.now()} Empathy Statement Audio Generation Returned")
+#                     # asyncio.create_task(send_audio(websocket, empathy_audio_data))
+#                     print(f"{datetime.now()} Empathy Statement Audio to Websocket Begun")
+#                     asyncio.create_task(send_audio(websocket, empathy_audio_data, empathy_duration, empathy_statement_played))
+#                     print(f"{datetime.now()} Empathy Statement Audio to Websocket Returned")
+#                     empathy_statement_generated = True
+#             # This looks whether the results dictionary has been updated - i.e. the other chains
+#             elif isinstance(result, dict):
+#                 results.update(result)
+
+#         # Wait until all the required chain results are available
+#         while not all(key in results for key in ["key_points", "current_goal_review"]):
+#             await asyncio.sleep(0.1)  # Wait for a short interval before checking again
+
+#         print(f"{datetime.now()} Lead Interviewer Statement Generation Begun")
+
+#         sales_utterance_response = await sales_api.do(
+#             conversation_history,
+#             human_response,
+#             # agent_response,
+#             empathy_statement=results["empathy_statement"],
+#             # conversation_summary=results["conversation_summary"],
+#             key_points=results["key_points"],
+#             current_goal_review=results["current_goal_review"],
+#         )
+
+#         print(f"{datetime.now()} Lead Interviewer Statement Generation Returned")
+#         # Extract the desired part of the response
+#         extracted_response = extract_desired_response(sales_utterance_response)
+
+#         # print(f"\nExtracted Lead Interviewer Response:\n{extracted_response}\n")
+
+#         print(f"{datetime.now()} Lead Interviewer Audio Generation Begun")
+#         # Generate speech for the extracted_response
+#         sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response + " ...!")
+#         print(f"{datetime.now()} Lead Interviewer Audio Generation Begun")
+
+#         await empathy_statement_played.wait()
+#         print(f"Empathy statement awaited: {datetime.now()}")
+
+#         print(f"{datetime.now()} Lead Interviewer Audio to Websocket Begun")
+#         await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration)
+#         print(f"{datetime.now()} Lead Interviewer Audio to Websocket Returned")
+
+#         print(f"{datetime.now()} Generate and Send Speech Returned")
+#         return results["empathy_statement"], extracted_response, sales_utterance_duration
+
+#     except Exception as e:
+#         print(f"Error in generate_and_send_speech: {e}")
+#         print(f"Error in generate_and_send_speech: {type(e).__name__}: {e}")
+#         print(traceback.format_exc())
+
+
 async def generate_and_send_speech(websocket: WebSocket, conversation_history: list, human_response: str, agent_response: str):
     try:
+        print(f"{datetime.now()} Generate and Send Speech Begun")
+        
         results = {}
-        empathy_statement_generated = False
-        empathy_statement_played = asyncio.Event()
+        empathy_statement_processed = False
+        
+        async for partial_result in sales_api.run_chains(conversation_history, human_response, agent_response):
+            results.update(partial_result)
+            
+            if "empathy_statement" in partial_result and not empathy_statement_processed:
+                print(f"{datetime.now()} Empathy Statement Audio Generation Begun")
+                empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"])
+                print(f"{datetime.now()} Empathy Statement Audio Generation Returned")
+                
+                print(f"{datetime.now()} Empathy Statement Audio to Websocket Begun")
+                await send_audio(websocket, empathy_audio_data, empathy_duration)
+                print(f"{datetime.now()} Empathy Statement Audio to Websocket Returned")
+                
+                empathy_statement_processed = True
 
-        print(f"STARTING GENERATE AND SEND SPEECH: {datetime.now()}")
-        async for result in sales_api.run_chains(conversation_history, human_response, agent_response):
-            if isinstance(result, str):
-                # This looks for a string which is the empathy statement
-                results["empathy_statement"] = result
-                if not empathy_statement_generated:
-                    print(f"EMPATHY STATEMENT 3 - Starting generating the empathy audio data: {datetime.now()}")
-                    # Generate speech for the empathy_statement and send it
-                    # empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"] + " ...!")
-                    empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"])
-                    print(f"EMPATHY STATEMENT 4 - Finished generating the empathy audio data: {datetime.now()}")
-                    # asyncio.create_task(send_audio(websocket, empathy_audio_data))
-                    asyncio.create_task(send_audio(websocket, empathy_audio_data, empathy_duration, empathy_statement_played))
-                    empathy_statement_generated = True
-            # This looks whether the results dictionary has been updated - i.e. the other chains
-            elif isinstance(result, dict):
-                results.update(result)
-
-        # Wait until all the required chain results are available
-        while not all(key in results for key in ["key_points", "current_goal_review"]):
-            await asyncio.sleep(0.1)  # Wait for a short interval before checking again
-
-        print(f"LEAD INTERVIEWER 1 - Starting generating text response {datetime.now()}")
-
+        print(f"{datetime.now()} Lead Interviewer Statement Generation Begun")
         sales_utterance_response = await sales_api.do(
             conversation_history,
             human_response,
-            # agent_response,
-            empathy_statement=results["empathy_statement"],
-            # conversation_summary=results["conversation_summary"],
-            key_points=results["key_points"],
-            current_goal_review=results["current_goal_review"],
+            empathy_statement=results.get("empathy_statement"),
+            key_points=results.get("key_points"),
+            current_goal_review=results.get("current_goal_review"),
         )
 
         # Extract the desired part of the response
         extracted_response = extract_desired_response(sales_utterance_response)
+        print(f"{datetime.now()} Lead Interviewer Statement Generation Returned")
 
-        print(f"\nExtracted Lead Interviewer Response:\n{extracted_response}\n")
-
-        print(f"LEAD INTERVIEWER 2 - Starting generating audio data: {datetime.now()}")
-        # Generate speech for the extracted_response
+        print(f"{datetime.now()} Lead Interviewer Audio Generation Begun")
         sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response + " ...!")
-        print(f"LEAD INTERVIEWER 3 - Finished generating audio data: {datetime.now()}")
+        print(f"{datetime.now()} Lead Interviewer Audio Generation Returned")
 
-        await empathy_statement_played.wait()
-        print(f"Empathy statement awaited: {datetime.now()}")
-
-        print(f"Send AUDIO start: {datetime.now()}")
+        print(f"{datetime.now()} Lead Interviewer Audio to Websocket Begun")
         await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration)
-        print(f"Send AUDIO finish: {datetime.now()}")
+        print(f"{datetime.now()} Lead Interviewer Audio to Websocket Returned")
 
-        print(f"GENERATE AND SEND SPEECH COMPLETE {datetime.now()}")
-        return results["empathy_statement"], extracted_response, sales_utterance_duration
+        print(f"{datetime.now()} Generate and Send Speech Returned")
+        return results.get("empathy_statement"), extracted_response, sales_utterance_duration
 
     except Exception as e:
         print(f"Error in generate_and_send_speech: {e}")
@@ -682,7 +782,8 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
         # Set the buffer size to 6 chunks of 20ms audio (320 * 2 bytes per chunk)
         buffer_size = int(2 / 0.02)
         chunk_size = 320 * 2
-        
+
+        print(f"{datetime.now()} Sending Audio Stream - Begun")
         while len(samples) >= chunk_size * buffer_size:
             for i in range(buffer_size):
                 chunk = samples[i*chunk_size:(i+1)*chunk_size]
@@ -702,7 +803,7 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
         # If there are any remaining bytes that don't form a complete chunk, send an empty chunk
         if len(samples) > 0:
             await vonage_websocket.send_bytes(bytearray())
-            print("Sent an empty chunk to complete the audio stream")
+            print(f"{datetime.now()} Sending Audio Stream - Finished")
 
 
 
@@ -902,6 +1003,7 @@ class WebSocketManager:
 
 
 
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     print(f"WebSocket connection opened for call_id: {call_id}")
@@ -909,141 +1011,91 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     websocket_manager = WebSocketManager(websocket, shared_data)
     await websocket_manager.connect()
 
+    deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"])
+    dg_connection = deepgram.listen.live.v("1")
+
+    def on_open(self, open, **kwargs):
+        print(f"Deepgram connection opened: {open}")
+
+    def on_message(self, result, **kwargs):
+        print(f"{datetime.now()} Deepgram transcription received:")
+        # pprint(result)
+        
+        if result.channel.alternatives[0].words:
+            shared_data.update_word_timestamp()
+        else:
+            shared_data.update_no_word_timestamp()
+        
+        handle_transcription(result, shared_data)
+
+    def on_error(self, error, **kwargs):
+        print(f"Deepgram Error: {error}")
+
+    def on_close(self, close, **kwargs):
+        print(f"Deepgram connection closed: {close}")
+
+    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+
+    options = LiveOptions(
+        model="nova-2",
+        punctuate=True,
+        language="en-US",
+        encoding="linear16",
+        channels=1,
+        sample_rate=16000,
+        interim_results=True,
+    )
+
     try:
-        # Initialize Deepgram client
-        config = DeepgramClientOptions(options={"keepalive": "true"})
-        deepgram: DeepgramClient = DeepgramClient(os.environ["DEEPGRAM_API_KEY"], config)
-        dg_connection = deepgram.listen.asynclive.v("1")
-
-        async def on_message(self, result, **kwargs):
-            if result.channel.alternatives[0].words:
-                shared_data.update_word_timestamp()
-            else:
-                shared_data.update_no_word_timestamp()
-            handle_transcription(result, shared_data)
-
-        async def on_error(self, error, **kwargs):
-            print(f"Error: {error}")
-
-        # Register the event handlers
-        dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-        dg_connection.on(LiveTranscriptionEvents.Error, on_error)
-
-        # Set the transcription options
-        options = LiveOptions(
-            model="nova-2",
-            filler_words=True,
-            language="en-US",
-            punctuate=True,
-            encoding="linear16",
-            channels=1,
-            sample_rate=16000,
-            interim_results=True,
-        )
-
-        # Start the Deepgram connection
-        await dg_connection.start(options)
-
-        # Add tasks for keepalive and continuous audio
-        keepalive_task = asyncio.create_task(send_keepalive(dg_connection))
-        continuous_audio_task = asyncio.create_task(send_continuous_audio(dg_connection))
+        dg_connection.start(options)
+        print("Deepgram connection started successfully")
 
         while True:
             try:
-                message = await asyncio.wait_for(websocket_manager.receive_message(), timeout=0.1)
+                message = await websocket_manager.receive_message()
                 if message["type"] == "websocket.receive":
-                    if "text" in message:
-                        # Handle JSON data
-                        data = json.loads(message["text"])
-                        # Process the JSON data as needed
-                    elif "bytes" in message:
-                        # Handle binary data
+                    if "bytes" in message:
                         audio_data = message["bytes"]
-                        await dg_connection.send(audio_data)
-
-            except asyncio.TimeoutError:
-                continue
-
-            except (ConnectionClosedError, WebSocketException) as e:
-                print(f"Deepgram connection closed: {e}")
-                # Attempt to reconnect
-                success = await reconnect_deepgram(dg_connection, options)
-                if not success:
-                    break
-                continue
-
+                        dg_connection.send(audio_data)
+                    
             except WebSocketDisconnect as e:
                 logger.error(f"WebSocket disconnected: code={e.code}")
-                if hasattr(e, 'reason'):
-                    logger.error(f"Disconnection reason: {e.reason}")
-                else:
-                    logger.error("Disconnection reason not provided")
-
+                logger.error(f"Disconnection reason: {getattr(e, 'reason', 'Unknown')}")
                 print(f"WebSocket disconnected: code={e.code}, reason={getattr(e, 'reason', 'Unknown')}")
+                
                 if await websocket_manager.should_reconnect():
                     print("Attempting to reconnect...")
-                    success = await reconnect_deepgram(dg_connection, options)
-                    if success:
-                        continue  # If reconnection was successful, continue with the next iteration
-                print("Call terminated. WebSocket will not reconnect.")
-                break
+                    dg_connection = deepgram.listen.live.v("1")
+                    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+                    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+                    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+                    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+                    dg_connection.start(options)
+                    print("Deepgram connection restarted successfully")
+                    continue
+                else:
+                    print("Call terminated. WebSocket will not reconnect.")
+                    break
 
     except Exception as e:
         print(f"Error in WebSocket endpoint: {e}")
         print(traceback.format_exc())
 
     finally:
-        # Cancel all tasks
-        for task in [keepalive_task, continuous_audio_task]:
-            if task:
-                task.cancel()
-
-        # Close the Deepgram connection
-        await dg_connection.finish()
+        if dg_connection:
+            dg_connection.finish()
+            print("Deepgram connection closed")
 
         try:
             if websocket_manager.websocket.client_state.name != "DISCONNECTED":
-                # Close the WebSocket connection if it's not already closed
                 await websocket_manager.disconnect()
+                print("WebSocket disconnected successfully")
         except Exception as e:
             print(f"Error closing WebSocket connection: {e}")
             print(traceback.format_exc())
-
-
-async def send_keepalive(dg_connection):
-    while True:
-        await asyncio.sleep(5)  # Send keepalive every 5 seconds
-        try:
-            await dg_connection.send(json.dumps({"type": "KeepAlive"}).encode())
-            print("Sent KeepAlive to Deepgram")
-        except Exception as e:
-            print(f"Error sending KeepAlive: {e}")
-
-async def send_continuous_audio(dg_connection):
-    while True:
-        try:
-            # Send a small amount of silent audio data every second
-            silent_audio = b'\x00' * 320  # 20ms of silent audio at 16kHz
-            await dg_connection.send(silent_audio)
-            await asyncio.sleep(1)
-        except Exception as e:
-            print(f"Error sending continuous audio: {e}")
-
-
-async def reconnect_deepgram(dg_connection, options):
-    max_retries = 5
-    for i in range(max_retries):
-        try:
-            await dg_connection.finish()
-            await dg_connection.start(options)
-            print("Successfully reconnected to Deepgram")
-            return True
-        except Exception as e:
-            print(f"Failed to reconnect to Deepgram (attempt {i+1}/{max_retries}): {e}")
-            await asyncio.sleep(2 ** i)  # Exponential backoff
-    print("Failed to reconnect to Deepgram after multiple attempts")
-    return False
-
 
 
 if __name__ == "__main__":

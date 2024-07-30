@@ -220,7 +220,6 @@ class StageAnalyzerChain(LLMChain):
                 "question_count_summary",
             ],
         )
-        # print(f"STAGE ANALYZER PROMPT {prompt}")
         return cls(prompt=prompt, llm=llm, verbose=verbose)
 
 # IN USE

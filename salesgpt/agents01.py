@@ -207,62 +207,11 @@ class SalesGPT(Chain):
         self.has_progressed = True
         self.interview_start_time = time.time()
         self.start_call()  # Initialize the timer and reset time-related attributes
-        
-        print(f"Goal Completeness Status CHECK: {self.goal_completeness_status}")
-
-
-    # async def async_chain_runner(self):
-    #     try:
-    #         print(f"Goal Completeness Status CHECK: {self.goal_completeness_status}")
-    #         chain_results = await asyncio.gather(
-    #         #     self.conversation_summary_chain.ainvoke({
-    #         #         "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-    #         #         "client_name": self.client_name,
-    #         #         "conversation_summary": self.conversation_summary,
-    #         #         "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
-    #         #         "current_conversation_stage": self.current_conversation_stage,
-    #         #     }),
-
-    #             self.key_points_chain.ainvoke({
-    #                 "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-    #                 "client_name": self.client_name,
-    #                 "human_response": self.human_response,
-    #                 "agent_response": self.agent_response,
-    #                 "current_conversation_stage": self.current_conversation_stage, 
-    #             }),
-                
-    #             self.current_goal_review_chain.ainvoke({
-    #                 "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-    #                 "current_conversation_stage": self.current_conversation_stage,
-    #                 "client_name": self.client_name,
-    #                 "interviewee_name": self.interviewee_name,
-    #                 "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
-    #                 "customer_type": self.customer_type,
-    #                 "has_progressed": self.has_progressed,
-    #                 "human_response": self.human_response,
-    #             }),
-    #         )
-
-    #         # self.conversation_summary = chain_results[0]["text"]
-    #         self.key_points = chain_results[0]["text"]
-    #         self.current_goal_review = chain_results[1]["text"]
-
-    #         return {
-    #             # "conversation_summary": self.conversation_summary,
-    #             "key_points": self.key_points,
-    #             "current_goal_review": self.current_goal_review,
-    #         }
-
-    #     except Exception as e:
-    #         print(f"Error in async_chain_runner: {e}")
-    #         print(f"Error in async_chain_runner: {type(e).__name__}: {e}")
-    #         print(traceback.format_exc())
-    #         raise  # Re-raise the exception for the caller to handle
-
  
     async def async_chain_runner(self):
         try:
-            print(f"Goal Completeness Status CHECK: {self.goal_completeness_status}")
+            print(f"[{datetime.now()}] Async Chain Runner Begun (key points and current goal review)")
+
             print(f"Has Progressed: {self.has_progressed}")
 
             if self.has_progressed:
@@ -291,6 +240,8 @@ class SalesGPT(Chain):
                 self.current_goal_review = current_goal_review_result["text"]
                 self.key_points = ""  # Set key_points to blank
 
+            print(f"[{datetime.now()}] Async Chain Runner Returned (key points and current goal review)")
+
             return {
                 "key_points": self.key_points,
                 "current_goal_review": self.current_goal_review,
@@ -306,12 +257,14 @@ class SalesGPT(Chain):
 
     async def run_empathy_statement_chain(self):
         try:
+            print(f"[{datetime.now()}] Run Empathy Statement Chain Begun")
             empathy_statement_result = await self.empathy_statement_chain.ainvoke({
                 "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
                 "client_name": self.client_name,  # Include client_name in the dictionary
                 "human_response": self.human_response,  # Include human_response in the dictionary
                 "agent_response": self.agent_response,  # Include agent_response in
             })
+            print(f"[{datetime.now()}] Run Empathy Statement Chain Returned")
             return empathy_statement_result["text"]
 
         except Exception as e:
@@ -323,18 +276,23 @@ class SalesGPT(Chain):
 
     async def determine_conversation_stage(self):
         try:
-
+            print(f"[{datetime.now()}] Determine Conversation Stage Begun")
+            
             # Increment turn count for current story component
+            # Print statements for this
             self.increment_story_component_turn_count()
             
             # This runs the chain and returns goal_completeness_status
+            # Print statements for this
             self.run_goal_completeness_chain()
 
             # This runs the chain and returns question_count_summary
+            # Print statements for this
             self.run_question_count_chain()
 
             previous_stage_id = self.conversation_stage_id
             try:
+                print(f"[{datetime.now()}] Stage Analyzer Chain Begun")
                 stage_analyzer_output = await self.stage_analyzer_chain.ainvoke(
                     input_data={
                         "conversation_history": "\n".join(self.conversation_history).rstrip("\n"),
@@ -353,6 +311,7 @@ class SalesGPT(Chain):
                     },
                     return_only_outputs=False,
                 )
+                print(f"[{datetime.now()}] Stage Analyzer Chain Returned")
             except Exception as e:
                 print(f"Error during stage analysis: {e}")
                 # Optionally, set a default value or perform other error handling
@@ -379,10 +338,12 @@ class SalesGPT(Chain):
             self.has_progressed = self.has_progressed_analysis()  
             # self.run_transition_chain() - TO BE DELETED
 
-            print(f"Current Conversation Stage: {self.current_conversation_stage}")
-            print(f"Conversation Stage History: {self.conversation_stage_history}")
-            print(f"Stage Counts: {self.stage_counts}")
-            print(f"Has Progressed: {self.has_progressed}")
+            # print(f"Current Conversation Stage: {self.current_conversation_stage}")
+            # print(f"Conversation Stage History: {self.conversation_stage_history}")
+            # print(f"Stage Counts: {self.stage_counts}")
+            # print(f"Has Progressed: {self.has_progressed}")
+
+            print(f"[{datetime.now()}] Determine Conversation Stage Returned")
         
         except AttributeError as e:
             print(f"AttributeError in determine_conversation_stage: {e}")
@@ -399,7 +360,7 @@ class SalesGPT(Chain):
             current_stage = self.conversation_stage_history[-1]
             previous_stage = self.conversation_stage_history[-2]
             result = int(current_stage) == int(previous_stage) + 1
-            print(f"Has Progressed Boolean: Current Stage: {current_stage}, Previous Stage: {previous_stage}, Has Progressed: {result}")
+            # print(f"Has Progressed Boolean: Current Stage: {current_stage}, Previous Stage: {previous_stage}, Has Progressed: {result}")
             return result
         return False
 
@@ -410,13 +371,14 @@ class SalesGPT(Chain):
             if stage_id not in stage_counts:
                 stage_counts[stage_id] = 0
             stage_counts[stage_id] += 1
-        print(f"Count Conversation Stages: {stage_counts}")
-        print(f"Conversation Stage History: {self.conversation_stage_history}")
+        # print(f"Count Conversation Stages: {stage_counts}")
+        # print(f"Conversation Stage History: {self.conversation_stage_history}")
         return stage_counts
 
 
     def run_question_count_chain(self):
         try:
+            print(f"[{datetime.now()}] Run Question Count Chain Begun")
             question_metrics = self.get_question_count_metrics()
             time_metrics = self.get_time_metrics()
             overall_time_metrics = self.track_overall_interview_time()
@@ -446,28 +408,30 @@ class SalesGPT(Chain):
             )
             self.question_count_summary = question_count_result["text"]
             
-            # Print metrics (you can keep or remove this based on your debugging needs)
-            print(f"Question Count Summary: {self.question_count_summary}")
-            print(f"Current Question Count: {question_metrics['current_count']}")
-            print(f"Minimum Question Count: {question_metrics['min_count']}")
-            print(f"Target Question Count: {question_metrics['target_count']}")
-            print(f"Minimum Question Count Met: {question_metrics['min_met']}")
-            print(f"Target Question Count Met: {question_metrics['target_met']}")
-            print(f"Current Time: {time_metrics['current_time']:.2f} seconds")
-            print(f"Minimum Time: {time_metrics['min_time']} seconds")
-            print(f"Target Time: {time_metrics['target_time']} seconds")
-            print(f"Minimum Time Met: {time_metrics['min_time_met']}")
-            print(f"Target Time Met: {time_metrics['target_time_met']}")
-            print(f"Overall Time Met: {overall_time_metrics['overall_time_met']}")
-            print(f"Overall Elapsed Time: {overall_time_metrics['overall_elapsed_time']:.2f} seconds")
-            print(f"Overall Target Time: {overall_time_metrics['overall_target_time']} seconds")
-            print(f"Goal Completeness Status: {self.goal_completeness_status}") 
+            # # Print metrics (you can keep or remove this based on your debugging needs)
+            # print(f"Question Count Summary: {self.question_count_summary}")
+            # print(f"Current Question Count: {question_metrics['current_count']}")
+            # print(f"Minimum Question Count: {question_metrics['min_count']}")
+            # print(f"Target Question Count: {question_metrics['target_count']}")
+            # print(f"Minimum Question Count Met: {question_metrics['min_met']}")
+            # print(f"Target Question Count Met: {question_metrics['target_met']}")
+            # print(f"Current Time: {time_metrics['current_time']:.2f} seconds")
+            # print(f"Minimum Time: {time_metrics['min_time']} seconds")
+            # print(f"Target Time: {time_metrics['target_time']} seconds")
+            # print(f"Minimum Time Met: {time_metrics['min_time_met']}")
+            # print(f"Target Time Met: {time_metrics['target_time_met']}")
+            # print(f"Overall Time Met: {overall_time_metrics['overall_time_met']}")
+            # print(f"Overall Elapsed Time: {overall_time_metrics['overall_elapsed_time']:.2f} seconds")
+            # print(f"Overall Target Time: {overall_time_metrics['overall_target_time']} seconds")
+            # print(f"Goal Completeness Status: {self.goal_completeness_status}") 
+            print(f"[{datetime.now()}] Run Question Count Chain Returned")
 
         except Exception as e:
             print(f"An error occurred in run_question_count_chain: {e}")
 
     def run_goal_completeness_chain(self):
         try:
+            print(f"[{datetime.now()}] Run Goal Completeness Chain Begun")
             goal_completeness_result = self.goal_completeness_chain.invoke(
                 input_data={
                     "client_name": self.client_name,
@@ -478,7 +442,8 @@ class SalesGPT(Chain):
                 }
             )
             self.goal_completeness_status = goal_completeness_result["text"]
-            print(f"Goal Completeness Status: {self.goal_completeness_status}")
+            print(f"[{datetime.now()}] Run Goal Completeness Chain Returned")
+            # print(f"Goal Completeness Status: {self.goal_completeness_status}")
         except Exception as e:
             print(f"An error occurred in run_goal_completeness_chain: {e}")
             # Optionally, set a default value or perform other error handling
@@ -538,13 +503,14 @@ class SalesGPT(Chain):
         }
 
     def increment_story_component_turn_count(self):
+        print(f"[{datetime.now()}] Increment Story Component Turn Count Begun")
         story_component_stage_id = self.conversation_stage_id
         if story_component_stage_id not in self.turns_per_story_component:
             self.turns_per_story_component[story_component_stage_id] = 0
         else:
             self.turns_per_story_component[story_component_stage_id] += 1
-        print(f"Turn count for story component {story_component_stage_id}: {self.turns_per_story_component[story_component_stage_id]}")
-
+        # print(f"Turn count for story component {story_component_stage_id}: {self.turns_per_story_component[story_component_stage_id]}")
+        print(f"[{datetime.now()}] Increment Story Component Turn Count Returned")
 
     def track_overall_interview_time(self):
         current_time = time.time()
@@ -610,7 +576,7 @@ class SalesGPT(Chain):
 
 
     async def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        print(f"Inputs in _call method: {inputs}")
+        # print(f"Inputs in _call method: {inputs}")
         """
         Executes one step of the sales agent.
 

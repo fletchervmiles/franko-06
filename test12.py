@@ -33,8 +33,8 @@ from deepgram import (
     DeepgramClientOptions,
     LiveTranscriptionEvents,
     LiveOptions,
-    Microphone,
 )
+
 
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -329,6 +329,8 @@ def handle_transcription(result, shared_data):
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')} Appending partial transcript - {sentence}")
 
 
+
+
 # class TextToSpeech:
 #     # Set your Deepgram API Key and desired voice model
 #     DG_API_KEY = os.getenv("DEEPGRAM_API_KEY")
@@ -459,7 +461,7 @@ async def make_outgoing_call():
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://e015-58-136-106-56.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://1923-58-136-106-211.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -467,7 +469,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://e015-58-136-106-56.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://1923-58-136-106-211.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -477,7 +479,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://e015-58-136-106-56.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://1923-58-136-106-211.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -588,6 +590,7 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
         raise HTTPException(status_code=400, detail="No recording URL provided")
 
     return {"message": "Recording processed successfully"}
+
 
 
 
@@ -902,6 +905,7 @@ class WebSocketManager:
 
 
 
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     print(f"WebSocket connection opened for call_id: {call_id}")
@@ -909,141 +913,87 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     websocket_manager = WebSocketManager(websocket, shared_data)
     await websocket_manager.connect()
 
+    deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"])
+    dg_connection = deepgram.listen.live.v("1")
+
+    def on_open(self, open, **kwargs):
+        print(f"Deepgram connection opened: {open}")
+
+    def on_message(self, result, **kwargs):
+        if result.is_final:
+            shared_data.update_word_timestamp()
+        else:
+            shared_data.update_no_word_timestamp()
+        handle_transcription(result, shared_data)
+
+    def on_error(self, error, **kwargs):
+        print(f"Deepgram Error: {error}")
+
+    def on_close(self, close, **kwargs):
+        print(f"Deepgram connection closed: {close}")
+
+    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+
+    options = LiveOptions(
+        model="nova-2",
+        punctuate=True,
+        language="en-US",
+        encoding="linear16",
+        channels=1,
+        sample_rate=16000,
+        interim_results=True,
+    )
+
     try:
-        # Initialize Deepgram client
-        config = DeepgramClientOptions(options={"keepalive": "true"})
-        deepgram: DeepgramClient = DeepgramClient(os.environ["DEEPGRAM_API_KEY"], config)
-        dg_connection = deepgram.listen.asynclive.v("1")
-
-        async def on_message(self, result, **kwargs):
-            if result.channel.alternatives[0].words:
-                shared_data.update_word_timestamp()
-            else:
-                shared_data.update_no_word_timestamp()
-            handle_transcription(result, shared_data)
-
-        async def on_error(self, error, **kwargs):
-            print(f"Error: {error}")
-
-        # Register the event handlers
-        dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-        dg_connection.on(LiveTranscriptionEvents.Error, on_error)
-
-        # Set the transcription options
-        options = LiveOptions(
-            model="nova-2",
-            filler_words=True,
-            language="en-US",
-            punctuate=True,
-            encoding="linear16",
-            channels=1,
-            sample_rate=16000,
-            interim_results=True,
-        )
-
-        # Start the Deepgram connection
-        await dg_connection.start(options)
-
-        # Add tasks for keepalive and continuous audio
-        keepalive_task = asyncio.create_task(send_keepalive(dg_connection))
-        continuous_audio_task = asyncio.create_task(send_continuous_audio(dg_connection))
+        dg_connection.start(options)
+        print("Deepgram connection started successfully")
 
         while True:
             try:
-                message = await asyncio.wait_for(websocket_manager.receive_message(), timeout=0.1)
+                message = await websocket_manager.receive_message()
                 if message["type"] == "websocket.receive":
-                    if "text" in message:
-                        # Handle JSON data
-                        data = json.loads(message["text"])
-                        # Process the JSON data as needed
-                    elif "bytes" in message:
-                        # Handle binary data
+                    if "bytes" in message:
                         audio_data = message["bytes"]
-                        await dg_connection.send(audio_data)
-
-            except asyncio.TimeoutError:
-                continue
-
-            except (ConnectionClosedError, WebSocketException) as e:
-                print(f"Deepgram connection closed: {e}")
-                # Attempt to reconnect
-                success = await reconnect_deepgram(dg_connection, options)
-                if not success:
-                    break
-                continue
-
+                        dg_connection.send(audio_data)
+                    
             except WebSocketDisconnect as e:
                 logger.error(f"WebSocket disconnected: code={e.code}")
-                if hasattr(e, 'reason'):
-                    logger.error(f"Disconnection reason: {e.reason}")
-                else:
-                    logger.error("Disconnection reason not provided")
-
+                logger.error(f"Disconnection reason: {getattr(e, 'reason', 'Unknown')}")
                 print(f"WebSocket disconnected: code={e.code}, reason={getattr(e, 'reason', 'Unknown')}")
+                
                 if await websocket_manager.should_reconnect():
                     print("Attempting to reconnect...")
-                    success = await reconnect_deepgram(dg_connection, options)
-                    if success:
-                        continue  # If reconnection was successful, continue with the next iteration
-                print("Call terminated. WebSocket will not reconnect.")
-                break
+                    dg_connection = deepgram.listen.live.v("1")
+                    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+                    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+                    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+                    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+                    dg_connection.start(options)
+                    print("Deepgram connection restarted successfully")
+                    continue
+                else:
+                    print("Call terminated. WebSocket will not reconnect.")
+                    break
 
     except Exception as e:
         print(f"Error in WebSocket endpoint: {e}")
         print(traceback.format_exc())
 
     finally:
-        # Cancel all tasks
-        for task in [keepalive_task, continuous_audio_task]:
-            if task:
-                task.cancel()
-
-        # Close the Deepgram connection
-        await dg_connection.finish()
+        if dg_connection:
+            dg_connection.finish()
+            print("Deepgram connection closed")
 
         try:
             if websocket_manager.websocket.client_state.name != "DISCONNECTED":
-                # Close the WebSocket connection if it's not already closed
                 await websocket_manager.disconnect()
+                print("WebSocket disconnected successfully")
         except Exception as e:
             print(f"Error closing WebSocket connection: {e}")
             print(traceback.format_exc())
-
-
-async def send_keepalive(dg_connection):
-    while True:
-        await asyncio.sleep(5)  # Send keepalive every 5 seconds
-        try:
-            await dg_connection.send(json.dumps({"type": "KeepAlive"}).encode())
-            print("Sent KeepAlive to Deepgram")
-        except Exception as e:
-            print(f"Error sending KeepAlive: {e}")
-
-async def send_continuous_audio(dg_connection):
-    while True:
-        try:
-            # Send a small amount of silent audio data every second
-            silent_audio = b'\x00' * 320  # 20ms of silent audio at 16kHz
-            await dg_connection.send(silent_audio)
-            await asyncio.sleep(1)
-        except Exception as e:
-            print(f"Error sending continuous audio: {e}")
-
-
-async def reconnect_deepgram(dg_connection, options):
-    max_retries = 5
-    for i in range(max_retries):
-        try:
-            await dg_connection.finish()
-            await dg_connection.start(options)
-            print("Successfully reconnected to Deepgram")
-            return True
-        except Exception as e:
-            print(f"Failed to reconnect to Deepgram (attempt {i+1}/{max_retries}): {e}")
-            await asyncio.sleep(2 ** i)  # Exponential backoff
-    print("Failed to reconnect to Deepgram after multiple attempts")
-    return False
-
 
 
 if __name__ == "__main__":
