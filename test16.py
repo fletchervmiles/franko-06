@@ -518,7 +518,7 @@ async def make_outgoing_call():
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -526,7 +526,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://1fed-184-82-29-142.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -536,7 +536,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
