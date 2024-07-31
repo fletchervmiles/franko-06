@@ -653,28 +653,28 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-# async def play_audio_file(websocket: WebSocket):
-#     # audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
-#     audio_folder_path = "/mnt/buffer_audio" 
-#     audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
+async def play_audio_file(websocket: WebSocket):
+    # audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
+    audio_folder_path = "/mnt/buffer_audio" 
+    # audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
     
-#     if not audio_files:
-#         print("No audio files found in the buffer folder.")
-#         return
+    if not audio_files:
+        print("No audio files found in the buffer folder.")
+        return
 
-#     try:
-#         # Randomly select one of the audio files
-#         selected_file = random.choice(audio_files)
-#         audio_file_path = os.path.join(audio_folder_path, selected_file)
+    try:
+        # Randomly select one of the audio files
+        selected_file = random.choice(audio_files)
+        audio_file_path = os.path.join(audio_folder_path, selected_file)
         
-#         print(f"[{datetime.now()}] - Sending Audio Buffer File Begun: {selected_file}")
+        print(f"[{datetime.now()}] - Sending Audio Buffer File Begun: {selected_file}")
         
-#         with open(audio_file_path, 'rb') as f:
-#             audio_data = f.read()
-#         await send_audio(websocket, audio_data, 0)  # Assume 3 seconds duration, adjust as needed
-#         print(f"[{datetime.now()}] - Sending Audio Buffer File Returned")
-#     except Exception as e:
-#         print(f"Error playing audio file: {e}")
+        with open(audio_file_path, 'rb') as f:
+            audio_data = f.read()
+        await send_audio(websocket, audio_data, 0)  # Assume 3 seconds duration, adjust as needed
+        print(f"[{datetime.now()}] - Sending Audio Buffer File Returned")
+    except Exception as e:
+        print(f"Error playing audio file: {e}")
         
 
 # async def generate_and_send_speech(websocket: WebSocket, conversation_history: list, human_response: str, agent_response: str):
@@ -762,13 +762,13 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
         results = {}
         empathy_statement_processed = False
 
-        # # Check if it's the first turn in the conversation
-        # is_first_turn = len(conversation_history) == 0
+        # Check if it's the first turn in the conversation
+        is_first_turn = len(conversation_history) == 0
 
-        # # Only play the audio file if it's not the first turn
-        # if not is_first_turn:
-        #     # Start playing the audio file asynchronously without awaiting
-        #     asyncio.create_task(play_audio_file(websocket))
+        # Only play the audio file if it's not the first turn
+        if not is_first_turn:
+            # Start playing the audio file asynchronously without awaiting
+            asyncio.create_task(play_audio_file(websocket))
         
         async for partial_result in sales_api.run_chains(conversation_history, human_response, agent_response):
             results.update(partial_result)
