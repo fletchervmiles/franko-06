@@ -255,24 +255,48 @@ class SalesGPT(Chain):
 
 
 
+    # async def run_empathy_statement_chain(self):
+    #     try:
+    #         print(f"[{datetime.now()}] Run Empathy Statement Chain Begun")
+    #         empathy_statement_result = await self.empathy_statement_chain.ainvoke({
+    #             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
+    #             "client_name": self.client_name,  # Include client_name in the dictionary
+    #             "human_response": self.human_response,  # Include human_response in the dictionary
+    #             "agent_response": self.agent_response,  # Include agent_response in
+    #         })
+            
+    #         print(f"[{datetime.now()}] Run Empathy Statement Chain Returned")
+    #         return empathy_statement_result["text"]
+
+    #     except Exception as e:
+    #         print(f"Error in run_empathy_statement_chain: {e}")
+    #         print(f"Error in run_empathy_statement_chain: {type(e).__name__}: {e}")
+    #         print(traceback.format_exc())
+    #         raise  # Re-raise the exception for the caller to handle
+
+    # With additional of Empathy statement insert
     async def run_empathy_statement_chain(self):
         try:
             print(f"[{datetime.now()}] Run Empathy Statement Chain Begun")
             empathy_statement_result = await self.empathy_statement_chain.ainvoke({
                 "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-                "client_name": self.client_name,  # Include client_name in the dictionary
-                "human_response": self.human_response,  # Include human_response in the dictionary
-                "agent_response": self.agent_response,  # Include agent_response in
+                "client_name": self.client_name,
+                "human_response": self.human_response,
+                "agent_response": self.agent_response,
             })
+            
+            # Insert text at the beginning and end of the empathy statement
+            empathy_statement_result["text"] = (
+                f'<break time="0.75s" /> Okay, <break time="0.5s" />{empathy_statement_result["text"]}'
+                f'<break time="0.75s" />'
+            )
+            
             print(f"[{datetime.now()}] Run Empathy Statement Chain Returned")
             return empathy_statement_result["text"]
-
         except Exception as e:
             print(f"Error in run_empathy_statement_chain: {e}")
-            print(f"Error in run_empathy_statement_chain: {type(e).__name__}: {e}")
             print(traceback.format_exc())
-            raise  # Re-raise the exception for the caller to handle
-
+            raise
 
     async def determine_conversation_stage(self):
         try:

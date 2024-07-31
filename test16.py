@@ -20,6 +20,7 @@ import redis
 import json
 from pprint import pprint
 from enum import Enum
+import re
 import requests
 import time
 from supabase import create_client as create_supabase_client, Client as SupabaseClient
@@ -141,20 +142,40 @@ class SharedData:
         # print("State machine set.")
 
 
+    # # These four methods are for the listening functionality
+    # def add_part(self, part):
+    #     self.transcript_parts.append(part)
+
+    # def get_full_transcript(self):
+    #     return ' '.join(self.transcript_parts)
+
+    # def update_word_timestamp(self):
+    #     self.last_word_time = datetime.now()
+    #     # print(f"[{self.last_word_time}] Word timestamp updated")
+
+    # def update_no_word_timestamp(self):
+    #     self.last_no_word_time = datetime.now()
+    #     # print(f"[{self.last_no_word_time}] No word timestamp updated")
+
     # These four methods are for the listening functionality
     def add_part(self, part):
-        self.transcript_parts.append(part)
+        if self.state_machine and self.state_machine.get_current_state() == CallState.LISTEN_FOR_USER_RESPONSE:
+            self.transcript_parts.append(part)
 
     def get_full_transcript(self):
-        return ' '.join(self.transcript_parts)
+        if self.state_machine and self.state_machine.get_current_state() == CallState.LISTEN_FOR_USER_RESPONSE:
+            return ' '.join(self.transcript_parts)
+        return ''
 
     def update_word_timestamp(self):
-        self.last_word_time = datetime.now()
-        # print(f"[{self.last_word_time}] Word timestamp updated")
+        if self.state_machine and self.state_machine.get_current_state() == CallState.LISTEN_FOR_USER_RESPONSE:
+            self.last_word_time = datetime.now()
+            # print(f"[{self.last_word_time}] Word timestamp updated")
 
     def update_no_word_timestamp(self):
-        self.last_no_word_time = datetime.now()
-        # print(f"[{self.last_no_word_time}] No word timestamp updated")
+        if self.state_machine and self.state_machine.get_current_state() == CallState.LISTEN_FOR_USER_RESPONSE:
+            self.last_no_word_time = datetime.now()
+            # print(f"[{self.last_no_word_time}] No word timestamp updated")
 
 
     def reset(self):
@@ -224,10 +245,25 @@ class StateMachine:
 
             # print(f"TIMING - Conversation History Updated {datetime.now()}")
             # Update the Conversation History, save the response to Redis
+            # agent_name = "Franko"
+            # ai_message = f"{agent_name}: {empathy_statement} {extracted_response}"
+            # self.r.set(f'{self.call_id}_agent_response', ai_message)
+            # conversation_history.append(ai_message)
+            # self.r.set(f'{self.call_id}_conversation_history', json.dumps(conversation_history))
+
             agent_name = "Franko"
             ai_message = f"{agent_name}: {empathy_statement} {extracted_response}"
-            self.r.set(f'{self.call_id}_agent_response', ai_message)
-            conversation_history.append(ai_message)
+
+            # Print the full AI message with breaks
+            print(f"\nFull AI Message:\n{ai_message}\n")
+
+            clean_ai_message = strip_break_tags(ai_message)
+
+            # Print the cleaned AI message
+            print(f"\nCleaned AI Message:\n{clean_ai_message}\n")
+
+            self.r.set(f'{self.call_id}_agent_response', clean_ai_message)
+            conversation_history.append(clean_ai_message)
             self.r.set(f'{self.call_id}_conversation_history', json.dumps(conversation_history))
 
             # Run the update_conversation_stage method as a separate task
@@ -338,7 +374,8 @@ def handle_transcription(result, shared_data):
         print(f"{datetime.now()}: Appending partial transcript - {sentence}")
 
 
-
+def strip_break_tags(text):
+    return re.sub(r'<break\s+time="[^"]*"\s*/>', '', text)
 
 
 
@@ -445,8 +482,8 @@ class TextToSpeech:
             "model_id": "eleven_turbo_v2_5",
             "text": text,
             "voice_settings": {
-                "similarity_boost": 0.5,
-                "stability": 0.5
+                "similarity_boost": 1,
+                "stability": 1
             }
         }
         try:
@@ -518,7 +555,7 @@ async def make_outgoing_call():
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -526,7 +563,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
+                            'uri': f'wss://1fed-184-82-29-142.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -536,12 +573,15 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
         return {"message": "Call initiated", "call_id": call_id}
     except Exception as e:
+        print(f"Error in make_outgoing_call: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error details: {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -653,28 +693,48 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-async def play_audio_file(websocket: WebSocket):
-    # audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
-    audio_folder_path = "/mnt/buffer_audio" 
-    audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
+# async def play_audio_file(websocket: WebSocket):
+#     # audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
+#     audio_folder_path = "/mnt/buffer_audio" 
+#     audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
     
-    if not audio_files:
-        print("No audio files found in the buffer folder.")
-        return
+#     if not audio_files:
+#         print("No audio files found in the buffer folder.")
+#         return
 
-    try:
-        # Randomly select one of the audio files
-        selected_file = random.choice(audio_files)
-        audio_file_path = os.path.join(audio_folder_path, selected_file)
+#     try:
+#         # Randomly select one of the audio files
+#         selected_file = random.choice(audio_files)
+#         audio_file_path = os.path.join(audio_folder_path, selected_file)
         
-        print(f"[{datetime.now()}] - Sending Audio Buffer File Begun: {selected_file}")
+#         print(f"[{datetime.now()}] - Sending Audio Buffer File Begun: {selected_file}")
+        
+#         with open(audio_file_path, 'rb') as f:
+#             audio_data = f.read()
+#         await send_audio(websocket, audio_data, 0)  # Assume 3 seconds duration, adjust as needed
+#         print(f"[{datetime.now()}] - Sending Audio Buffer File Returned")
+#     except Exception as e:
+#         print(f"Error playing audio file: {e}")
+
+async def play_audio_file(websocket: WebSocket):
+    # Specify the exact file path
+    # audio_file_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\understood_audio.raw"
+    audio_folder_path = "/mnt/buffer_audio"
+    audio_file_name = "understood_audio.raw"
+    audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+    
+    try:
+        print(f"[{datetime.now()}] - Sending Audio Buffer File Begun: {audio_file_path}")
         
         with open(audio_file_path, 'rb') as f:
             audio_data = f.read()
-        await send_audio(websocket, audio_data, 0)  # Assume 3 seconds duration, adjust as needed
+        await send_audio(websocket, audio_data, 0)  # Assume 0 seconds duration, adjust if needed
         print(f"[{datetime.now()}] - Sending Audio Buffer File Returned")
+    except FileNotFoundError:
+        print(f"Error: Audio file not found at {audio_file_path}")
     except Exception as e:
         print(f"Error playing audio file: {e}")
+
         
 
 # async def generate_and_send_speech(websocket: WebSocket, conversation_history: list, human_response: str, agent_response: str):
@@ -800,7 +860,7 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
         extracted_response = extract_desired_response(sales_utterance_response)
         print(f"{datetime.now()} Lead Interviewer Statement Generation Returned")
 
-        sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response + " ...!")
+        sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response)
         print(f"{datetime.now()} Lead Interviewer Audio Generation Returned")
 
         print(f"{datetime.now()} Lead Interviewer Audio to Websocket Begun")
