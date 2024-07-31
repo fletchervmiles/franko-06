@@ -656,7 +656,7 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 async def play_audio_file(websocket: WebSocket):
     # audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
     audio_folder_path = "/mnt/buffer_audio" 
-    # audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
+    audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
     
     if not audio_files:
         print("No audio files found in the buffer folder.")
@@ -884,7 +884,9 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
         
         # If there are any remaining bytes that don't form a complete chunk, send an empty chunk
         if len(samples) > 0:
-            await vonage_websocket.send_bytes(bytearray())
+            padding_size = chunk_size - len(samples)
+            padded_chunk = samples + bytearray(padding_size)
+            await vonage_websocket.send_bytes(padded_chunk)
 
 
         print(f"{datetime.now()} Sending Audio Stream - Finished")
