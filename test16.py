@@ -518,7 +518,7 @@ async def make_outgoing_call():
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -526,7 +526,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
+                            'uri': f'wss://1fed-184-82-29-142.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -536,7 +536,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -803,21 +803,9 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
         sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response + " ...!")
         print(f"{datetime.now()} Lead Interviewer Audio Generation Returned")
 
-        # Define a coroutine for delayed sending
-        async def delayed_send_audio(websocket, audio_data, initial_delay_duration, sent_time):
-            current_time = datetime.now()
-            elapsed_time = (current_time - sent_time).total_seconds()
-            adjusted_delay = max(0, initial_delay_duration - elapsed_time)  # Ensure delay isn't negative
-
-            print(f"{datetime.now()} Waiting for {adjusted_delay} (adjusted delay) seconds before sending sales utterance audio.")
-            await asyncio.sleep(adjusted_delay)  # Delay the sending
-            print(f"{datetime.now()} Sales utterance audio starting.")
-            await send_audio(websocket, audio_data, sales_utterance_duration)  # Send after the delay
-            print(f"{datetime.now()} Sales utterance audio sent.")
-
-        # Start the delayed sending as a background task
-        asyncio.create_task(delayed_send_audio(websocket, sales_utterance_audio_data, empathy_duration, empathy_sent_time))
-        print(f"{datetime.now()} Delayed audio sending task started")
+        print(f"{datetime.now()} Lead Interviewer Audio to Websocket Begun")
+        await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration)
+        print(f"{datetime.now()} Lead Interviewer Audio to Websocket Returned")
 
         print(f"{datetime.now()} Generate and Send Speech Returned")
         return results.get("empathy_statement"), extracted_response, sales_utterance_duration
@@ -826,6 +814,31 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
         print(f"Error in generate_and_send_speech: {e}")
         print(f"Error in generate_and_send_speech: {type(e).__name__}: {e}")
         print(traceback.format_exc())
+
+
+    #     # Define a coroutine for delayed sending
+    #     async def delayed_send_audio(websocket, audio_data, initial_delay_duration, sent_time):
+    #         current_time = datetime.now()
+    #         elapsed_time = (current_time - sent_time).total_seconds()
+    #         adjusted_delay = max(0, initial_delay_duration - elapsed_time)  # Ensure delay isn't negative
+
+    #         print(f"{datetime.now()} Waiting for {adjusted_delay} (adjusted delay) seconds before sending sales utterance audio.")
+    #         await asyncio.sleep(adjusted_delay)  # Delay the sending
+    #         print(f"{datetime.now()} Sales utterance audio starting.")
+    #         await send_audio(websocket, audio_data, sales_utterance_duration)  # Send after the delay
+    #         print(f"{datetime.now()} Sales utterance audio sent.")
+
+    #     # Start the delayed sending as a background task
+    #     asyncio.create_task(delayed_send_audio(websocket, sales_utterance_audio_data, empathy_duration, empathy_sent_time))
+    #     print(f"{datetime.now()} Delayed audio sending task started")
+
+    #     print(f"{datetime.now()} Generate and Send Speech Returned")
+    #     return results.get("empathy_statement"), extracted_response, sales_utterance_duration
+
+    # except Exception as e:
+    #     print(f"Error in generate_and_send_speech: {e}")
+    #     print(f"Error in generate_and_send_speech: {type(e).__name__}: {e}")
+    #     print(traceback.format_exc())
 
 
 def extract_desired_response(response):
@@ -849,7 +862,7 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
     try:
         samples = bytearray(audio_data)
         # Set the buffer size to 6 chunks of 20ms audio (320 * 2 bytes per chunk)
-        buffer_size = int(2 / 0.02)
+        buffer_size = int(1 / 0.02)
         chunk_size = 320 * 2
 
         print(f"{datetime.now()} Sending Audio Stream - Begun")
