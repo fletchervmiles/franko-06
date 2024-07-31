@@ -149,11 +149,11 @@ class SharedData:
 
     def update_word_timestamp(self):
         self.last_word_time = datetime.now()
-        print(f"[{self.last_word_time}] Word timestamp updated")
+        # print(f"[{self.last_word_time}] Word timestamp updated")
 
     def update_no_word_timestamp(self):
         self.last_no_word_time = datetime.now()
-        print(f"[{self.last_no_word_time}] No word timestamp updated")
+        # print(f"[{self.last_no_word_time}] No word timestamp updated")
 
 
     def reset(self):
@@ -665,7 +665,8 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 async def play_audio_file(audio_manager: AudioManager):
-    audio_folder_path = "/mnt/buffer_audio" 
+    audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
+    # audio_folder_path = "/mnt/buffer_audio" 
     audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
     
     if not audio_files:

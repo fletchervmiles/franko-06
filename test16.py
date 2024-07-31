@@ -9,6 +9,7 @@ from vonage import Client as VonageClient, Voice
 import os
 import io
 import wave
+import struct
 from dotenv import load_dotenv
 from uuid import uuid4
 from pydantic import BaseModel, Field
@@ -403,6 +404,36 @@ class TextToSpeech:
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
     VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
 
+    # def generate_speech(self, text):
+    #     start_time = time.time()
+    #     ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
+    #     headers = {
+    #         "xi-api-key": self.ELEVENLABS_API_KEY,
+    #         "Content-Type": "application/json"
+    #     }
+    #     payload = {
+    #         "model_id": "eleven_turbo_v2_5",
+    #         # "model_id": "eleven_multilingual_v2",
+    #         # "model_id": "eleven_monolingual_v1",
+    #         "text": text,
+    #         "voice_settings": {
+    #             "similarity_boost": 0.5,
+    #             "stability": 0.5
+    #         }
+    #     }
+    #     try:
+    #         response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)  # Added timeout
+    #         response.raise_for_status()  # This will raise an exception for HTTP error codes
+    #         print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
+    #         return response.content, 0  # Assuming a fixed duration for simplicity
+    #     except requests.exceptions.HTTPError as e:
+    #         logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
+    #     except requests.exceptions.RequestException as e:
+    #         logging.error(f"Error during ElevenLabs API request: {e}")
+    #     print(f"Failed to generate speech for text: {text}")
+    #     return None, 0  # Indicate failure
+
+
     def generate_speech(self, text):
         start_time = time.time()
         ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
@@ -412,8 +443,6 @@ class TextToSpeech:
         }
         payload = {
             "model_id": "eleven_turbo_v2_5",
-            # "model_id": "eleven_multilingual_v2",
-            # "model_id": "eleven_monolingual_v1",
             "text": text,
             "voice_settings": {
                 "similarity_boost": 0.5,
@@ -421,17 +450,35 @@ class TextToSpeech:
             }
         }
         try:
-            response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)  # Added timeout
-            response.raise_for_status()  # This will raise an exception for HTTP error codes
+            response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)
+            response.raise_for_status()
             print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-            return response.content, 0  # Assuming a fixed duration for simplicity
+            
+            audio_content = response.content
+            duration = self.calculate_audio_duration(audio_content)
+            
+            return audio_content, duration
         except requests.exceptions.HTTPError as e:
             logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
         except requests.exceptions.RequestException as e:
             logging.error(f"Error during ElevenLabs API request: {e}")
         print(f"Failed to generate speech for text: {text}")
-        return None, 0  # Indicate failure
+        return None, 0
 
+    def calculate_audio_duration(self, audio_content):
+        # PCM 16-bit audio at 16000 Hz
+        sample_width = 2  # 16-bit = 2 bytes
+        sample_rate = 16000
+        
+        # Calculate number of samples
+        num_samples = len(audio_content) // sample_width
+        print(f"Number of samples: {num_samples}")  # Debugging output
+
+        # Calculate duration in seconds
+        duration = num_samples / sample_rate
+        print(f"Duration in seconds: {duration}")  # Debugging output
+        
+        return duration
 
 
 @app.post("/call")
@@ -606,28 +653,28 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-async def play_audio_file(websocket: WebSocket):
-    # audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
-    audio_folder_path = "/mnt/buffer_audio" 
-    audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
+# async def play_audio_file(websocket: WebSocket):
+#     # audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
+#     audio_folder_path = "/mnt/buffer_audio" 
+#     audio_files = [f for f in os.listdir(audio_folder_path) if f.endswith('.raw')]
     
-    if not audio_files:
-        print("No audio files found in the buffer folder.")
-        return
+#     if not audio_files:
+#         print("No audio files found in the buffer folder.")
+#         return
 
-    try:
-        # Randomly select one of the audio files
-        selected_file = random.choice(audio_files)
-        audio_file_path = os.path.join(audio_folder_path, selected_file)
+#     try:
+#         # Randomly select one of the audio files
+#         selected_file = random.choice(audio_files)
+#         audio_file_path = os.path.join(audio_folder_path, selected_file)
         
-        print(f"[{datetime.now()}] - Sending Audio Buffer File Begun: {selected_file}")
+#         print(f"[{datetime.now()}] - Sending Audio Buffer File Begun: {selected_file}")
         
-        with open(audio_file_path, 'rb') as f:
-            audio_data = f.read()
-        await send_audio(websocket, audio_data, 0)  # Assume 3 seconds duration, adjust as needed
-        print(f"[{datetime.now()}] - Sending Audio Buffer File Returned")
-    except Exception as e:
-        print(f"Error playing audio file: {e}")
+#         with open(audio_file_path, 'rb') as f:
+#             audio_data = f.read()
+#         await send_audio(websocket, audio_data, 0)  # Assume 3 seconds duration, adjust as needed
+#         print(f"[{datetime.now()}] - Sending Audio Buffer File Returned")
+#     except Exception as e:
+#         print(f"Error playing audio file: {e}")
         
 
 # async def generate_and_send_speech(websocket: WebSocket, conversation_history: list, human_response: str, agent_response: str):
@@ -715,13 +762,13 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
         results = {}
         empathy_statement_processed = False
 
-        # Check if it's the first turn in the conversation
-        is_first_turn = len(conversation_history) == 0
+        # # Check if it's the first turn in the conversation
+        # is_first_turn = len(conversation_history) == 0
 
-        # Only play the audio file if it's not the first turn
-        if not is_first_turn:
-            # Start playing the audio file asynchronously without awaiting
-            asyncio.create_task(play_audio_file(websocket))
+        # # Only play the audio file if it's not the first turn
+        # if not is_first_turn:
+        #     # Start playing the audio file asynchronously without awaiting
+        #     asyncio.create_task(play_audio_file(websocket))
         
         async for partial_result in sales_api.run_chains(conversation_history, human_response, agent_response):
             results.update(partial_result)
@@ -731,32 +778,46 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
                 empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"])
                 print(f"{datetime.now()} Empathy Statement Audio Generation Returned")
                 
-                print(f"{datetime.now()} Empathy Statement Audio to Websocket Begun")
+                # Generate empathy statement audio and send it
+                empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"])
+                empathy_sent_time = datetime.now()  # Capture the time right after sending the empathy audio
                 await send_audio(websocket, empathy_audio_data, empathy_duration)
-                print(f"{datetime.now()} Empathy Statement Audio to Websocket Returned")
+                print(f"{datetime.now()} Empathy Statement Audio Sent")
                 
                 empathy_statement_processed = True
 
+        # Generate sales utterance audio
         print(f"{datetime.now()} Lead Interviewer Statement Generation Begun")
         sales_utterance_response = await sales_api.do(
             conversation_history,
             human_response,
-            empathy_statement=results.get("empathy_statement"),
-            key_points=results.get("key_points"),
-            current_goal_review=results.get("current_goal_review"),
+            # agent_response,
+            empathy_statement=results["empathy_statement"],
+            # conversation_summary=results["conversation_summary"],
+            key_points=results["key_points"],
+            current_goal_review=results["current_goal_review"],
         )
-
-        # Extract the desired part of the response
         extracted_response = extract_desired_response(sales_utterance_response)
         print(f"{datetime.now()} Lead Interviewer Statement Generation Returned")
 
-        print(f"{datetime.now()} Lead Interviewer Audio Generation Begun")
         sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response + " ...!")
         print(f"{datetime.now()} Lead Interviewer Audio Generation Returned")
 
-        print(f"{datetime.now()} Lead Interviewer Audio to Websocket Begun")
-        await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration)
-        print(f"{datetime.now()} Lead Interviewer Audio to Websocket Returned")
+        # Define a coroutine for delayed sending
+        async def delayed_send_audio(websocket, audio_data, initial_delay_duration, sent_time):
+            current_time = datetime.now()
+            elapsed_time = (current_time - sent_time).total_seconds()
+            adjusted_delay = max(0, initial_delay_duration - elapsed_time)  # Ensure delay isn't negative
+
+            print(f"{datetime.now()} Waiting for {adjusted_delay} (adjusted delay) seconds before sending sales utterance audio.")
+            await asyncio.sleep(adjusted_delay)  # Delay the sending
+            print(f"{datetime.now()} Sales utterance audio starting.")
+            await send_audio(websocket, audio_data, sales_utterance_duration)  # Send after the delay
+            print(f"{datetime.now()} Sales utterance audio sent.")
+
+        # Start the delayed sending as a background task
+        asyncio.create_task(delayed_send_audio(websocket, sales_utterance_audio_data, empathy_duration, empathy_sent_time))
+        print(f"{datetime.now()} Delayed audio sending task started")
 
         print(f"{datetime.now()} Generate and Send Speech Returned")
         return results.get("empathy_statement"), extracted_response, sales_utterance_duration
@@ -788,7 +849,7 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, empathy_
     try:
         samples = bytearray(audio_data)
         # Set the buffer size to 6 chunks of 20ms audio (320 * 2 bytes per chunk)
-        buffer_size = int(4 / 0.02)
+        buffer_size = int(2 / 0.02)
         chunk_size = 320 * 2
 
         print(f"{datetime.now()} Sending Audio Stream - Begun")
@@ -1025,7 +1086,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         print(f"Deepgram connection opened: {open}")
 
     def on_message(self, result, **kwargs):
-        print(f"{datetime.now()} Deepgram transcription received:")
+        # print(f"{datetime.now()} Deepgram transcription received:")
         # pprint(result)
         
         if result.channel.alternatives[0].words:
