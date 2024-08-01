@@ -720,7 +720,7 @@ async def play_audio_file(websocket: WebSocket):
     # Specify the exact file path
     # audio_file_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\understood_audio.raw"
     audio_folder_path = "/mnt/buffer_audio"
-    audio_file_name = "understood_audio.raw"
+    audio_file_name = "understood_okay_audio.raw"
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     
     try:

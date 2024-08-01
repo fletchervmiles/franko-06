@@ -53,7 +53,8 @@ class TextToSpeech:
             "Content-Type": "application/json"
         }
         payload = {
-            "model_id": "eleven_turbo_v2_5",
+            # "model_id": "eleven_turbo_v2_5",
+            "model_id": "eleven_turbo_v2",
             "text": text,
             "voice_settings": {
                 "similarity_boost": 1,
@@ -168,7 +169,10 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     try:
         # Generate speech using TextToSpeech
         tts = TextToSpeech()
-        text = 'Understood, <break time="0.5s" /> allow me a brief moment to think.'
+        text = """Understood. <break time="0.5s" /> allow me a brief moment to think.
+        
+        <break time="1s" /> Okay<break time="0.7s" />."""
+        
         save_path = f"audio_{call_id}.raw"
         audio_data = tts.generate_speech(text, save_path)
 

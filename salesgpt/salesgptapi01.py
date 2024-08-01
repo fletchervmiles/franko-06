@@ -98,6 +98,7 @@ class SalesGPTAPI:
             self.sales_agent.goal_completeness_status = self.sales_agent.goal_completeness_status or "N/A"
 
             if self.first_turn:
+                await asyncio.sleep(1)
                 yield {
                     "empathy_statement": "Hi there, this is Franko! I'm super excited to chat with you today!",
                     "key_points": "",
