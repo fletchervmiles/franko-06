@@ -132,8 +132,8 @@ The goal for this section is to conclude the interview on a high note, ensuring 
 
 GOAL_TARGET_NUMBERS = {
 # Goal number: [min_questions, target_questions, min_seconds, target_seconds, overall cumulative time]
-"1": [2, 3, 60, 120, 120],
-"2": [2, 3, 180, 180, 300], 
-"3": [5, 8, 240, 480, 780],
-"4": [1, 2, 60, 120, 900]
+"1": [1, 2, 60, 90, 90],
+"2": [2, 3, 180, 180, 270], 
+"3": [5, 8, 240, 480, 750],
+"4": [1, 2, 60, 120, 870]
 }

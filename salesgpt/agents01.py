@@ -1,7 +1,3 @@
-"""
-This is agents01.py file
-"""
-
 from copy import deepcopy
 import asyncio
 import logging
@@ -141,12 +137,6 @@ class SalesGPT(Chain):
     lead_interviewer: str = "Franko"
     
     use_tools: bool = False
-    salesperson_name: str = "Ted Lasso"
-    salesperson_role: str = "Business Development Representative"
-    company_name: str = "Sleep Haven"
-    company_business: str = "Sleep Haven is a premium mattress company that provides customers with the most comfortable and supportive sleeping experience possible. We offer a range of high-quality mattresses, pillows, and bedding accessories that are designed to meet the unique needs of our customers."
-    company_values: str = "Our mission at Sleep Haven is to help people achieve a better night's sleep by providing them with the best possible sleep solutions. We believe that quality sleep is essential to overall health and well-being, and we are committed to helping our customers achieve optimal sleep by offering exceptional products and customer service."
-    conversation_purpose: str = "find out whether they are looking to achieve better sleep via buying a premier mattress."
     conversation_type: str = "call"
 
     def retrieve_conversation_stage(self, key):
@@ -622,15 +612,9 @@ class SalesGPT(Chain):
             "input": "",
             "conversation_stage": self.current_conversation_stage,
             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-            "salesperson_name": self.salesperson_name,
-            "salesperson_role": self.salesperson_role,
             "interviewee_name": self.interviewee_name,
             "customer_type": self.customer_type,
             "client_product_summary": self.client_product_summary,
-            "company_name": self.company_name,
-            "company_business": self.company_business,
-            "company_values": self.company_values,
-            "conversation_purpose": self.conversation_purpose,
             "conversation_type": self.conversation_type,
             "empathy_statement": inputs.get("empathy_statement", self.empathy_statement),
             # "conversation_summary": inputs.get("conversation_summary", self.conversation_summary),
@@ -802,18 +786,58 @@ class SalesGPT(Chain):
             max_tokens=max_tokens
         )
 
-        question_count_chain = QuestionCountChain.from_llm(llm_with_context, verbose=verbose)
-        goal_completeness_chain = GoalCompletenessChain.from_llm(llm_with_context, verbose=verbose)
-        stage_analyzer_chain = StageAnalyzerChain.from_llm(llm_with_context, verbose=verbose)
+        # question_count_chain = QuestionCountChain.from_llm(llm_with_context, verbose=verbose)
+        # goal_completeness_chain = GoalCompletenessChain.from_llm(llm_with_context, verbose=verbose)
+        # stage_analyzer_chain = StageAnalyzerChain.from_llm(llm_with_context, verbose=verbose)
+        # sales_conversation_utterance_chain = SalesConversationChain.from_llm(
+        #     llm_with_context, 
+        #     verbose=verbose,
+        #     use_custom_prompt=kwargs.get("use_custom_prompt", False),
+        #     custom_prompt=kwargs.get("custom_prompt", None)
+        # )
+        # key_points_chain = KeyPointsChain.from_llm(llm_with_context, verbose=verbose)
+        # empathy_statement_chain = EmpathyStatementChain.from_llm(llm_with_context, verbose=verbose)
+        # current_goal_review_chain = CurrentGoalReviewChain.from_llm(llm_with_context, verbose=verbose)
+
+        # sales_gpt_instance = cls(
+        #     question_count_chain=question_count_chain,
+        #     goal_completeness_chain=goal_completeness_chain,
+        #     stage_analyzer_chain=stage_analyzer_chain,
+        #     sales_conversation_utterance_chain=sales_conversation_utterance_chain,
+        #     key_points_chain=key_points_chain,
+        #     empathy_statement_chain=empathy_statement_chain,
+        #     current_goal_review_chain=current_goal_review_chain,
+        #     # sales_agent_executor=sales_agent_executor,
+        #     # knowledge_base=knowledge_base,
+        #     model_name=llm.model,
+        #     verbose=verbose,
+        #     # use_tools=use_tools,
+        #     **kwargs,
+        # )
+
+        # sales_gpt_instance.conversation_stage_dict = {
+        #     key: value.format(
+        #         interviewee_name=sales_gpt_instance.interviewee_name,
+        #         client_name=sales_gpt_instance.client_name,
+        #         customer_type=sales_gpt_instance.customer_type,
+        #     )
+        #     for key, value in CONVERSATION_STAGES.items()
+        # }
+
+        # return sales_gpt_instance
+
+        question_count_chain = QuestionCountChain.from_llm(llm, verbose=verbose)
+        goal_completeness_chain = GoalCompletenessChain.from_llm(llm, verbose=verbose)
+        stage_analyzer_chain = StageAnalyzerChain.from_llm(llm, verbose=verbose)
         sales_conversation_utterance_chain = SalesConversationChain.from_llm(
-            llm_with_context, 
+            llm, 
             verbose=verbose,
             use_custom_prompt=kwargs.get("use_custom_prompt", False),
             custom_prompt=kwargs.get("custom_prompt", None)
         )
-        key_points_chain = KeyPointsChain.from_llm(llm_with_context, verbose=verbose)
-        empathy_statement_chain = EmpathyStatementChain.from_llm(llm_with_context, verbose=verbose)
-        current_goal_review_chain = CurrentGoalReviewChain.from_llm(llm_with_context, verbose=verbose)
+        key_points_chain = KeyPointsChain.from_llm(llm, verbose=verbose)
+        empathy_statement_chain = EmpathyStatementChain.from_llm(llm, verbose=verbose)
+        current_goal_review_chain = CurrentGoalReviewChain.from_llm(llm, verbose=verbose)
 
         sales_gpt_instance = cls(
             question_count_chain=question_count_chain,
@@ -823,11 +847,8 @@ class SalesGPT(Chain):
             key_points_chain=key_points_chain,
             empathy_statement_chain=empathy_statement_chain,
             current_goal_review_chain=current_goal_review_chain,
-            # sales_agent_executor=sales_agent_executor,
-            # knowledge_base=knowledge_base,
             model_name=llm.model,
             verbose=verbose,
-            # use_tools=use_tools,
             **kwargs,
         )
 

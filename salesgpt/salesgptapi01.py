@@ -1,7 +1,3 @@
-"""
-This is salesgptapi01.py file
-"""
-
 import json
 import os
 from langchain_community.chat_models import ChatLiteLLM
@@ -66,7 +62,6 @@ class SalesGPTAPI:
                     self.llm,
                     use_tools=True,
                     product_catalog="examples/sample_product_catalog.txt",
-                    salesperson_name="Ted Lasso",
                     verbose=self.verbose,
                 )
             else:
@@ -164,6 +159,9 @@ class SalesGPTAPI:
 
     async def update_conversation_stage(self):
         await self.sales_agent.determine_conversation_stage()
+
+
+
 
     # This do method essentially just runs the standard non-stream response
     async def do(self, conversation_history: list, human_input=None, empathy_statement=None, key_points=None, current_goal_review=None):

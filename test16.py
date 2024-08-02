@@ -555,7 +555,7 @@ async def make_outgoing_call():
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -563,7 +563,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
+                            'uri': f'wss://1fed-184-82-29-142.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -573,7 +573,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -718,8 +718,8 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 async def play_audio_file(websocket: WebSocket):
     # Specify the exact file path
-    # audio_file_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\understood_audio.raw"
-    audio_folder_path = "/mnt/buffer_audio"
+    audio_file_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\understood_okay_audio.raw"
+    # audio_folder_path = "/mnt/buffer_audio"
     audio_file_name = "understood_okay_audio.raw"
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     
@@ -902,13 +902,15 @@ async def generate_and_send_speech(websocket: WebSocket, conversation_history: l
 
 
 def extract_desired_response(response):
-    # Find the start and end of the desired section
-    start = response.find("***")
-    end = response.rfind("***")
+    start_marker = "<<<LEAD>>>"
+    end_marker = "<<<LEAD>>>"
+    
+    start = response.find(start_marker)
+    end = response.rfind(end_marker)
     
     if start != -1 and end != -1 and start < end:
-        # Extract the content between the *** markers
-        extracted = response[start+3:end].strip()
+        # Extract the content between the markers
+        extracted = response[start + len(start_marker):end].strip()
         return extracted
     else:
         # If the markers are not found, return the original response

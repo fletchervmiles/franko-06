@@ -88,12 +88,6 @@ class SalesConversationChain(TracedLLMChain):
             prompt = PromptTemplate(
                 template=LEAD_INTERVIEWER_PROMPT,
                 input_variables=[
-                    "salesperson_name",
-                    "salesperson_role",
-                    "company_name",
-                    "company_business",
-                    "company_values",
-                    "conversation_purpose",
                     "conversation_type",
                     "conversation_history",
                     "empathy_statement",
@@ -115,12 +109,6 @@ class SalesConversationChain(TracedLLMChain):
             prompt = PromptTemplate(
                 template=LEAD_INTERVIEWER_PROMPT,
                 input_variables=[
-                    "salesperson_name",
-                    "salesperson_role",
-                    "company_name",
-                    "company_business",
-                    "company_values",
-                    "conversation_purpose",
                     "conversation_type",
                     "conversation_history",
                     "empathy_statement",

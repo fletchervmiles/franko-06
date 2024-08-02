@@ -102,8 +102,13 @@ Explanation: "Your response" transitions smoothly from the appreciation expresse
 
 ## Step 4. Response Format
 
+Your response should consist of three parts, each clearly separated and labeled:
 
-Restate the empathy statement shared earlier and enclose it with the following delimiter “###”. Then give your Lead Interviewer response which should be a natural continuation of the empathy statement and always enclose it with the following delimiter “***”. This is very important. Then state the total words of the Lead Interviewer response. Remember, aim for less than 25. Review the example responses for guidance. 
+1. Empathy Statement: Restate the empathy statement shared earlier, enclosed with the following delimiter "<<<EMPATHY>>>".
+
+2. Lead Interviewer Response: Provide your response as the Lead Interviewer, which should be a natural continuation of the empathy statement. Always enclose this with the following delimiter "<<<LEAD>>>". This is extremely important.
+
+Word Count: State the total word count of the Lead Interviewer response only. Remember to aim for less than 25 words.
 
 Give your response only with no explanation or other accompanying text.
 
@@ -111,71 +116,69 @@ Give your response only with no explanation or other accompanying text.
 
 
 
-
-
 EXAMPLE RESPONSES:
 
 EXAMPLE 1:
 
-Empathy statement: ###That’s a strong recommendation! The team at Cursor are going to love hearing this!###
+Empathy statement: <<<EMPATHY>>>That’s a strong recommendation! The team at Cursor are going to love hearing this!<<<EMPATHY>>>
 
-Lead Interviewer Response: ***I'm curious about other benefits you usually discuss. Could you walk me through how these conversations typically play out with your colleagues?***
+Lead Interviewer Response: <<<LEAD>>>I'm curious about other benefits you usually discuss. Could you walk me through how these conversations typically play out with your colleagues?<<<LEAD>>>
 
 Word count: 22
 
 EXAMPLE 2:
 
-Empathy statement: ###Wow that’s so good, I’m glad to hear it has been such a game-changer for your work! I bet your clients really appreciate your improved accuracy.###
+Empathy statement: <<<EMPATHY>>>Wow that’s so good, I’m glad to hear it has been such a game-changer for your work! I bet your clients really appreciate your improved accuracy.<<<EMPATHY>>>
 
-Lead Interviewer Response: ***Could you estimate how much faster you're completing projects now, and how that's affected your overall workload and the way you approach projects?***
+Lead Interviewer Response: <<<LEAD>>>Could you estimate how much faster you're completing projects now, and how that's affected your overall workload and the way you approach projects?<<<LEAD>>>
 
 Word count: 23
 
 EXAMPLE 3:
 
-Empathy statement: ###That’s cool, I can see why a demo from a fellow self taught engineer would resonate!###
+Empathy statement: <<<EMPATHY>>>That’s cool, I can see why a demo from a fellow self taught engineer would resonate!<<<EMPATHY>>>
 
-Lead Interviewer Response: ***Watching the demo must have given you a good first glimpse of Cursor. Thinking back, do you remember what specifically caught your attention?***
+Lead Interviewer Response: <<<LEAD>>>Watching the demo must have given you a good first glimpse of Cursor. Thinking back, do you remember what specifically caught your attention?<<<LEAD>>>
 
 Word count: 23
 
 EXAMPLE 4:
 
-Empathy statement: ###You’re really getting after it! I admire that. And it’s impressive how you’re handling it all solo, too!###
+Empathy statement: <<<EMPATHY>>>You’re really getting after it! I admire that. And it’s impressive how you’re handling it all solo, too!<<<EMPATHY>>>
 
-Lead Interviewer Response: ***Now that we’ve learned a bit about you, I’m curious, how did you first discover Cursor? Try to think back to the specific moment.***
+Lead Interviewer Response: <<<LEAD>>>Now that we’ve learned a bit about you, I’m curious, how did you first discover Cursor? Try to think back to the specific moment.<<<LEAD>>>
 
 Word count: 24
 
 EXAMPLE 5:
 
-Empathy statement: ###I love this response, nice and detailed! You’re obviously deep into the development process!###
+Empathy statement: <<<EMPATHY>>>I love this response, nice and detailed! You’re obviously deep into the development process!<<<EMPATHY>>>
 
-Lead Interviewer Response: ***Are you working solo or with a team? I’m interested to hear how you’re managing the challenges you mentioned, like code performance, latency and hallucinations, etc.*** 
+Lead Interviewer Response: <<<LEAD>>>Are you working solo or with a team? I’m interested to hear how you’re managing the challenges you mentioned, like code performance, latency and hallucinations, etc.<<<LEAD>>>
 
 Word count: 26
 
 EXAMPLE 6:
 
-Empathy statement: ###That’s incredible… I’m pumped for you and fingers crossed for the launch!###
+Empathy statement: <<<EMPATHY>>>That’s incredible… I’m pumped for you and fingers crossed for the launch!<<<EMPATHY>>>
 
-Lead Interviewer Response: ***Can you walk me through a typical workday as you focus on launching your product? Feel free to discuss today's focus as an example.***
+Lead Interviewer Response: <<<LEAD>>>Can you walk me through a typical workday as you focus on launching your product? Feel free to discuss today's focus as an example.<<<LEAD>>>
 
 Word count: 24
 
 EXAMPLE 7:
 
-Empathy statement: ###Wow, that does sound cool! I’d love to learn more.###
+Empathy statement: <<<EMPATHY>>>Wow, that does sound cool! I’d love to learn more.<<<EMPATHY>>>
 
-Lead Interviewer Response: ***Tell me more about your side project, what inspired you to get started and how’s it going so far? Fill me in!***
+Lead Interviewer Response: <<<LEAD>>>Tell me more about your side project, what inspired you to get started and how’s it going so far? Fill me in!<<<LEAD>>>
 
 Word count: 22
 
 EXAMPLE 8:
 
-Empathy statement: ###I completely understand, and I appreciate your patience throughout this interview. Your time and insights are incredibly valuable to us.###
+Empathy statement: <<<EMPATHY>>>I completely understand, and I appreciate your patience throughout this interview. Your time and insights are incredibly valuable to us.<<<EMPATHY>>>
 
-Lead Interviewer Response: ***One area we haven't touched on yet is Cursor's pricing. Could you share how you perceive the value of Cursor relative to its cost?***
+Lead Interviewer Response: <<<LEAD>>>One area we haven't touched on yet is Cursor's pricing. Could you share how you perceive the value of Cursor relative to its cost?<<<LEAD>>>
 
 Word count: 24
 """
