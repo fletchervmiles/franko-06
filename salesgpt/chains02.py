@@ -70,7 +70,8 @@ class TracedLLMChain(LLMChain):
             public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
             host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com"),
             user_id=input_data.get('interviewee_name'),
-            session_id=input_data.get('call_id')
+            session_id=input_data.get('call_id'),
+            tags=[input_data.get('client_name', 'unknown_client')],
         )
 
     def invoke(self, input_data: dict, **kwargs) -> dict:

@@ -53,22 +53,56 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 #         self.sales_agent.seed_agent()
 #         return self.sales_agent
 
+# class SalesGPTAPI:
+#     def __init__(self, config_path: str, call_id: str):
+#         self.config_path = config_path
+#         self.call_id = call_id
+#         self.load_config()
+#         self.llm = ChatLiteLLM(temperature=1, model_name=GPT_MODEL)
+#         self.sales_agent = None
+#         self.first_turn = True
+
+#     def load_config(self):
+#         with open(self.config_path, 'r') as f:
+#             self.config = json.load(f)
+        
+#         # Load all config values as attributes
+#         for key, value in self.config.items():
+#             setattr(self, key, value)
+
+#     def initialize_agent(self):
+#         self.sales_agent = SalesGPT.from_llm(
+#             self.llm,
+#             verbose=False,
+#             call_id=self.call_id,
+#             client_name=self.client_name,
+#             interviewee_name=self.interviewee_name,
+#             interviewee_last_name=self.interviewee_last_name,
+#             interviewee_email=self.interviewee_email,
+#             to_number=self.to_number,
+#         )
+        
+#         # # Print attributes before seeding
+#         # print("SalesGPT attributes before seeding:")
+#         # for attr, value in self.sales_agent.__dict__.items():
+#         #     if not callable(value) and not attr.startswith("__"):
+#         #         print(f"{attr}: {value}")
+
+#         self.sales_agent.seed_agent()
+
 class SalesGPTAPI:
-    def __init__(self, config_path: str, call_id: str):
-        self.config_path = config_path
+    def __init__(self, config: dict, call_id: str):
+        self.config = config
         self.call_id = call_id
-        self.load_config()
         self.llm = ChatLiteLLM(temperature=1, model_name=GPT_MODEL)
         self.sales_agent = None
         self.first_turn = True
 
-    def load_config(self):
-        with open(self.config_path, 'r') as f:
-            self.config = json.load(f)
-        
         # Load all config values as attributes
         for key, value in self.config.items():
             setattr(self, key, value)
+
+    # Remove the load_config method as it's no longer needed
 
     def initialize_agent(self):
         self.sales_agent = SalesGPT.from_llm(
@@ -82,13 +116,9 @@ class SalesGPTAPI:
             to_number=self.to_number,
         )
         
-        # # Print attributes before seeding
-        # print("SalesGPT attributes before seeding:")
-        # for attr, value in self.sales_agent.__dict__.items():
-        #     if not callable(value) and not attr.startswith("__"):
-        #         print(f"{attr}: {value}")
-
         self.sales_agent.seed_agent()
+
+
 
     def set_interview_start_time(self):
         self.sales_agent.set_interview_start_time()

@@ -357,6 +357,7 @@ class SalesGPT(Chain):
                         "customer_type": self.customer_type,
                         "goal_completeness_status": self.goal_completeness_status,
                         "question_count_summary": self.question_count_summary,
+                        "client_name": self.client_name,
                     },
                     return_only_outputs=False,
                 )
@@ -449,7 +450,8 @@ class SalesGPT(Chain):
                     "overall_time_met": overall_time_metrics["overall_time_met"],
                     "overall_elapsed_time": overall_time_metrics["overall_elapsed_time"],
                     "overall_target_time": overall_time_metrics["overall_target_time"],
-                    "goal_completeness_status": self.goal_completeness_status
+                    "goal_completeness_status": self.goal_completeness_status,
+                    "client_name": self.client_name,
                 }
             )
             self.question_count_summary = question_count_result["text"]
@@ -499,12 +501,6 @@ class SalesGPT(Chain):
             print(f"Default Goal Completeness Status set due to error: {self.goal_completeness_status}")
 
 
-    def update_story_component_time(self):
-        current_time = time.time()
-        if self.current_stage_start_time > 0:
-            elapsed_time = current_time - self.current_stage_start_time
-            self.time_per_story_component[self.conversation_stage_id] = elapsed_time
-
 
 
     def get_question_count_metrics(self):
@@ -520,6 +516,12 @@ class SalesGPT(Chain):
             "min_met": min_met,
             "target_met": target_met
         }
+
+    def update_story_component_time(self):
+        current_time = time.time()
+        if self.current_stage_start_time > 0:
+            elapsed_time = current_time - self.current_stage_start_time
+            self.time_per_story_component[self.conversation_stage_id] = elapsed_time
 
 
     def update_story_component_time(self):

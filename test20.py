@@ -584,7 +584,7 @@ async def make_outgoing_call(call_request: CallRequest):
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -592,7 +592,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://1fed-184-82-29-142.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -602,7 +602,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     ]
                 }
             ],
-            'event_url': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -647,8 +647,16 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                     # Set the call_completed flag to True
                     shared_data.call_completed = True
 
+                    # Print conversation history before deleting
+                    conversation_history = r.get(f'{call_id}_conversation_history')
+                    if conversation_history:
+                        print(f"Conversation history for call_id {call_id}:")
+                        print(json.loads(conversation_history.decode('utf-8')))
+                    else:
+                        print(f"No conversation history found for call_id {call_id}")
+
                     # Delay the execution by 2 seconds
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(60)
 
                     # Clean up the SharedData instance
                     shared_data.reset()
@@ -689,6 +697,19 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
 
 
 
+
+async def save_interview_data(supabase: SupabaseClient, interview_data: dict):
+    try:
+        response = supabase.table('user_interviews').insert(interview_data).execute()
+        if response.data:
+            print(f"Interview data saved successfully for call_id: {interview_data['call_id']}")
+        else:
+            print(f"Failed to save interview data for call_id: {interview_data['call_id']}")
+    except Exception as e:
+        print(f"Error saving interview data to Supabase: {e}")
+        raise
+
+
 @app.post("/vonage_recording")
 async def handle_recording(request: Request, call_id: str = Query(...)):
     data = await request.json()
@@ -700,6 +721,34 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
                 raise Exception(f"No call instance found for call_id: {call_id}")
 
             shared_data = call_instances[call_id]["shared_data"]
+            sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+
+            # Retrieve additional data
+            dynamic_config = sales_gpt_api.config
+            interviewee_name = dynamic_config.get('interviewee_name', '')
+            interviewee_last_name = dynamic_config.get('interviewee_last_name', '')
+            interviewee_email = dynamic_config.get('interviewee_email', '')
+            to_number = dynamic_config.get('to_number', '')
+            client_name = dynamic_config.get('client_name', 'Default')
+
+            # Get conversation history from Redis
+            conversation_history_str = r.get(f'{call_id}_conversation_history')
+            if conversation_history_str:
+                conversation_history = json.loads(conversation_history_str.decode("utf-8"))
+            else:
+                conversation_history = []
+
+            print(f"Raw conversation history for call_id {call_id}: {conversation_history}")
+
+            
+            # Calculate overall elapsed time
+            interview_start_time = sales_gpt_api.sales_agent.interview_start_time
+            if interview_start_time is None:
+                print(f"Warning: interview_start_time is None for call_id {call_id}")
+                interview_start_time = time.time()
+                overall_elapsed_time = 0
+            else:
+                overall_elapsed_time = time.time() - interview_start_time
 
             # Download the recording from Vonage
             vonage_client = VonageClient(
@@ -710,7 +759,7 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
             recording_bytes = voice.get_recording(recording_url)
 
             # Upload the recording to Supabase
-            file_path = f'Cursor-Test/{call_id}.mp3'
+            file_path = f'{client_name}/{call_id}.mp3'
             upload_response = supabase.storage.from_('recordings').upload(file_path, recording_bytes, {
                 "Content-Type": "audio/mpeg"
             })
@@ -718,14 +767,33 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
                 raise Exception(f"Failed to upload recording for call_id {call_id}: {upload_response.text}")
 
             # Construct the Supabase URL for the uploaded file
-            supabase_url = f"https://cedxguhjiaxatqwsccrp.supabase.co/storage/v1/object/public/recordings/Franko_Test/{call_id}.mp3"
+            supabase_url = f"https://cedxguhjiaxatqwsccrp.supabase.co/storage/v1/object/public/recordings/{file_path}"
+            
             # Save the Supabase URL to the shared_data instance
             shared_data.recording_url = supabase_url
             print(f"Supabase URL for call_id {call_id}: {supabase_url}")
 
-            print(f"Recording URL saved to Supabase successfully for call_id {call_id}")
+            # Prepare interview data
+            interview_data = {
+                "call_id": call_id,
+                "interviewee_name": interviewee_name,
+                "interviewee_last_name": interviewee_last_name,
+                "interviewee_email": interviewee_email,
+                "to_number": to_number,
+                "client_name": client_name,
+                "current_date": datetime.now().isoformat(),
+                "interview_start_time": datetime.fromtimestamp(interview_start_time).isoformat(),
+                "overall_elapsed_time": overall_elapsed_time,
+                "conversation_history": json.dumps(conversation_history),
+                "audio_file_link": supabase_url
+            }
+
+            # Save interview data to Supabase
+            await save_interview_data(supabase, interview_data)
+
+            print(f"Recording URL and interview data saved to Supabase successfully for call_id {call_id}")
         except Exception as e:
-            print(f"Exception occurred while saving recording URL for call_id {call_id}: {e}")
+            print(f"Exception occurred while processing recording for call_id {call_id}: {e}")
             print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=str(e))
     else:
@@ -741,19 +809,18 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-
-# # Production
-# async def play_audio_file(websocket: WebSocket, call_id: str):
-#     # Specify the exact file path
-#     audio_folder_path = "/mnt/buffer_audio"
-#     audio_file_name = "understood_okay_audio.raw"
-#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
-
-# Local
+# Production
 async def play_audio_file(websocket: WebSocket, call_id: str):
+    # Specify the exact file path
+    audio_folder_path = "/mnt/buffer_audio"
     audio_file_name = "understood_okay_audio.raw"
-    audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+
+# # Local
+# async def play_audio_file(websocket: WebSocket, call_id: str):
+#     audio_file_name = "understood_okay_audio.raw"
+#     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
+#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     
     try:
         print(f"[{datetime.now()}] - Sending Audio Buffer File Begun for call_id {call_id}: {audio_file_path}")
