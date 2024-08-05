@@ -97,8 +97,12 @@ vonage_client = VonageClient(
 voice = Voice(vonage_client)
 
 
-
-
+class CallRequest(BaseModel):
+    client_name: str
+    interviewee_name: str 
+    interviewee_last_name: str
+    interviewee_email: str
+    to_number: str
 
 
 class CallStatus(BaseModel):
@@ -110,7 +114,6 @@ class CallStatus(BaseModel):
     status: str
     direction: str
     timestamp: str
-
 
 class CallState(Enum):
     CALL_SETUP = "CALL_SETUP"
@@ -530,10 +533,24 @@ class TextToSpeech:
 
 
 @app.post("/call")
-async def make_outgoing_call():
+async def make_outgoing_call(call_request: CallRequest):
     try:
         call_id = str(uuid4())
         print(f"{datetime.now()}: Call initiated with call_id: {call_id}")
+
+        # Create a dynamic configuration
+        dynamic_config = {
+            "client_name": call_request.client_name,
+            "interviewee_name": call_request.interviewee_name,
+            "interviewee_last_name": call_request.interviewee_last_name,
+            "interviewee_email": call_request.interviewee_email,
+            "to_number": call_request.to_number,
+        }
+
+        # Save the dynamic configuration to a temporary JSON file
+        temp_config_path = f"temp_config_{call_id}.json"
+        with open(temp_config_path, 'w') as f:
+            json.dump(dynamic_config, f)
 
         # Store call-related data in Redis
         r.set(f'{call_id}_call_answered', 'False')
@@ -542,7 +559,7 @@ async def make_outgoing_call():
         r.set(f'{call_id}_conversation_history', json.dumps([]))
 
         # Create new instances for this call
-        sales_gpt_api = SalesGPTAPI(config_path=CONFIG_PATH, call_id=call_id)
+        sales_gpt_api = SalesGPTAPI(config_path=temp_config_path, call_id=call_id)
         sales_gpt = sales_gpt_api.initialize_agent()
         shared_data = SharedData()
         state_machine = StateMachine(call_id=call_id, r=r, vonage_client=vonage_client, shared_data=shared_data, sales_api=sales_gpt_api)
@@ -559,7 +576,7 @@ async def make_outgoing_call():
         asyncio.create_task(state_machine.start())
 
         response = vonage_client.voice.create_call({
-            'to': [{'type': 'phone', 'number': TO_NUMBER}],
+            'to': [{'type': 'phone', 'number': call_request.to_number}], # Use to_number from the request
             'from': {'type': 'phone', 'number': VONAGE_NUMBER},
             'ncco': [
                 {
@@ -586,6 +603,9 @@ async def make_outgoing_call():
             'event_method': 'POST'
         })
 
+        # Clean up the temporary config file
+        os.remove(temp_config_path)
+
         return {"message": "Call initiated", "call_id": call_id}
     except Exception as e:
         print(f"Error in make_outgoing_call: {str(e)}")
@@ -604,6 +624,12 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
         if call_status.status == 'answered':
             r.set(f'{call_id}_call_answered', 'True')
             print(f"{datetime.now()}: Call answered status changed to True for call_id: {call_id}")
+
+            # Set the interview start time when the call is answered
+            if call_id in call_instances:
+                sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+                sales_gpt_api.set_interview_start_time()
+                print(f"{datetime.now()}: Interview start time set for call_id: {call_id}")
         
         elif call_status.status == 'completed':
             if call_id in call_instances:

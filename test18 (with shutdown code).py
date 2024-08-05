@@ -96,11 +96,6 @@ vonage_client = VonageClient(
 )
 voice = Voice(vonage_client)
 
-
-
-
-
-
 class CallStatus(BaseModel):
     headers: dict
     from_: str = Field(alias="from")
@@ -110,7 +105,6 @@ class CallStatus(BaseModel):
     status: str
     direction: str
     timestamp: str
-
 
 class CallState(Enum):
     CALL_SETUP = "CALL_SETUP"
@@ -128,6 +122,7 @@ class SharedData:
         self.is_reconnecting = False
         self.reconnection_attempts = 0
         self.call_id = None  # Add this line
+        self.is_terminating = False  # New attribute to indicate if the call is terminating
         
         # These are for the listening functionality
         self.transcript_parts = []
@@ -197,7 +192,7 @@ class StateMachine:
         self.human_response_received = asyncio.Event()
         self.shared_data.set_state_machine(self)
         self.shared_data.set_call_id(call_id)  # Add this line
-        self.cleanup_task = None
+        self.running = True  # New attribute to control the main loop
 
     def get_current_state(self):
         return self.state
@@ -221,31 +216,15 @@ class StateMachine:
         await self.event_queue.put(CallState.GENERATE_FRANKO_RESPONSE)
 
 
-    async def cleanup(self):
-        # Cancel any ongoing tasks
-        if self.cleanup_task:
-            self.cleanup_task.cancel()
-        
-        # Clear the event queue
-        while not self.event_queue.empty():
-            await self.event_queue.get()
-        
-        # Cancel any ongoing operations
-        # For example, if you have any ongoing API calls or database operations:
-        if hasattr(self, 'current_operation'):
-            self.current_operation.cancel()
-        
-        # Reset any state variables
-        self.state = CallState.CALL_SETUP
-        
-        print(f"{datetime.now()}: StateMachine cleaned up for call_id: {self.call_id}")
-
-
-
     async def generate_franko_response(self):
         try:
             print(f"{datetime.now()} Generate Franko Response Begun")
 
+            shared_data = call_instances[call_id]["shared_data"]
+            
+            if shared_data.is_terminating:  # New: Check is_terminating
+                print(f"{datetime.now()} Call is terminating, skipping response generation for call_id: {call_id}")
+                return
 
             # Get conversation history and human response from Redis
             conversation_history = json.loads(self.r.get(f"{self.call_id}_conversation_history").decode("utf-8"))
@@ -255,13 +234,17 @@ class StateMachine:
             agent_response = agent_response.decode("utf-8") if agent_response else "N/A"
 
             # Pass the websocket object and conversation data to the generate_and_send_speech function
-            empathy_statement, extracted_response, audio_state_delay = await generate_and_send_speech(
+            empathy_statement, extracted_response, sales_utterance_duration = await generate_and_send_speech(
                 self.shared_data.get_websocket(), 
                 self.call_id,  # Add this line to pass the call_id
                 conversation_history, 
                 human_response, 
                 agent_response
             )
+
+            if shared_data.is_terminating:  # New: Check is_terminating again after long operation
+                print(f"{datetime.now()} Call terminated during response generation for call_id: {call_id}")
+                return
 
             agent_name = "Franko"
             ai_message = f"{agent_name}: {empathy_statement} {extracted_response}"
@@ -283,12 +266,9 @@ class StateMachine:
             asyncio.create_task(self.update_conversation_stage())
             # print(f"Updating conversation stage in the background")
 
-            # Sleep for the audio_state_delay time
-            print(f"Sleeping for audio_state_delay: {audio_state_delay:.2f} seconds")
-            print(f"{datetime.now()} Audio state delay starting...")
-            await asyncio.sleep(max(audio_state_delay, 0))
-            print(f"{datetime.now()} Audio state delay ended!")
-
+            # print(f"Sleep to allow audio to play starting...")
+            await asyncio.sleep(max(sales_utterance_duration - 2, 0))
+            # print(f"Sleep to allow audio to play ending...")
 
             print(f"{datetime.now()} Generate Franko Response Returned")
             # Transition to the LISTEN_FOR_USER_RESPONSE state
@@ -336,7 +316,6 @@ class StateMachine:
         await self.event_queue.put(CallState.GENERATE_FRANKO_RESPONSE)
 
 
-
     async def listen(self):
         # print(f"{datetime.now()}: Starting to listen for states...")
         try:
@@ -362,9 +341,12 @@ class StateMachine:
         finally:
             print(f"{datetime.now()}: Stopped listening for states.")
 
+    def stop(self):  # New method to stop the state machine
+        self.running = False
+
     async def start(self):
-        await self.call_setup()  # Start with the initial state
-        await self.listen()  # Start the event loop/listener
+        await self.call_setup()
+        await self.listen()
 
 # So this runs every 0.1 seconds
 def check_for_silence(last_word_time, last_no_word_time):
@@ -389,98 +371,11 @@ def strip_break_tags(text):
     return re.sub(r'<break\s+time="[^"]*"\s*/>', '', text)
 
 
-
-# class TextToSpeech:
-#     # Set your Deepgram API Key and desired voice model
-#     DG_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-#     MODEL_NAME = "aura-asteria-en"  # Example model name, change as needed
-
-
-#     def generate_speech(self, text):
-#         start_time = time.time()
-#         DEEPGRAM_URL = f"https://api.deepgram.com/v1/speak?model={self.MODEL_NAME}&performance=some&encoding=linear16&sample_rate=16000&container=none"
-#         headers = {
-#             "Authorization": f"Token {self.DG_API_KEY}",
-#             "Content-Type": "application/json"
-#         }
-#         payload = {
-#             "text": text
-#         }
-
-#         response = requests.post(DEEPGRAM_URL, headers=headers, json=payload)
-#         response.raise_for_status()
-#         print(f"Time taken for Deepgram API request: {time.time() - start_time} seconds")
-        
-#         duration = 2
-
-#         return response.content, duration
-
-# class TextToSpeech:
-#     # Set your ElevenLabs API Key and desired voice ID
-#     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-#     VOICE_ID = "TSsWwtgLq1gLBwl617e4"  # Replace with the desired voice ID
-
-#     def generate_speech(self, text):
-#         # start_time = time.time()
-#         ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
-#         headers = {
-#             "xi-api-key": self.ELEVENLABS_API_KEY,
-#             "Content-Type": "application/json"
-#         }
-#         payload = {
-#             "seed": -1,
-#             "model_id": "eleven_turbo_v2",
-#             "text": text,
-#             "voice_settings": {
-#                 "similarity_boost": 0.5,
-#                 "stability": 0.5
-#             }
-#         }
-
-#         response = requests.post(ELEVENLABS_URL, headers=headers, json=payload)
-#         response.raise_for_status()
-#         # print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-
-#         # Fixed Duration
-#         duration = 5
-
-#         return response.content, duration
-
 class TextToSpeech:
 
     # Set your ElevenLabs API Key and desired voice ID
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
     VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
-
-    # def generate_speech(self, text):
-    #     start_time = time.time()
-    #     ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
-    #     headers = {
-    #         "xi-api-key": self.ELEVENLABS_API_KEY,
-    #         "Content-Type": "application/json"
-    #     }
-    #     payload = {
-    #         "model_id": "eleven_turbo_v2_5",
-    #         # "model_id": "eleven_multilingual_v2",
-    #         # "model_id": "eleven_monolingual_v1",
-    #         "text": text,
-    #         "voice_settings": {
-    #             "similarity_boost": 0.5,
-    #             "stability": 0.5
-    #         }
-    #     }
-    #     try:
-    #         response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)  # Added timeout
-    #         response.raise_for_status()  # This will raise an exception for HTTP error codes
-    #         print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-    #         return response.content, 0  # Assuming a fixed duration for simplicity
-    #     except requests.exceptions.HTTPError as e:
-    #         logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
-    #     except requests.exceptions.RequestException as e:
-    #         logging.error(f"Error during ElevenLabs API request: {e}")
-    #     print(f"Failed to generate speech for text: {text}")
-    #     return None, 0  # Indicate failure
-
 
     def generate_speech(self, text):
         start_time = time.time()
@@ -595,6 +490,7 @@ async def make_outgoing_call():
 
 
 
+
 @app.post("/vonage_call_status")
 async def handle_vonage_call_status(call_id: str = Query(...), call_status: CallStatus = Body(...)):
     try:
@@ -606,47 +502,8 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
             print(f"{datetime.now()}: Call answered status changed to True for call_id: {call_id}")
         
         elif call_status.status == 'completed':
-            if call_id in call_instances:
-                try:
-                    print(f"{datetime.now()}: Starting termination for call_id: {call_id}")
-
-                    # Get instances from call_instances
-                    state_machine = call_instances[call_id]["state_machine"]
-                    shared_data = call_instances[call_id]["shared_data"]
-                    state_machine = call_instances[call_id]["state_machine"]
-
-                    # Set the call_completed flag to True
-                    shared_data.call_completed = True
-
-                    # Delay the execution by 2 seconds
-                    await asyncio.sleep(2)
-
-                    # Clean up the SharedData instance
-                    shared_data.reset()
-                    print(f"{datetime.now()}: SharedData instance reset for call_id: {call_id}")
-
-                    # Clean up the state machine
-                    await state_machine.cleanup()
-                    print(f"{datetime.now()}: State Machine Cancelled call_id: {call_id}")
-
-                    # Remove the instances from the global dictionary
-                    del call_instances[call_id]
-                    print(f"{datetime.now()}: Instances removed from call_instances for call_id: {call_id}")
-
-                    # Delete data from Redis
-                    r.delete(f'{call_id}_call_answered')
-                    r.delete(f'{call_id}_human_response')
-                    r.delete(f'{call_id}_agent_response')
-                    r.delete(f'{call_id}_conversation_history')
-                    print(f"{datetime.now()}: Redis history deleted for call_id: {call_id}")
-
-                    print(f"Call terminated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} for call_id: {call_id}")
-
-                except Exception as e:
-                    print(f"{datetime.now()}: Error during call termination for call_id: {call_id}: {e}")
-                    print(traceback.format_exc())
-            else:
-                print(f"{datetime.now()}: Call instances not found for call_id: {call_id}")
+            print(f"{datetime.now()}: Call completed, initiating termination for call_id: {call_id}")
+            await terminate_call(call_id)  # New: Call terminate_call when status is 'completed'
         
         else:
             print(f"{datetime.now()}: Unhandled call status: {call_status.status} for call_id: {call_id}")
@@ -656,6 +513,50 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
         print(traceback.format_exc())
     
     return {"message": "Status update received"}
+
+
+
+
+async def terminate_call(call_id: str):
+    if call_id in call_instances:
+        try:
+            print(f"{datetime.now()}: Starting termination for call_id: {call_id}")
+
+            # Get instances from call_instances
+            shared_data = call_instances[call_id]["shared_data"]
+            state_machine = call_instances[call_id]["state_machine"]  # New: Get state_machine instance
+
+            # Set the termination flag
+            shared_data.is_terminating = True  # New: Set is_terminating flag
+            state_machine.stop()  # New: Stop the state machine
+
+            # Delay the execution by 2 seconds to allow ongoing processes to complete
+            await asyncio.sleep(3)
+
+            # Clean up the SharedData instance
+            shared_data.reset()
+            print(f"{datetime.now()}: SharedData instance reset for call_id: {call_id}")
+
+            # Remove the instances from the global dictionary
+            del call_instances[call_id]
+            print(f"{datetime.now()}: Instances removed from call_instances for call_id: {call_id}")
+
+            # Delete data from Redis
+            r.delete(f'{call_id}_call_answered')
+            r.delete(f'{call_id}_human_response')
+            r.delete(f'{call_id}_agent_response')
+            r.delete(f'{call_id}_conversation_history')
+            print(f"{datetime.now()}: Redis history deleted for call_id: {call_id}")
+
+            print(f"Call terminated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} for call_id: {call_id}")
+
+
+        except Exception as e:
+            print(f"{datetime.now()}: Error during call termination for call_id: {call_id}: {e}")
+            print(traceback.format_exc())
+    else:
+        print(f"{datetime.now()}: Call instances not found for call_id: {call_id}")
+
 
 
 
@@ -742,17 +643,12 @@ async def play_audio_file(websocket: WebSocket, call_id: str):
 
 
 
-
 async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversation_history: list, human_response: str, agent_response: str):
     try:
-        start_time = time.time()
         print(f"{datetime.now()} Generate and Send Speech Begun for call_id: {call_id}")
         
         results = {}
         empathy_statement_processed = False
-        play_audio_file_duration = 5.2  # seconds
-        empathy_duration = 0
-        sales_utterance_duration = 0
 
         # Check if it's the first turn in the conversation
         is_first_turn = len(conversation_history) == 0
@@ -761,8 +657,6 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         if not is_first_turn:
             # Start playing the audio file asynchronously without awaiting
             asyncio.create_task(play_audio_file(websocket, call_id))
-        else:
-            play_audio_file_duration = 0  # Don't count this if it's the first turn
         
         sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
         
@@ -798,23 +692,13 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration, call_id)
         print(f"{datetime.now()} Lead Interviewer Audio to Websocket Returned for call_id: {call_id}")
 
-        # Calculate timing information
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        audio_playback_time = play_audio_file_duration + empathy_duration + sales_utterance_duration
-        audio_state_delay = max(0, audio_playback_time - elapsed_time)
-
         print(f"{datetime.now()} Generate and Send Speech Returned for call_id: {call_id}")
-        print(f"Elapsed time: {elapsed_time:.2f}s, Audio playback time: {audio_playback_time:.2f}s, Audio state delay: {audio_state_delay:.2f}s")
-
-        return results.get("empathy_statement"), extracted_response, audio_state_delay
+        return results.get("empathy_statement"), extracted_response, sales_utterance_duration
 
     except Exception as e:
         print(f"Error in generate_and_send_speech for call_id {call_id}: {e}")
         print(f"Error in generate_and_send_speech: {type(e).__name__}: {e}")
         print(traceback.format_exc())
-
-
 
 
 def extract_desired_response(response):
@@ -838,37 +722,30 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id:
     try:
         print(f"{datetime.now()} Sending Audio Stream - Begun for call_id: {call_id}")
         samples = bytearray(audio_data)
-        # Set the buffer size to 6 chunks of 20ms audio (320 * 2 bytes per chunk)
         buffer_size = int(1 / 0.02)
         chunk_size = 320 * 2
 
+        shared_data = call_instances[call_id]["shared_data"]  # New: Get shared_data
+
         print(f"{datetime.now()} Sending Audio Stream - Begun")
-        while len(samples) >= chunk_size * buffer_size:
+        while len(samples) >= chunk_size * buffer_size and not shared_data.is_terminating:  # New: Check is_terminating
             for i in range(buffer_size):
+                if shared_data.is_terminating:  # New: Check is_terminating
+                    break
                 chunk = samples[i*chunk_size:(i+1)*chunk_size]
                 await vonage_websocket.send_bytes(chunk)
-                # print(f"Sent audio chunk of size {len(chunk)} bytes")
             samples = samples[buffer_size*chunk_size:]
             await asyncio.sleep(0.018)
         
-        # Send the remaining audio data only if it forms complete chunks of 640 bytes
-        while len(samples) >= chunk_size:
+        # Send remaining audio data only if not terminating
+        while len(samples) >= chunk_size and not shared_data.is_terminating:  # New: Check is_terminating
             chunk = samples[:chunk_size]
             await vonage_websocket.send_bytes(chunk)
-            # print(f"Sent remaining audio chunk of size {len(chunk)} bytes")
             samples = samples[chunk_size:]
             await asyncio.sleep(0.018)
         
-        # If there are any remaining bytes that don't form a complete chunk, send an empty chunk
-        if len(samples) > 0:
-            padding_size = chunk_size - len(samples)
-            padded_chunk = samples + bytearray(padding_size)
-            await vonage_websocket.send_bytes(padded_chunk)
-
-
         print(f"{datetime.now()} Sending Audio Stream - Finished for call_id: {call_id}")
 
-    
     except Exception as e:
         logging.error(f"Error in send_audio: {e}")
         logging.error(f"Error in send_audio: {type(e).__name__}: {e}")
@@ -898,7 +775,7 @@ class WebSocketManager:
 
     async def disconnect(self):
         await self.websocket.close()
-        print("WebSocket disconnected.")
+        print(f"WebSocket disconnected for call_id: {self.call_id}")
 
     async def send_message(self, message: dict):
         await self.websocket.send_json(message)
@@ -1014,7 +891,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         dg_connection.start(options)
         print(f"{datetime.now()}: Deepgram connection started successfully for call_id: {call_id}")
 
-        while True:
+        while not shared_data.is_terminating:  # New: Check is_terminating flag
             try:
                 message = await websocket_manager.receive_message()
                 if message["type"] == "websocket.receive":
@@ -1056,6 +933,9 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         except Exception as e:
             print(f"{datetime.now()}: Error closing WebSocket connection for call_id {call_id}: {e}")
             print(traceback.format_exc())
+
+
+
 
 
 if __name__ == "__main__":

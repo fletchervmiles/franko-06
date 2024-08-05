@@ -1,10 +1,13 @@
 from copy import deepcopy
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union, Optional
 import time
 from pydantic import Field
 from datetime import datetime
+import pytz
+import importlib
+from salesgpt.client_configs import default
 
 # from langchain.agents import (AgentExecutor, LLMSingleActionAgent,
 #                               create_openai_tools_agent)
@@ -78,93 +81,7 @@ logging.basicConfig(level=logging.WARNING)  # Set global logging level
 logging.getLogger().setLevel(logging.WARNING)  # Set root logger level
 
 
-# ChatLiteLLM.set_verbose = True
 
-# class SalesGPT(Chain):
-#     """Controller model for the Sales Agent."""
-
-#     conversation_history: List[str] = []
-#     conversation_stage_id: str = "1"
-#     human_response: str = "N/A - this is the first turn of the conversation."
-#     agent_response: str = "N/A - this is the first turn of the conversation."
-
-#     current_conversation_stage: str = CONVERSATION_STAGES.get("1")
-#     stage_analyzer_chain: StageAnalyzerChain = Field(...)
-#     # sales_agent_executor: Union[CustomAgentExecutor, None] = Field(...)
-#     # knowledge_base: Union[RetrievalQA, None] = Field(...)
-#     sales_conversation_utterance_chain: SalesConversationChain = Field(...)
-#     # conversation_summary_chain: ConversationSummaryChain = Field(...)
-#     conversation_stage_dict: Dict = CONVERSATION_STAGES
-#     # conversation_goal_target_question_counts: Dict = GOAL_TARGET_QUESTION_COUNTS
-#     key_points_chain: KeyPointsChain = Field(...)
-#     empathy_statement_chain: EmpathyStatementChain = Field(...)
-#     current_goal_review_chain: CurrentGoalReviewChain = Field(...)
-
-#     question_count_chain: QuestionCountChain = Field(...)
-#     goal_completeness_chain: GoalCompletenessChain = Field(...)
-#     # transition_chain: TransitionChain = Field(...)
-
-#     conversation_stage_history: List[str] = []
-#     stage_counts: Dict[str, int] = {}
-#     has_progressed: bool = False
-
-#     # Add the new attributes here
-#     turns_per_story_component: Dict[str, int] = {}
-#     GOAL_TARGET_NUMBERS: Dict[str, List[int]] = GOAL_TARGET_NUMBERS
-
-#     time_per_story_component: Dict[str, float] = {}
-#     story_component_start_time: float = 0.0
-#     current_stage_start_time: float = 0.0
-#     interview_start_time: float = Field(default_factory=time.time)  # Add this line
-
-#     model_name: str = "gpt-4o" # TODO - make this an env variable
-#     # model_name: str = "gpt-3.5-turbo-0613" # TODO - make this an env variable
-#     # model_name: str = "claude-3-haiku-20240307" # TODO - make this an env variable
-#     # model_name: str = "claude-2" # TODO - make this an env variable
-#     # model_name: str = "groq/llama2-70b-4096" # TODO - make this an env variable
-#     # model_name: str = "groq/llama3-70b-8192" # TODO - make this an env variable
-#     # model_name: str = "groq/mixtral-8x7b-32768" # TODO
-
-#     key_points: str = "This is the start of the conversation. There is no conversation history."
-#     # conversation_summary: str = "This is the start of the conversation. There is no conversation history."
-#     empathy_statement: str = "N/A"
-#     current_goal_review: str = "N/A"
-#     goal_completeness_status: str = "N/A"
-#     question_count_summary: str = "N/A"
-
-#     client_name: str = "Cursor"
-#     client_product_summary: str = "Cursor is an AI-powered coding assistant designed to help developers write code more efficiently. It provides code suggestions, error diagnostics, and refactoring tools, facilitating faster and more accurate coding across various programming languages. Cursor integrates into development environments, enhancing productivity by automating routine tasks and suggesting optimizations."
-#     interviewee_name: str = "Fletcher"
-#     customer_type: str = "Paid"
-#     lead_interviewer: str = "Franko"
-    
-#     use_tools: bool = False
-#     conversation_type: str = "call"
-
-
-#         # @time_logger
-#     def seed_agent(self):
-#         """
-#         This method seeds the conversation by setting the initial conversation stage and clearing the conversation history.
-
-#         The initial conversation stage is retrieved using the key "1". The conversation history is reset to an empty list.
-
-#         Returns:
-#             None
-#         """
-#         self.current_conversation_stage = self.retrieve_conversation_stage("1")
-#         self.conversation_history = []
-#         self.conversation_stage_history = []
-#         self.stage_counts = {}
-#         self.has_progressed = True
-#         self.interview_start_time = time.time()
-#         self.start_call()  # Initialize the timer and reset time-related attributes
-
-
-#     def start_call(self):
-#         self.current_stage_start_time = time.time()
-#         self.time_per_story_component = {}
-#         self.story_component_start_time = 0.0
 
 
 class SalesGPT(Chain):
@@ -180,17 +97,17 @@ class SalesGPT(Chain):
     goal_completeness_chain: GoalCompletenessChain = Field(...)
 
     # Attributes that may change per conversation (initialized in __init__)
-    call_id: str = Field(...)
-    model_name: str = Field(...)
-    client_name: str = Field(...)
-    client_product_summary: str = Field(...)
-    interviewee_name: str = Field(...)
-    customer_type: str = Field(...)
-    lead_interviewer: str = Field(...)
+    call_id: str = Field(default="")
+    model_name: str = Field(default="gpt-4o")
+    client_name: str = Field(default="")
+    client_product_summary: Optional[str] = Field(default=None)
+    interviewee_name: str = Field(default="")
+    customer_type: Optional[str] = Field(default=None)
+    lead_interviewer: str = Field(default="")
     # use_tools: bool = Field(default=False)
     conversation_type: str = Field(default="call")
-    GOAL_TARGET_NUMBERS: Dict[str, List[int]] = Field(...)
-    conversation_stage_dict: Dict[str, str] = Field(...)
+    GOAL_TARGET_NUMBERS: Dict[str, List[int]] = Field(default="")
+    conversation_stage_dict: Dict[str, str] = Field(default="")
 
     # Attributes that are reset for each conversation (initialized in seed_agent)
     conversation_history: List[str] = Field(default_factory=list)
@@ -205,47 +122,49 @@ class SalesGPT(Chain):
     time_per_story_component: Dict[str, float] = Field(default_factory=dict)
     story_component_start_time: float = Field(default=0.0)
     current_stage_start_time: float = Field(default=0.0)
-    interview_start_time: float = Field(default_factory=time.time)
+    interview_start_time: Optional[float] = Field(default=None)
     key_points: str = Field(default="This is the start of the conversation. There is no conversation history.")
     empathy_statement: str = Field(default="N/A")
     current_goal_review: str = Field(default="N/A")
     goal_completeness_status: str = Field(default="N/A")
     question_count_summary: str = Field(default="N/A")
+    to_number: str # Do I need this?
+    interviewee_last_name: str = Field(default="") # New
+    interviewee_email: str = Field(default="") # New
+    # current_date: str = Field(default_factory=lambda: datetime.now(pytz.timezone('America/Los_Angeles')).strftime('%Y-%m-%d'))
+    current_date: str = Field(default_factory=lambda: datetime.now().strftime('%Y-%m-%d'))
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.update_conversation_specific_data()
+
+
+    # def __init__(self, **data):
+    #     super().__init__(**data)
+    #     self.update_conversation_specific_data()
 
     def update_conversation_specific_data(self):
-        """
-        Update conversation-specific data based on the client name or other factors.
-        This method should be called when initializing a new conversation or when client details change.
-        """
-        # This is a placeholder implementation. In the future, you'll implement the logic
-        # to extract the relevant dictionaries based on the client name or other factors.
-        self.GOAL_TARGET_NUMBERS = self.get_goal_target_numbers(self.client_name)
-        self.conversation_stage_dict = self.get_conversation_stages(self.client_name)
+        print(f"Updating conversation data for client: {self.client_name}")
+        client_module = self.get_client_module(self.client_name)
+        print(f"Loaded module: {client_module.__name__}")
+        self.GOAL_TARGET_NUMBERS = getattr(client_module, 'GOAL_TARGET_NUMBERS', default.GOAL_TARGET_NUMBERS)
+        self.conversation_stage_dict = getattr(client_module, 'CONVERSATION_STAGES', default.CONVERSATION_STAGES)
+        print(f"Loaded GOAL_TARGET_NUMBERS: {self.GOAL_TARGET_NUMBERS}")
+        print(f"Loaded conversation_stage_dict: {self.conversation_stage_dict}")
 
-    def get_goal_target_numbers(self, client_name: str) -> Dict[str, List[int]]:
+    def get_client_module(self, client_name: str):
         """
-        Get the goal target numbers based on the client name.
-        This is a placeholder method - implement the actual logic as needed.
+        Dynamically import the client-specific module based on the client name.
+        If the module doesn't exist, return the default module.
         """
-        # Placeholder implementation
-        return GOAL_TARGET_NUMBERS  # You'll replace this with actual logic
-
-    def get_conversation_stages(self, client_name: str) -> Dict[str, str]:
-        """
-        Get the conversation stages based on the client name.
-        This is a placeholder method - implement the actual logic as needed.
-        """
-        # Placeholder implementation
-        return CONVERSATION_STAGES  # You'll replace this with actual logic
+        try:
+            return importlib.import_module(f'salesgpt.client_configs.{client_name.lower()}')
+        except ImportError:
+            print(f"No specific configuration found for {client_name}. Using default configuration.")
+            return default
 
     def seed_agent(self):
         """
         This method seeds the conversation by setting the initial conversation stage and resetting conversation-specific attributes.
         """
+        self.update_conversation_specific_data()
         self.conversation_stage_id = "1"
         self.current_conversation_stage = self.retrieve_conversation_stage("1")
         self.conversation_history = []
@@ -265,11 +184,21 @@ class SalesGPT(Chain):
         self.goal_completeness_status = "N/A"
         self.question_count_summary = "N/A"
         self.start_call()  # Initialize the timer and reset time-related attributes
+        # self.update_conversation_specific_data()
 
     def start_call(self):
         self.current_stage_start_time = time.time()
         self.time_per_story_component = {}
         self.story_component_start_time = 0.0
+        self.current_date = datetime.now().strftime('%Y-%m-%d')
+
+    # If using American time zone
+    # def start_call(self):
+    #     sf_tz = pytz.timezone('America/Los_Angeles')
+    #     self.current_stage_start_time = datetime.now(sf_tz).timestamp()
+    #     self.time_per_story_component = {}
+    #     self.story_component_start_time = 0.0
+    #     self.current_date = datetime.now(sf_tz).strftime('%Y-%m-%d')
 
 
     
@@ -331,6 +260,9 @@ class SalesGPT(Chain):
                     "human_response": self.human_response,
                     "agent_response": self.agent_response,
                     "current_conversation_stage": self.current_conversation_stage, 
+                    "call_id": self.call_id,
+                    "interviewee_name": self.interviewee_name, 
+
                 })
                 self.key_points = key_points_result["text"]
                 self.current_goal_review = ""  # Set current_goal_review to blank
@@ -340,7 +272,8 @@ class SalesGPT(Chain):
                     "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
                     "current_conversation_stage": self.current_conversation_stage,
                     "client_name": self.client_name,
-                    "interviewee_name": self.interviewee_name,
+                    "call_id": self.call_id,
+                    "interviewee_name": self.interviewee_name, 
                     "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
                     "customer_type": self.customer_type,
                     "has_progressed": self.has_progressed,
@@ -372,6 +305,8 @@ class SalesGPT(Chain):
                 "client_name": self.client_name,
                 "human_response": self.human_response,
                 "agent_response": self.agent_response,
+                "call_id": self.call_id,
+                "interviewee_name": self.interviewee_name, 
             })
             
             # Insert text at the beginning and end of the empathy statement
@@ -417,7 +352,8 @@ class SalesGPT(Chain):
                             ]
                         ),
                         # "conversation_summary": self.conversation_summary,
-                        "interviewee_name": self.interviewee_name,
+                        "call_id": self.call_id,
+                        "interviewee_name": self.interviewee_name, 
                         "customer_type": self.customer_type,
                         "goal_completeness_status": self.goal_completeness_status,
                         "question_count_summary": self.question_count_summary,
@@ -497,7 +433,9 @@ class SalesGPT(Chain):
                     # "client_name": self.client_name,
                     # "conversation_stage_id": self.conversation_stage_id,
                     # "interviewee_name": self.interviewee_name,
-                    # "stage_counts": self.stage_counts, 
+                    # "stage_counts": self.stage_counts,
+                    "call_id": self.call_id,
+                    "interviewee_name": self.interviewee_name, 
                     "current_question_count": question_metrics["current_count"],
                     "min_question_count": question_metrics["min_count"],
                     "target_question_count": question_metrics["target_count"],
@@ -547,6 +485,8 @@ class SalesGPT(Chain):
                     "current_conversation_stage": self.current_conversation_stage,
                     "has_progressed": self.has_progressed,
                     "human_response": self.human_response,
+                    "call_id": self.call_id,
+                    "interviewee_name": self.interviewee_name, 
                 }
             )
             self.goal_completeness_status = goal_completeness_result["text"]
@@ -616,17 +556,36 @@ class SalesGPT(Chain):
         # print(f"Turn count for story component {story_component_stage_id}: {self.turns_per_story_component[story_component_stage_id]}")
         print(f"[{datetime.now()}] Increment Story Component Turn Count Returned")
 
+    def set_interview_start_time(self):
+        self.interview_start_time = time.time()
+
     def track_overall_interview_time(self):
+        if self.interview_start_time is None:
+            print("Interview start time has not been set.")
+            return None
+
         current_time = time.time()
         overall_elapsed_time = current_time - self.interview_start_time
         story_component_stage_id = self.conversation_stage_id
         _, _, _, _, overall_target_time = self.GOAL_TARGET_NUMBERS.get(story_component_stage_id, (0, 0, 0, 0, 0))
         overall_time_met = overall_elapsed_time >= overall_target_time
+
+        
+        # Print the values
+        print(f"[{datetime.now()}] Time right now")
+        print(f"Overall Interview Time Tracking:")
+        print(f"  Overall Elapsed Time: {overall_elapsed_time:.2f} seconds")
+        print(f"  Overall Target Time: {overall_target_time} seconds")
+        print(f"  Overall Time Met: {overall_time_met}")
+        
+
         return {
             "overall_elapsed_time": overall_elapsed_time,
             "overall_target_time": overall_target_time,
             "overall_time_met": overall_time_met
         }
+
+
 
     # @time_logger
     async def step(self, stream: bool = False):
@@ -673,7 +632,6 @@ class SalesGPT(Chain):
             "input": "",
             "conversation_stage": self.current_conversation_stage,
             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-            "interviewee_name": self.interviewee_name,
             "customer_type": self.customer_type,
             "client_product_summary": self.client_product_summary,
             "conversation_type": self.conversation_type,
@@ -687,6 +645,7 @@ class SalesGPT(Chain):
             "has_progressed": self.has_progressed,
             "current_conversation_stage": self.current_conversation_stage,
             "call_id": self.call_id,  # Add this line to include call_id in inputs
+            "interviewee_name": self.interviewee_name,
         }
 
 
@@ -706,7 +665,7 @@ class SalesGPT(Chain):
         # Create a new LLM instance with the standard context length
         llm_with_context = ChatLiteLLM(
             temperature=llm.temperature,
-            model_name=llm.model,
+            model_name="gpt-4o",
             api_key=os.getenv("OPENAI_API_KEY", ""),
             max_tokens=max_tokens
         )
@@ -720,7 +679,10 @@ class SalesGPT(Chain):
             use_custom_prompt=kwargs.get("use_custom_prompt", False),
             custom_prompt=kwargs.get("custom_prompt", None)
         )
-        key_points_chain = KeyPointsChain.from_llm(llm, verbose=verbose)
+        key_points_chain = KeyPointsChain.from_llm(
+            llm=llm,
+            verbose=True,
+        )
         empathy_statement_chain = EmpathyStatementChain.from_llm(llm, verbose=verbose)
         current_goal_review_chain = CurrentGoalReviewChain.from_llm(llm, verbose=verbose)
 

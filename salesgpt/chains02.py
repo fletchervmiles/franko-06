@@ -20,48 +20,76 @@ from .prompts_folder.stage_analyzer import STAGE_ANALYZER_PROMPT
 # from .prompts_folder.transition import TRANSITION_PROMPT
 from .prompts_folder.goal_completeness_status import GOAL_COMPLETENESS_STATUS_PROMPT
 
-from langfuse import Langfuse
 
 ChatLiteLLM.set_verbose = True
 
-
 from langchain.chains import LLMChain
-from langfuse.callback import CallbackHandler
 
-# Initialize Langfuse handler with your credentials
+from langfuse.callback import CallbackHandler
+from langfuse.decorators import langfuse_context, observe
+from langfuse import Langfuse
+
+from dotenv import load_dotenv
+
+load_dotenv()  # This loads the variables from .env
+langfuse = Langfuse()
+
 langfuse_handler = CallbackHandler(
-    secret_key="sk-lf-83505b90-4cca-4b63-a745-d3b73254d837",  # Replace with your actual secret key
-    public_key="pk-lf-27bdbd34-695c-4347-a253-e6adb06c926b",  # Replace with your actual public key
-    host="https://cloud.langfuse.com"  # Adjust the host if necessary
+    secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+    public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+    host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
 )
 
-# import logging
-# logging.getLogger("requests").setLevel(logging.WARNING)
-# logging.basicConfig(level=logging.WARNING)  # Set global logging level
-# logging.getLogger().setLevel(logging.WARNING)  # Set root logger level
 
+# class TracedLLMChain(LLMChain):
+#     """Base chain class with Langfuse tracing integrated."""
+
+#     def invoke(self, input_data: dict, **kwargs) -> dict:
+#         config = kwargs.get('config', {})s
+#         callbacks = config.get('callbacks', [])
+#         callbacks.append(langfuse_handler)
+#         config['callbacks'] = callbacks
+#         kwargs['config'] = config
+#         return super().invoke(input_data, **kwargs)
+
+#     async def ainvoke(self, input_data: dict, **kwargs) -> dict:
+#         # Ensure that Langfuse handler is included in the callbacks
+#         config = kwargs.get('config', {})
+#         callbacks = config.get('callbacks', [])
+#         callbacks.append(langfuse_handler)
+#         config['callbacks'] = callbacks
+#         kwargs['config'] = config
+        
+#         # Call the superclass ainvoke with the updated config
+#         return await super().ainvoke(input_data, **kwargs)
 
 class TracedLLMChain(LLMChain):
-    """Base chain class with Langfuse tracing integrated."""
+    def _get_langfuse_handler(self, input_data):
+        return CallbackHandler(
+            secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+            public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+            host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com"),
+            user_id=input_data.get('interviewee_name'),
+            session_id=input_data.get('call_id')
+        )
 
     def invoke(self, input_data: dict, **kwargs) -> dict:
         config = kwargs.get('config', {})
         callbacks = config.get('callbacks', [])
-        callbacks.append(langfuse_handler)
+        callbacks.append(self._get_langfuse_handler(input_data))
         config['callbacks'] = callbacks
         kwargs['config'] = config
         return super().invoke(input_data, **kwargs)
 
     async def ainvoke(self, input_data: dict, **kwargs) -> dict:
-        # Ensure that Langfuse handler is included in the callbacks
         config = kwargs.get('config', {})
         callbacks = config.get('callbacks', [])
-        callbacks.append(langfuse_handler)
+        callbacks.append(self._get_langfuse_handler(input_data))
         config['callbacks'] = callbacks
         kwargs['config'] = config
-        
-        # Call the superclass ainvoke with the updated config
         return await super().ainvoke(input_data, **kwargs)
+
+
 
 
 # IN USE
@@ -81,7 +109,8 @@ class SalesConversationChain(TracedLLMChain):
         # llm_alt = ChatLiteLLM(temperature=0, model_name="replicate/meta-llama-3-8b-instruct", api_key="r8_djcrjSEI4A1G50NtubUXgTXkoHT5jmG1XMHoA")
         # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-opus-20240229", api_key=os.getenv("ANTHROPIC_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="together_ai/meta-llama/Llama-3-70b-chat-hf", api_key="b39a51c976619c8f1e44718c5a0edb7e1780a51ad44667e78931dbe65a2cfb9d")
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""))
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        print(f"SalesConversationChain initialized with max_tokens: {llm_alt.max_tokens}")
 
 
         if use_custom_prompt:  # Add this block
@@ -153,7 +182,7 @@ class KeyPointsChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""))
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=KEY_POINTS_PROMPT,
@@ -175,7 +204,7 @@ class EmpathyStatementChain(TracedLLMChain):
         # llm_alt = ChatLiteLLM(temperature=0, model_name="groq/llama3-70b-8192", api_key=os.getenv("GROQ_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-opus-20240229", api_key=os.getenv("ANTHROPIC_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="together_ai/meta-llama/Llama-3-70b-chat-hf", api_key="b39a51c976619c8f1e44718c5a0edb7e1780a51ad44667e78931dbe65a2cfb9d")
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""))
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=EMPATHY_STATEMENT_PROMPT,
@@ -195,7 +224,7 @@ class GoalCompletenessChain(TracedLLMChain):
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-opus-20240229", api_key=os.getenv("ANTHROPIC_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="together_ai/meta-llama/Llama-3-70b-chat-hf", api_key="b39a51c976619c8f1e44718c5a0edb7e1780a51ad44667e78931dbe65a2cfb9d")
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""))
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
         
         prompt = PromptTemplate(
             template=GOAL_COMPLETENESS_STATUS_PROMPT,
@@ -215,7 +244,7 @@ class CurrentGoalReviewChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""))
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=CURRENT_GOAL_REVIEW_PROMPT,
@@ -238,7 +267,7 @@ class StageAnalyzerChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         """Get the response parser."""
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""))
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
 
 
         prompt = PromptTemplate(
@@ -261,7 +290,7 @@ class StageAnalyzerChain(TracedLLMChain):
 class QuestionCountChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""))
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=QUESTION_COUNT_PROMPT,
@@ -269,7 +298,8 @@ class QuestionCountChain(TracedLLMChain):
                 # "conversation_history",
                 # "client_name",
                 # "conversation_stage_id",
-                # "interviewee_name",
+                "interviewee_name",
+                "call_id",
                 # "stage_counts",
                 "current_question_count",  # Added
                 "min_question_count",  # Added
