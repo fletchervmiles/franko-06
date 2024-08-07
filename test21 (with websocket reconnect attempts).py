@@ -34,7 +34,7 @@ from deepgram import (
     LiveTranscriptionEvents,
     LiveOptions,
 )
-
+from functools import partial
 
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -131,6 +131,7 @@ class SharedData:
         self.is_reconnecting = False
         self.reconnection_attempts = 0
         self.call_id = None  # Add this line
+        self.deepgram_reconnection_needed = False  # Add this line
         
         # These are for the listening functionality
         self.transcript_parts = []
@@ -992,13 +993,18 @@ class WebSocketManager:
         self.shared_data.websocket_ready.set()  # Set the websocket_ready event
         print(f"WebSocket connection accepted for call_id: {self.call_id}")
 
+    # This doesn't appear to be called anywhere in the /ws endpoint?
     async def disconnect(self):
         await self.websocket.close()
         print("WebSocket disconnected.")
 
+    # This doesn't appear to be called anywhere in the /ws endpoint?
+    # The on_message is does this in my /ws endpoint
     async def send_message(self, message: dict):
         await self.websocket.send_json(message)
 
+    # Not sure if this is doing anything, I don't think so?
+    # This looks like duplicate code 
     async def receive_message(self):
         try:
             message = await self.websocket.receive()
@@ -1054,9 +1060,47 @@ class WebSocketManager:
 
 
 
+# Define these functions outside of the websocket_endpoint function
+def on_open(self):
+    print(f"{datetime.now()}: Deepgram connection opened")
 
+def on_message(self, result, shared_data):
+    # print(f"{datetime.now()}: Received transcription: {result}")
+    if result.channel.alternatives[0].words:
+        shared_data.update_word_timestamp()
+    else:
+        shared_data.update_no_word_timestamp()
 
+    handle_transcription(result, shared_data)
 
+def on_error(self, error, call_id, shared_data):
+    print(f"{datetime.now()}: Deepgram Error for call_id {call_id}: {error}")
+    # Set the flag in shared_data
+    shared_data.deepgram_reconnection_needed = True
+    print(f"{datetime.now()}: Deepgram reconnection flag set for call_id {call_id}")
+
+def on_close(self):
+    print(f"{datetime.now()}: Deepgram connection closed")
+
+async def setup_deepgram_connection(deepgram, call_id, shared_data):
+    dg_connection = deepgram.listen.live.v("1")
+    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+    dg_connection.on(LiveTranscriptionEvents.Transcript, partial(on_message, shared_data=shared_data))
+    dg_connection.on(LiveTranscriptionEvents.Error, partial(on_error, call_id=call_id, shared_data=shared_data))
+    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+    
+    options = LiveOptions(
+        model="nova-2",
+        punctuate=True,
+        language="en-US",
+        encoding="linear16",
+        channels=1,
+        sample_rate=16000,
+        interim_results=True,
+    )
+    
+    dg_connection.start(options)
+    return dg_connection
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
@@ -1072,96 +1116,87 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     await websocket_manager.connect()
 
     deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"])
-    dg_connection = deepgram.listen.live.v("1")
+    
+    max_retries = 3
+    retry_delay = 1
 
-    def on_open(self, open, **kwargs):
-        print(f"{datetime.now()}: Deepgram connection opened for call_id: {call_id}")
+    for attempt in range(max_retries):
+        try:
+            dg_connection = await setup_deepgram_connection(deepgram, call_id, shared_data)
+            print(f"{datetime.now()}: Deepgram connection started successfully for call_id: {call_id}")
+            break
+        except Exception as e:
+            print(f"{datetime.now()}: Failed to start Deepgram connection (attempt {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                print(f"{datetime.now()}: Max retries reached. Unable to establish Deepgram connection.")
+                await websocket.close(code=1011)
+                return
 
-    def on_message(self, result, **kwargs):
-        if result.channel.alternatives[0].words:
-            shared_data.update_word_timestamp()
-        else:
-            shared_data.update_no_word_timestamp()
-        
-        handle_transcription(result, shared_data)
-
-    def on_error(self, error, **kwargs):
-        print(f"{datetime.now()}: Deepgram Error for call_id {call_id}: {error}")
-
-    def on_close(self, close, **kwargs):
-        print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
-
-    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
-    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
-    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
-
-    options = LiveOptions(
-        model="nova-2",
-        punctuate=True,
-        language="en-US",
-        encoding="linear16",
-        channels=1,
-        sample_rate=16000,
-        interim_results=True,
-    )
+    audio_packet_count = 0
+    last_audio_time = time.time()
 
     try:
-        dg_connection.start(options)
-        print(f"{datetime.now()}: Deepgram connection started successfully for call_id: {call_id}")
-
-        # while True:
-        #     try:
-        #         message = await websocket_manager.receive_message()
-        #         if message["type"] == "websocket.receive":
-        #             if "bytes" in message:
-        #                 audio_data = message["bytes"]
-        #                 dg_connection.send(audio_data)
-
-        # Testing audio    
-        audio_packet_count = 0
-        last_audio_time = time.time()
-
         while True:
+            if shared_data.deepgram_reconnection_needed:
+                print(f"{datetime.now()}: Attempting to reconnect Deepgram for call_id: {call_id}")
+                try:
+                    dg_connection.finish()
+                    dg_connection = await setup_deepgram_connection(deepgram, call_id, shared_data)
+                    shared_data.deepgram_reconnection_needed = False
+                    print(f"{datetime.now()}: Deepgram reconnected successfully for call_id: {call_id}")
+                except Exception as e:
+                    print(f"{datetime.now()}: Failed to reconnect Deepgram for call_id: {call_id}. Error: {e}")
+                    # If reconnection fails, we'll try again on the next iteration
+
             try:
-                message = await websocket_manager.receive_message()
+                message = await asyncio.wait_for(websocket_manager.receive_message(), timeout=1.0)
                 if message["type"] == "websocket.receive":
                     if "bytes" in message:
                         audio_data = message["bytes"]
                         audio_packet_count += 1
                         current_time = time.time()
                         
-                        print(f"{datetime.now()}: Received audio packet {audio_packet_count} for call_id: {call_id}")
-                        print(f"    Packet size: {len(audio_data)} bytes")
-                        print(f"    Time since last packet: {current_time - last_audio_time:.2f} seconds")
+                        # print(f"{datetime.now()}: Received audio packet {audio_packet_count} for call_id: {call_id}")
+                        # print(f"    Packet size: {len(audio_data)} b.pyytes")
+                        # print(f"    Time since last packet: {current_time - last_audio_time:.2f} seconds")
                         
-                        dg_connection.send(audio_data)
+                        try:
+                            dg_connection.send(audio_data)
+                        except Exception as e:
+                            print(f"{datetime.now()}: Error sending audio to Deepgram: {e}")
+                            shared_data.deepgram_reconnection_needed = True
                         
                         last_audio_time = current_time
 
-                        if audio_packet_count % 100 == 0:  # Log every 100 packets
-                            print(f"{datetime.now()}: Sent {audio_packet_count} audio packets to Deepgram for call_id: {call_id}")
-                    
+                        # if audio_packet_count % 100 == 0:
+                            # print(f"{datetime.now()}: Sent {audio_packet_count} audio packets to Deepgram for call_id: {call_id}")
+            except asyncio.TimeoutError:
+                # No message received within the timeout period, continue the loop
+                continue
             except WebSocketDisconnect as e:
-                logger.error(f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}")
-                logger.error(f"{datetime.now()}: Disconnection reason for call_id {call_id}: {getattr(e, 'reason', 'Unknown')}")
-                
-                if await websocket_manager.should_reconnect():
-                    print(f"{datetime.now()}: Attempting to reconnect for call_id: {call_id}")
-                    dg_connection = deepgram.listen.live.v("1")
-                    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
-                    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-                    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
-                    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
-                    dg_connection.start(options)
-                    print(f"{datetime.now()}: Deepgram connection restarted successfully for call_id: {call_id}")
-                    continue
-                else:
+                print(f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}")
+                print(f"{datetime.now()}: Disconnection reason for call_id {call_id}: {getattr(e, 'reason', 'Unknown')}")
+                break
+            except Exception as e:
+                print(f"{datetime.now()}: Error in WebSocket communication for call_id {call_id}: {e}")
+                if not await websocket_manager.should_reconnect():
                     print(f"{datetime.now()}: Call terminated for call_id: {call_id}. WebSocket will not reconnect.")
+                    break
+                print(f"{datetime.now()}: Attempting to reconnect WebSocket for call_id: {call_id}")
+                try:
+                    await websocket_manager.reconnect()
+                    if websocket_manager.websocket.client_state.name != "CONNECTED":
+                        print(f"{datetime.now()}: Failed to reconnect WebSocket for call_id: {call_id}")
+                        break
+                except Exception as reconnect_error:
+                    print(f"{datetime.now()}: Error during WebSocket reconnection for call_id {call_id}: {reconnect_error}")
                     break
 
     except Exception as e:
-        print(f"{datetime.now()}: Error in WebSocket endpoint for call_id {call_id}: {e}")
+        print(f"{datetime.now()}: Unexpected error in WebSocket endpoint for call_id {call_id}: {e}")
         print(traceback.format_exc())
 
     finally:
@@ -1169,14 +1204,277 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
             dg_connection.finish()
             print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
 
-        try:
-            if websocket_manager.websocket.client_state.name != "DISCONNECTED":
-                await websocket_manager.disconnect()
-                print(f"{datetime.now()}: WebSocket disconnected successfully for call_id: {call_id}")
-        except Exception as e:
-            print(f"{datetime.now()}: Error closing WebSocket connection for call_id {call_id}: {e}")
-            print(traceback.format_exc())
+        await websocket_manager.disconnect()
+        print(f"{datetime.now()}: WebSocket disconnected successfully for call_id: {call_id}")
 
+
+
+# @app.websocket("/ws")
+# async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
+#     print(f"{datetime.now()}: WebSocket connection opened for call_id: {call_id}")
+
+#     if call_id not in call_instances:
+#         print(f"{datetime.now()}: Error: No call instance found for call_id: {call_id}")
+#         await websocket.close(code=1000)
+#         return
+
+#     shared_data = call_instances[call_id]["shared_data"]
+#     websocket_manager = WebSocketManager(websocket, shared_data)
+#     await websocket_manager.connect()
+
+#     deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"])
+#     dg_connection = deepgram.listen.live.v("1")
+
+#     def on_open(self, open, **kwargs):
+#         print(f"{datetime.now()}: Deepgram connection opened for call_id: {call_id}")
+
+#     def on_message(self, result, **kwargs):
+#         if result.channel.alternatives[0].words:
+#             shared_data.update_word_timestamp()
+#         else:
+#             shared_data.update_no_word_timestamp()
+        
+#         handle_transcription(result, shared_data)
+
+#     # # It looks like this error is being captured but nothing below this...
+#     # def on_error(self, error, **kwargs):
+#     #     print(f"{datetime.now()}: Deepgram Error for call_id {call_id}: {error}")
+
+#     # Modify the on_error function
+#     def on_error(self, error, **kwargs):
+#         print(f"{datetime.now()}: Deepgram Error for call_id {call_id}: {error}")
+#         # Set the flag in shared_data
+#         shared_data.deepgram_reconnection_needed = True
+#         print(f"{datetime.now()}: Deepgram reconnection flag set for call_id {call_id}")
+
+#     def on_close(self, close, **kwargs):
+#         print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
+
+#     dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+#     dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+#     dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+#     dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+
+#     options = LiveOptions(
+#         model="nova-2",
+#         punctuate=True,
+#         language="en-US",
+#         encoding="linear16",
+#         channels=1,
+#         sample_rate=16000,
+#         interim_results=True,
+#     )
+
+#     try:
+#         dg_connection.start(options)
+#         print(f"{datetime.now()}: Deepgram connection started successfully for call_id: {call_id}")
+
+#         # while True:
+#         #     try:
+#         #         message = await websocket_manager.receive_message()
+#         #         if message["type"] == "websocket.receive":
+#         #             if "bytes" in message:
+#         #                 audio_data = message["bytes"]
+#         #                 dg_connection.send(audio_data)
+
+#         # Testing audio    
+#         audio_packet_count = 0
+#         last_audio_time = time.time()
+
+#         while True:
+#             # Check if Deepgram reconnection is needed
+#             if shared_data.deepgram_reconnection_needed:
+#                 print(f"{datetime.now()}: Attempting to reconnect Deepgram for call_id: {call_id}")
+#                 try:
+#                     dg_connection.finish()  # Close the existing connection
+#                     dg_connection = deepgram.listen.live.v("1")
+#                     dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+#                     dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+#                     dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+#                     dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+#                     dg_connection.start(options)
+#                     shared_data.deepgram_reconnection_needed = False
+#                     print(f"{datetime.now()}: Deepgram reconnected successfully for call_id: {call_id}")
+#                 except Exception as e:
+#                     print(f"{datetime.now()}: Failed to reconnect Deepgram for call_id: {call_id}. Error: {e}")
+
+#             try:
+#                 message = await asyncio.wait_for(websocket_manager.receive_message(), timeout=1.0)
+#                 if message["type"] == "websocket.receive":
+#                     if "bytes" in message:
+#                         audio_data = message["bytes"]
+#                         audio_packet_count += 1
+#                         current_time = time.time()
+                        
+#                         print(f"{datetime.now()}: Received audio packet {audio_packet_count} for call_id: {call_id}")
+#                         print(f"    Packet size: {len(audio_data)} bytes")
+#                         print(f"    Time since last packet: {current_time - last_audio_time:.2f} seconds")
+                        
+#                         dg_connection.send(audio_data)
+                        
+#                         last_audio_time = current_time
+
+#                         if audio_packet_count % 100 == 0:
+#                             print(f"{datetime.now()}: Sent {audio_packet_count} audio packets to Deepgram for call_id: {call_id}")
+#             except asyncio.TimeoutError:
+#                 # No message received within the timeout period, continue the loop
+#                 continue
+#             except WebSocketDisconnect as e:
+#                 print(f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}")
+#                 print(f"{datetime.now()}: Disconnection reason for call_id {call_id}: {getattr(e, 'reason', 'Unknown')}")
+                
+#                 if await websocket_manager.should_reconnect():
+#                     print(f"{datetime.now()}: Attempting to reconnect WebSocket for call_id: {call_id}")
+#                     await websocket_manager.reconnect()
+#                     if websocket_manager.websocket.client_state.name == "CONNECTED":
+#                         continue
+#                     else:
+#                         print(f"{datetime.now()}: Failed to reconnect WebSocket for call_id: {call_id}")
+#                         break
+#                 else:
+#                     print(f"{datetime.now()}: Call terminated for call_id: {call_id}. WebSocket will not reconnect.")
+#                     break
+
+#     except Exception as e:
+#         print(f"{datetime.now()}: Error in WebSocket endpoint for call_id {call_id}: {e}")
+#         print(traceback.format_exc())
+
+#     finally:
+#         if dg_connection:
+#             dg_connection.finish()
+#             print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
+
+#         await websocket_manager.disconnect()
+#         print(f"{datetime.now()}: WebSocket disconnected successfully for call_id: {call_id}")
+
+class DeepgramHandler:
+    def __init__(self, call_id: str, shared_data: SharedData):
+        self.call_id = call_id
+        self.shared_data = shared_data
+        self.client = DeepgramClient(os.environ["DEEPGRAM_API_KEY"])
+        self.connection = None
+
+    async def setup_connection(self):
+        self.connection = self.client.listen.live.v("1")
+        self.connection.on(LiveTranscriptionEvents.Open, self.on_open)
+        self.connection.on(LiveTranscriptionEvents.Transcript, self.on_message)
+        self.connection.on(LiveTranscriptionEvents.Error, self.on_error)
+        self.connection.on(LiveTranscriptionEvents.Close, self.on_close)
+
+        options = LiveOptions(
+            model="nova-2",
+            punctuate=True,
+            language="en-US",
+            encoding="linear16",
+            channels=1,
+            sample_rate=16000,
+            interim_results=True,
+        )
+
+        await self.connection.start(options)
+
+    def on_open(self):
+        print(f"{datetime.now()}: Deepgram connection opened for call_id: {self.call_id}")
+
+    def on_message(self, result):
+        print(f"{datetime.now()}: Received transcription for call_id {self.call_id}: {result}")
+        if result.channel.alternatives[0].words:
+            self.shared_data.update_word_timestamp()
+        else:
+            self.shared_data.update_no_word_timestamp()
+
+        handle_transcription(result, shared_data)
+
+    def on_error(self, error):
+        print(f"{datetime.now()}: Deepgram Error for call_id {self.call_id}: {error}")
+        self.shared_data.deepgram_reconnection_needed = True
+
+    def on_close(self):
+        print(f"{datetime.now()}: Deepgram connection closed for call_id: {self.call_id}")
+
+    async def send_audio(self, audio_data):
+        if self.connection:
+            await self.connection.send(audio_data)
+        else:
+            print(f"{datetime.now()}: Deepgram connection not established for call_id: {self.call_id}")
+
+    async def close(self):
+        if self.connection:
+            await self.connection.finish()
+            self.connection = None
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
+    print(f"{datetime.now()}: WebSocket connection opened for call_id: {call_id}")
+
+    if call_id not in call_instances:
+        print(f"{datetime.now()}: Error: No call instance found for call_id: {call_id}")
+        await websocket.close(code=1000)
+        return
+
+    shared_data = call_instances[call_id]["shared_data"]
+    websocket_manager = WebSocketManager(websocket, shared_data)
+    await websocket_manager.connect()
+
+    deepgram_handler = DeepgramHandler(call_id, shared_data)
+    await deepgram_handler.setup_connection()
+
+    audio_packet_count = 0
+    last_audio_time = time.time()
+
+    try:
+        while True:
+            if shared_data.deepgram_reconnection_needed:
+                print(f"{datetime.now()}: Attempting to reconnect Deepgram for call_id: {call_id}")
+                await deepgram_handler.close()
+                await deepgram_handler.setup_connection()
+                shared_data.deepgram_reconnection_needed = False
+
+            try:
+                message = await asyncio.wait_for(websocket_manager.receive_message(), timeout=1.0)
+                if message["type"] == "websocket.receive" and "bytes" in message:
+                    audio_data = message["bytes"]
+                    audio_packet_count += 1
+                    current_time = time.time()
+
+                    print(f"{datetime.now()}: Received audio packet {audio_packet_count} for call_id: {call_id}")
+                    print(f"    Packet size: {len(audio_data)} bytes")
+                    print(f"    Time since last packet: {current_time - last_audio_time:.2f} seconds")
+
+                    try:
+                        await deepgram_handler.send_audio(audio_data)
+                    except Exception as e:
+                        print(f"{datetime.now()}: Error sending audio to Deepgram: {e}")
+                        shared_data.deepgram_reconnection_needed = True
+
+                    last_audio_time = current_time
+
+                    if audio_packet_count % 100 == 0:
+                        print(f"{datetime.now()}: Sent {audio_packet_count} audio packets to Deepgram for call_id: {call_id}")
+
+            except asyncio.TimeoutError:
+                continue
+            except WebSocketDisconnect as e:
+                print(f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}")
+                break
+            except Exception as e:
+                print(f"{datetime.now()}: Error in WebSocket communication for call_id {call_id}: {e}")
+                if not await websocket_manager.should_reconnect():
+                    print(f"{datetime.now()}: Call terminated for call_id: {call_id}. WebSocket will not reconnect.")
+                    break
+                print(f"{datetime.now()}: Attempting to reconnect WebSocket for call_id: {call_id}")
+                if not await websocket_manager.reconnect():
+                    print(f"{datetime.now()}: Failed to reconnect WebSocket for call_id: {call_id}")
+                    break
+
+    except Exception as e:
+        print(f"{datetime.now()}: Unexpected error in WebSocket endpoint for call_id {call_id}: {e}")
+        print(traceback.format_exc())
+
+    finally:
+        await deepgram_handler.close()
+        await websocket_manager.disconnect()
+        print(f"{datetime.now()}: WebSocket and Deepgram connections closed for call_id: {call_id}")
 
 if __name__ == "__main__":
     import uvicorn
