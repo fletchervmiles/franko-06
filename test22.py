@@ -535,17 +535,26 @@ class TextToSpeech:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10) as response:
-                    response.raise_for_status()
-                    audio_content = await response.read()
-            
-            print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-            
-            duration = self.calculate_audio_duration(audio_content)
-            
-            return audio_content, duration
+                    if response.status == 200:
+                        audio_content = await response.read()
+                        duration = self.calculate_audio_duration(audio_content)
+                        return audio_content, duration
+                    else:
+                        error_content = await response.text()
+                        print(f"{datetime.now()} - ElevenLabs API error: Status {response.status}")
+                        print(f"{datetime.now()} - Error content: {error_content}")
+                        try:
+                            error_json = json.loads(error_content)
+                            print(f"{datetime.now()} - Error details: {json.dumps(error_json, indent=2)}")
+                        except json.JSONDecodeError:
+                            print(f"{datetime.now()} - Could not parse error content as JSON")
+                        return None, 0
         except aiohttp.ClientError as e:
-            logging.error(f"Error during ElevenLabs API request: {e}")
-        print(f"Failed to generate speech for text: {text}")
+            print(f"{datetime.now()} - Network error during ElevenLabs API request: {str(e)}")
+        except Exception as e:
+            print(f"{datetime.now()} - Unexpected error during ElevenLabs API request: {str(e)}")
+            print(f"{datetime.now()} - Error type: {type(e).__name__}")
+            print(f"{datetime.now()} - Error details:\n{traceback.format_exc()}")
         return None, 0
 
     def calculate_audio_duration(self, audio_content):
@@ -617,7 +626,7 @@ async def make_outgoing_call(call_request: CallRequest):
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://a839-184-82-30-188.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -625,7 +634,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
+                            'uri': f'wss://a839-184-82-30-188.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -635,7 +644,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     ]
                 }
             ],
-            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://a839-184-82-30-188.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -842,18 +851,18 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-# # PROD CHANGE
-async def play_audio_file(websocket: WebSocket, call_id: str):
-    # Specify the exact file path
-    audio_folder_path = "/mnt/buffer_audio"
-    audio_file_name = "understood_okay_audio.raw"
-    audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+# # # PROD CHANGE
+# async def play_audio_file(websocket: WebSocket, call_id: str):
+#     # Specify the exact file path
+#     audio_folder_path = "/mnt/buffer_audio"
+#     audio_file_name = "understood_okay_audio.raw"
+#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
 
 # LOCAL
-# async def play_audio_file(websocket: WebSocket, call_id: str):
-#     audio_file_name = "understood_okay_audio.raw"
-#     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
-#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+async def play_audio_file(websocket: WebSocket, call_id: str):
+    audio_file_name = "understood_okay_audio.raw"
+    audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
+    audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     
     try:
         print(f"[{datetime.now()}] - Sending Audio Buffer File Begun for call_id {call_id}: {audio_file_path}")
