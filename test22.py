@@ -619,6 +619,16 @@ async def make_outgoing_call(call_request: CallRequest):
         # Start the state machine asynchronously
         asyncio.create_task(state_machine.start())
 
+        print(f"Vonage Application ID: {VONAGE_APPLICATION_ID}")
+        print(f"Vonage Private Key Path: {VONAGE_APPLICATION_PRIVATE_KEY_PATH}")
+        
+        # Check if the private key file exists and is readable
+        if not os.path.isfile(VONAGE_APPLICATION_PRIVATE_KEY_PATH):
+            raise FileNotFoundError(f"Vonage private key file not found: {VONAGE_APPLICATION_PRIVATE_KEY_PATH}")
+        
+        if not os.access(VONAGE_APPLICATION_PRIVATE_KEY_PATH, os.R_OK):
+            raise PermissionError(f"Cannot read Vonage private key file: {VONAGE_APPLICATION_PRIVATE_KEY_PATH}")
+
         # PROD CHANGE
         response = vonage_client.voice.create_call({
             'to': [{'type': 'phone', 'number': call_request.to_number}], # Use to_number from the request
@@ -652,6 +662,11 @@ async def make_outgoing_call(call_request: CallRequest):
         # os.remove(temp_config_path)
 
         return {"message": "Call initiated", "call_id": call_id}
+
+    except vonage.errors.AuthenticationError as e:
+        print(f"Vonage Authentication Error: {str(e)}")
+        raise HTTPException(status_code=401, detail="Vonage authentication failed")
+
     except Exception as e:
         print(f"Error in make_outgoing_call: {str(e)}")
         print(f"Error type: {type(e).__name__}")

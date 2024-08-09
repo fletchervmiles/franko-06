@@ -146,8 +146,8 @@ class SalesGPT(Chain):
         print(f"Loaded module: {client_module.__name__}")
         self.GOAL_TARGET_NUMBERS = getattr(client_module, 'GOAL_TARGET_NUMBERS', default.GOAL_TARGET_NUMBERS)
         self.conversation_stage_dict = getattr(client_module, 'CONVERSATION_STAGES', default.CONVERSATION_STAGES)
-        print(f"Loaded GOAL_TARGET_NUMBERS: {self.GOAL_TARGET_NUMBERS}")
-        print(f"Loaded conversation_stage_dict: {self.conversation_stage_dict}")
+        # print(f"Loaded GOAL_TARGET_NUMBERS: {self.GOAL_TARGET_NUMBERS}")
+        # print(f"Loaded conversation_stage_dict: {self.conversation_stage_dict}")
 
     def get_client_module(self, client_name: str):
         """
