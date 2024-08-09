@@ -360,12 +360,19 @@ class SalesGPT(Chain):
                 print(f"[{datetime.now()}] Stage Analyzer Chain Returned")
             except Exception as e:
                 print(f"Error during stage analysis: {e}")
-                # Optionally, set a default value or perform other error handling
-                stage_analyzer_output = {"text": "default_stage_id"}  # Example default value
+                stage_analyzer_output = {"text": self.conversation_stage_id}
 
+            # Extract the stage ID from the output
+            stage_analyzer_text = stage_analyzer_output.get("text", "")
+            import re
+            match = re.search(r'<<<<<(\d+)>>>>>', stage_analyzer_text)
+            if match:
+                new_stage_id = match.group(1)
+                print(f"[{datetime.now()}] New conversation stage ID set: {new_stage_id}")
+                self.conversation_stage_id = new_stage_id
+            else:
+                print("No valid stage ID found in the output. Keeping current stage ID.")
 
-            # This sets the new conversation_stage_id - the main output
-            self.conversation_stage_id = stage_analyzer_output.get("text")
 
             if self.conversation_stage_id != previous_stage_id:
                 self.update_story_component_time()  # Update time for the previous stage
@@ -563,7 +570,7 @@ class SalesGPT(Chain):
         overall_elapsed_time = current_time - self.interview_start_time
         story_component_stage_id = self.conversation_stage_id
         _, _, _, _, overall_target_time = self.GOAL_TARGET_NUMBERS.get(story_component_stage_id, (0, 0, 0, 0, 0))
-        overall_time_met = overall_elapsed_time >= overall_target_time
+        overall_time_met = overall_elapsed_time < overall_target_time
 
         
         # Print the values

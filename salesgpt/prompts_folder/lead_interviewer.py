@@ -116,9 +116,9 @@ Give your response only with no explanation or other accompanying text.
 
 
 
-EXAMPLE RESPONSES:
+## EXAMPLE RESPONSES:
 
-EXAMPLE 1:
+#### EXAMPLE 1:
 
 Empathy statement: <<<EMPATHY>>>That’s a strong recommendation! The team at Cursor are going to love hearing this!<<<EMPATHY>>>
 
@@ -126,7 +126,7 @@ Lead Interviewer Response: <<<LEAD>>>I'm curious about other benefits you usuall
 
 Word count: 22
 
-EXAMPLE 2:
+#### EXAMPLE 2:
 
 Empathy statement: <<<EMPATHY>>>Wow that’s so good, I’m glad to hear it has been such a game-changer for your work! I bet your clients really appreciate your improved accuracy.<<<EMPATHY>>>
 
@@ -134,7 +134,7 @@ Lead Interviewer Response: <<<LEAD>>>Could you estimate how much faster you're c
 
 Word count: 23
 
-EXAMPLE 3:
+#### EXAMPLE 3:
 
 Empathy statement: <<<EMPATHY>>>That’s cool, I can see why a demo from a fellow self taught engineer would resonate!<<<EMPATHY>>>
 
@@ -142,7 +142,7 @@ Lead Interviewer Response: <<<LEAD>>>Watching the demo must have given you a goo
 
 Word count: 23
 
-EXAMPLE 4:
+#### EXAMPLE 4:
 
 Empathy statement: <<<EMPATHY>>>You’re really getting after it! I admire that. And it’s impressive how you’re handling it all solo, too!<<<EMPATHY>>>
 
@@ -150,7 +150,7 @@ Lead Interviewer Response: <<<LEAD>>>Now that we’ve learned a bit about you, I
 
 Word count: 24
 
-EXAMPLE 5:
+#### EXAMPLE 5:
 
 Empathy statement: <<<EMPATHY>>>I love this response, nice and detailed! You’re obviously deep into the development process!<<<EMPATHY>>>
 
@@ -158,7 +158,7 @@ Lead Interviewer Response: <<<LEAD>>>Are you working solo or with a team? I’m 
 
 Word count: 26
 
-EXAMPLE 6:
+#### EXAMPLE 6:
 
 Empathy statement: <<<EMPATHY>>>That’s incredible… I’m pumped for you and fingers crossed for the launch!<<<EMPATHY>>>
 
@@ -166,7 +166,7 @@ Lead Interviewer Response: <<<LEAD>>>Can you walk me through a typical workday a
 
 Word count: 24
 
-EXAMPLE 7:
+#### EXAMPLE 7:
 
 Empathy statement: <<<EMPATHY>>>Wow, that does sound cool! I’d love to learn more.<<<EMPATHY>>>
 
@@ -174,7 +174,7 @@ Lead Interviewer Response: <<<LEAD>>>Tell me more about your side project, what 
 
 Word count: 22
 
-EXAMPLE 8:
+#### EXAMPLE 8:
 
 Empathy statement: <<<EMPATHY>>>I completely understand, and I appreciate your patience throughout this interview. Your time and insights are incredibly valuable to us.<<<EMPATHY>>>
 

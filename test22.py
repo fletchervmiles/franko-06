@@ -1173,16 +1173,16 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
                         audio_packet_count += 1
                         current_time = time.time()
                         
-                        print(f"{datetime.now()}: Received audio packet {audio_packet_count} for call_id: {call_id}")
-                        print(f"    Packet size: {len(audio_data)} bytes")
-                        print(f"    Time since last packet: {current_time - last_audio_time:.2f} seconds")
+                        # print(f"{datetime.now()}: Received audio packet {audio_packet_count} for call_id: {call_id}")
+                        # print(f"    Packet size: {len(audio_data)} bytes")
+                        # print(f"    Time since last packet: {current_time - last_audio_time:.2f} seconds")
                         
                         dg_connection.send(audio_data)
                         
                         last_audio_time = current_time
 
-                        if audio_packet_count % 100 == 0:  # Log every 100 packets
-                            print(f"{datetime.now()}: Sent {audio_packet_count} audio packets to Deepgram for call_id: {call_id}")
+                        # if audio_packet_count % 100 == 0:  # Log every 100 packets
+                        #     print(f"{datetime.now()}: Sent {audio_packet_count} audio packets to Deepgram for call_id: {call_id}")
                     
             except WebSocketDisconnect as e:
                 logger.error(f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}")
