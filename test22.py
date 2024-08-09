@@ -626,7 +626,7 @@ async def make_outgoing_call(call_request: CallRequest):
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://a839-184-82-30-188.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -634,7 +634,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://a839-184-82-30-188.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -644,7 +644,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     ]
                 }
             ],
-            'event_url': [f'https://a839-184-82-30-188.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -851,18 +851,18 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-# # # PROD CHANGE
-# async def play_audio_file(websocket: WebSocket, call_id: str):
-#     # Specify the exact file path
-#     audio_folder_path = "/mnt/buffer_audio"
-#     audio_file_name = "understood_okay_audio.raw"
-#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
-
-# LOCAL
+# # PROD CHANGE
 async def play_audio_file(websocket: WebSocket, call_id: str):
+    # Specify the exact file path
+    audio_folder_path = "/mnt/buffer_audio"
     audio_file_name = "understood_okay_audio.raw"
-    audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+
+# # LOCAL
+# async def play_audio_file(websocket: WebSocket, call_id: str):
+#     audio_file_name = "understood_okay_audio.raw"
+#     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
+#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     
     try:
         print(f"[{datetime.now()}] - Sending Audio Buffer File Begun for call_id {call_id}: {audio_file_path}")
