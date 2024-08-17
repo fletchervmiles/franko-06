@@ -162,7 +162,6 @@ This section aims to understand the interviewee's perception of Cursor's value r
 
     "9": f"""
 **Current Interview Section: Open-Ended Insight Gathering and Closing with Appreciation and Positivity:**
-2.py
 
 The goal for this section is to conclude the interview on a high note, ensuring that the interviewee feels valued and appreciated for their participation and insights and confirming the processing of their reimbursement.
 

@@ -276,7 +276,7 @@ class StageAnalyzerChain(TracedLLMChain):
             input_variables=[
                 "conversation_history",
                 "conversation_stage_id",
-                "conversation_stages",
+                # "conversation_stages",
                 # "conversation_summary",
                 "interviewee_type",
                 "interviewee_name",
