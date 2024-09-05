@@ -225,5 +225,9 @@ GOAL_TARGET_NUMBERS = {
     "6": [2, 3, 180, 240, 1740],
     "7": [2, 3, 180, 240, 1980],
     "8": [5, 6, 300, 360, 2340],
-    "9": [2, 3, 180, 240, 2580]
+    "9": [10000, 10000, 10000, 10000, 10000]
 }
+
+# IMPORTANT - whatever the last number is, it needs to be LARGE so it doesn't skip to the next stage
+# Will fix this so it terminates on its own at some point
+# Added to Trello backlog

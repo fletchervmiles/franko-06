@@ -131,7 +131,49 @@ class SalesGPTAPI:
 
         return self.sales_agent
 
-    # Works with test 14
+#     # Works with test 14
+#     async def run_chains(self, conversation_history, human_response, agent_response):
+#         try:
+#             print(f"[{datetime.now()}] Run Chains Begun")
+
+#             self.sales_agent.conversation_history = conversation_history if isinstance(conversation_history, list) else []
+#             self.sales_agent.human_response = human_response
+#             self.sales_agent.agent_response = agent_response
+#             self.sales_agent.goal_completeness_status = self.sales_agent.goal_completeness_status or "N/A"
+
+#             if self.first_turn:
+#                 # await asyncio.sleep(0.5)
+#                 yield {
+#                     "empathy_statement": "Hi there, this is Franko! I'm super excited to chat with you today!",
+#                     "key_points": "",
+#                     "current_goal_review": r"""
+# This is the immediate start of the interview conversation. To ensure a smooth and professional opening, USE THE FOLLOWING SCRIPT EXACTLY AS YOUR RESPONSE (replacing with the relevant client name). Here’s the response to help you open up the interview effectively: 
+# "The purpose of our call will be to discuss your experience with [client_name]. It will be recorded and shared with the team, I know they'll appreciate your insights! The interview will take approximately 45 minutes. Once the interview is completed, your payment will be processed by a member of the team. Are you in a quiet place and ready to get started?"
+# For this turn, adherence strictly to the provided script is imperative.
+# Note that this part usually contains a recommendation and analysis but due to the nature of this first turn, a pre-specified script has been provided for your usage. This is to ensure that the tone and modality of the conversation are properly set.
+#                     """
+#                 }
+#             else:
+#                 # Run both chains concurrently
+#                 empathy_task = asyncio.create_task(self.sales_agent.run_empathy_statement_chain())
+#                 chain_results_task = asyncio.create_task(self.sales_agent.async_chain_runner())
+
+#                 # Yield empathy statement as soon as it's available
+#                 empathy_statement = await empathy_task
+#                 yield {"empathy_statement": empathy_statement}
+
+#                 # Wait for the other task to complete
+#                 chain_results = await chain_results_task
+#                 yield chain_results
+
+#             self.first_turn = False
+
+#         except Exception as e:
+#             print(f"Error in run_chains: {e}")
+#             print(traceback.format_exc())
+#             raise
+
+
     async def run_chains(self, conversation_history, human_response, agent_response):
         try:
             print(f"[{datetime.now()}] Run Chains Begun")
@@ -141,27 +183,39 @@ class SalesGPTAPI:
             self.sales_agent.agent_response = agent_response
             self.sales_agent.goal_completeness_status = self.sales_agent.goal_completeness_status or "N/A"
 
-            if self.first_turn:
-                await asyncio.sleep(1)
-                yield {
-                    "empathy_statement": "Hi there, this is Franko! I'm super excited to chat with you today!",
-                    "key_points": "",
-                    "current_goal_review": "This is the very turn of the interview conversation. Focus on introducing the interview. Here's an example Lead Interviewer response to get started, \"The purpose of our call will be to discuss your experience with [client_name]. It will be recorded and shared with the team, I know they'll appreciate your insights! The interview will take approximately 45 minutes. Are you in a quiet place and ready to get started?\""
-                }
-            else:
-                # Run both chains concurrently
+            # Get the current stage category using the new method
+            current_category = self.sales_agent.get_current_stage_category().lower()
+
+            # Determine if this is the first turn
+            is_first_turn = len(self.sales_agent.conversation_history) == 0
+
+            # Run empathy chain only if it's not the first turn
+            empathy_task = None
+            if not is_first_turn:
                 empathy_task = asyncio.create_task(self.sales_agent.run_empathy_statement_chain())
+            
+            # Start chain_results_task only if the category is not verbatim
+            chain_results_task = None
+            if current_category != "verbatim":
                 chain_results_task = asyncio.create_task(self.sales_agent.async_chain_runner())
 
-                # Yield empathy statement as soon as it's available
+            # Yield empathy statement if it's not the first turn
+            if empathy_task:
                 empathy_statement = await empathy_task
                 yield {"empathy_statement": empathy_statement}
+            else:
+                yield {"empathy_statement": ""}  # Empty string for the first turn
 
-                # Wait for the other task to complete
+            # Wait for the other task to complete if it was started
+            if chain_results_task:
                 chain_results = await chain_results_task
                 yield chain_results
-
-            self.first_turn = False
+            else:
+                # For Verbatim category, return empty strings for key_points and current_goal_review
+                yield {
+                    # "key_points": "",
+                    "current_goal_review": ""
+                }
 
         except Exception as e:
             print(f"Error in run_chains: {e}")
@@ -179,7 +233,7 @@ class SalesGPTAPI:
             raise
 
     # This do method essentially just runs the standard non-stream response
-    async def do(self, conversation_history: list, human_input=None, empathy_statement=None, key_points=None, current_goal_review=None):
+    async def do(self, conversation_history: list, human_input=None, empathy_statement=None, current_goal_review=None):
         # print("do() method empathy_statement argument:", empathy_statement)
         # print("SalesGPTAPI.empathy_statement attribute:", getattr(self, "empathy_statement", None))
         # print("SalesGPTAPI.sales_agent.empathy_statement attribute:", getattr(self.sales_agent, "empathy_statement", None))
@@ -187,11 +241,11 @@ class SalesGPTAPI:
         ai_log = await self.sales_agent._call({
             "empathy_statement": empathy_statement,
             # "conversation_summary": conversation_summary,
-            "key_points": key_points,
+            # "key_points": key_points,
             "current_goal_review": current_goal_review,
         })
 
-        return ai_log["text"].rstrip('<END_OF_TURN>')
+        return ai_log["text"]
 
 
 

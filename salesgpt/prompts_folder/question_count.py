@@ -1,4 +1,5 @@
 QUESTION_COUNT_PROMPT = """
+
 # Role Title: INTERVIEW PROGRESSION ANALYZER
 
 ## Persona: 
@@ -82,6 +83,7 @@ State whether this value is true or false.
 
 d) Provide your conclusion:
 
+State the final score.
 
 ---
 
@@ -99,10 +101,7 @@ c) Overall Interview Time Status (no score):
 - **On track:** True
 d) Conclusion:
 - The total score is 2/5
-- The minimum requirements for both question count and time have been met 
-- The target counts for both have not yet been achieved
-- The interview is on track overall 
-- There is some time and question count flexibility to continue asking questions if required
+
 
 **EXAMPLE 2**
 ### Question and Timing Progression Report
@@ -116,9 +115,7 @@ c) Overall Interview Time Status (no score):
 - **On track:** False
 d) Conclusion:
 - The total score is 5/5
-- The minimum and the target requirements for question count and time have been met.
-- The overall interview is not on track, as the elapsed time has exceeded the overall target time.
-- Given that both question and time targets for the current interview section are met and the interview is behind schedule, it is advisable to move to the next stage of the interview.
+
 
 
 **EXAMPLE 3**
@@ -134,9 +131,5 @@ c) Overall Interview Time Status (no score):
 - **On track:** True
 d) Conclusion:
 - The total score is 1/5
-- The minimum question count has been met, but the target question count has not.
-- Neither the minimum nor the target time has been met.
-- The overall interview time is on track, meaning there is flexibility to continue asking questions within this section or moving forward as required.
-- Based on the scores and status, it might be advisable to continue in the current section for a bit longer to meet the desired time targets, as the overall interview is progressing well within the expected pace.
 
 """

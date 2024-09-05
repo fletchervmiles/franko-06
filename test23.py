@@ -28,6 +28,7 @@ import traceback
 import psutil
 import random
 import aiohttp
+from collections import deque
 from deepgram import (
     DeepgramClient,
     DeepgramClientOptions,
@@ -121,6 +122,28 @@ class CallState(Enum):
     LISTEN_FOR_USER_RESPONSE = "LISTEN_FOR_USER_RESPONSE"
 
 
+class AudioQueue:
+    def __init__(self):
+        self.queue = deque()
+        self.lock = asyncio.Lock()
+
+    async def enqueue(self, audio_data):
+        async with self.lock:
+            self.queue.append(audio_data)
+
+    async def dequeue(self):
+        async with self.lock:
+            return self.queue.popleft() if self.queue else None
+
+    async def is_empty(self):
+        async with self.lock:
+            return len(self.queue) == 0
+
+    async def clear(self):
+        async with self.lock:
+            self.queue.clear()
+
+
 class SharedData:
     def __init__(self):
         self._data = {}
@@ -136,6 +159,10 @@ class SharedData:
         self.transcript_parts = []
         self.last_word_time = None
         self.last_no_word_time = None
+
+        # New
+        self.audio_queue = AudioQueue()  # New audio queue
+
 
 
 
@@ -263,7 +290,8 @@ class StateMachine:
                 self.call_id,  # Add this line to pass the call_id
                 conversation_history, 
                 human_response, 
-                agent_response
+                agent_response,
+                self.shared_data  # Add this line to pass shared_data
             )
 
             agent_name = "Franko"
@@ -873,25 +901,24 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 #     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
 
 # LOCAL
-async def play_audio_file(websocket: WebSocket, call_id: str):
+async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
     audio_file_name = "understood_okay_audio.raw"
     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     
     try:
-        print(f"[{datetime.now()}] - Sending Audio Buffer File Begun for call_id {call_id}: {audio_file_path}")
+        print(f"[{datetime.now()}] - Queueing Audio Buffer File Begun for call_id {call_id}: {audio_file_path}")
         
         with open(audio_file_path, 'rb') as f:
             audio_data = f.read()
-        await send_audio(websocket, audio_data, 0, call_id)  # Pass call_id here
-        print(f"[{datetime.now()}] - Sending Audio Buffer File Returned for call_id {call_id}")
+        await send_audio(websocket, audio_data, 0, call_id, shared_data)
+        print(f"[{datetime.now()}] - Queueing Audio Buffer File Returned for call_id {call_id}")
     except FileNotFoundError:
         print(f"Error: Audio file not found at {audio_file_path} for call_id {call_id}")
     except Exception as e:
         print(f"Error playing audio file for call_id {call_id}: {e}")
 
         
-
 
 
 
@@ -923,11 +950,9 @@ async def play_audio_file(websocket: WebSocket, call_id: str):
 #         async for partial_result in sales_gpt_api.run_chains(conversation_history, human_response, agent_response):
 #             results.update(partial_result)
             
-#             if "empathy_statement" in partial_result and not empathy_statement_processed:
+#             # Skip empathy statement generation on the first turn
+#             if not is_first_turn and "empathy_statement" in partial_result and not empathy_statement_processed:
 #                 print(f"{datetime.now()} Empathy Statement Audio Generation Begun for call_id: {call_id}")
-#                 # empathy_audio_data, empathy_duration = TextToSpeech().generate_speech(results["empathy_statement"])
-#                 # print(f"{datetime.now()} Empathy Statement Audio Generation Returned for call_id: {call_id}")
-#                                 # KEY CHANGE: Use await with the async generate_speech method
                 
 #                 empathy_audio_data, empathy_duration = await tts.generate_speech(results["empathy_statement"])
 #                 print(f"{datetime.now()} Empathy Statement Audio Generation Returned for call_id: {call_id}")
@@ -942,18 +967,13 @@ async def play_audio_file(websocket: WebSocket, call_id: str):
 #         sales_utterance_response = await sales_gpt_api.do(
 #             conversation_history,
 #             human_response,
-#             empathy_statement=results["empathy_statement"],
-#             # key_points=results["key_points"],
+#             empathy_statement=results.get("empathy_statement", ""),  # Use empty string if no empathy statement
 #             current_goal_review=results["current_goal_review"],
 #         )
 #         print(f"[sales_gpt_api.do output] Full response:\n{sales_utterance_response}")
 #         extracted_response = extract_desired_response(sales_utterance_response)
 #         print(f"{datetime.now()} Lead Interviewer Statement Generation Returned for call_id: {call_id}")
 
-#         # sales_utterance_audio_data, sales_utterance_duration = TextToSpeech().generate_speech(extracted_response)
-#         # print(f"{datetime.now()} Lead Interviewer Audio Generation Returned for call_id: {call_id}")
-
-#         # KEY CHANGE: Use await with the async generate_speech method
 #         sales_utterance_audio_data, sales_utterance_duration = await tts.generate_speech(extracted_response)
 #         print(f"{datetime.now()} Lead Interviewer Audio Generation Returned for call_id: {call_id}")
 
@@ -970,15 +990,14 @@ async def play_audio_file(websocket: WebSocket, call_id: str):
 #         print(f"{datetime.now()} Generate and Send Speech Returned for call_id: {call_id}")
 #         print(f"Elapsed time: {elapsed_time:.2f}s, Audio playback time: {audio_playback_time:.2f}s, Audio state delay: {audio_state_delay:.2f}s")
 
-#         return results.get("empathy_statement"), extracted_response, audio_state_delay
+#         return results.get("empathy_statement", ""), extracted_response, audio_state_delay
 
 #     except Exception as e:
 #         print(f"Error in generate_and_send_speech for call_id {call_id}: {e}")
 #         print(f"Error in generate_and_send_speech: {type(e).__name__}: {e}")
 #         print(traceback.format_exc())
 
-
-async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversation_history: list, human_response: str, agent_response: str):
+async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversation_history: list, human_response: str, agent_response: str, shared_data: SharedData):
     try:
         start_time = time.time()
         print(f"{datetime.now()} Generate and Send Speech Begun for call_id: {call_id}")
@@ -987,43 +1006,38 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         empathy_statement_processed = False
         tts = TextToSpeech()  # Create a single instance of TextToSpeech
 
-        # Check if it's the first turn in the conversation
         is_first_turn = len(conversation_history) == 0
 
         play_audio_file_duration = 5.2 if not is_first_turn else 0  # seconds
         empathy_duration = 0
         sales_utterance_duration = 0
 
-        # Only play the audio file if it's not the first turn
         if not is_first_turn:
-            # Start playing the audio file asynchronously without awaiting
-            asyncio.create_task(play_audio_file(websocket, call_id))
+            asyncio.create_task(play_audio_file(websocket, call_id, shared_data))
         else:
-            play_audio_file_duration = 0  # Don't count this if it's the first turn
+            play_audio_file_duration = 0
         
         sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
         
         async for partial_result in sales_gpt_api.run_chains(conversation_history, human_response, agent_response):
             results.update(partial_result)
             
-            # Skip empathy statement generation on the first turn
             if not is_first_turn and "empathy_statement" in partial_result and not empathy_statement_processed:
                 print(f"{datetime.now()} Empathy Statement Audio Generation Begun for call_id: {call_id}")
                 
                 empathy_audio_data, empathy_duration = await tts.generate_speech(results["empathy_statement"])
                 print(f"{datetime.now()} Empathy Statement Audio Generation Returned for call_id: {call_id}")
                 
-                await send_audio(websocket, empathy_audio_data, empathy_duration, call_id)
-                print(f"{datetime.now()} Empathy Statement Audio Sent for call_id: {call_id}")
+                await send_audio(websocket, empathy_audio_data, empathy_duration, call_id, shared_data)
+                print(f"{datetime.now()} Empathy Statement Audio Queued for call_id: {call_id}")
                 
                 empathy_statement_processed = True
 
-        # Generate sales utterance audio
         print(f"{datetime.now()} Lead Interviewer Statement Generation Begun for call_id: {call_id}")
         sales_utterance_response = await sales_gpt_api.do(
             conversation_history,
             human_response,
-            empathy_statement=results.get("empathy_statement", ""),  # Use empty string if no empathy statement
+            empathy_statement=results.get("empathy_statement", ""),
             current_goal_review=results["current_goal_review"],
         )
         print(f"[sales_gpt_api.do output] Full response:\n{sales_utterance_response}")
@@ -1033,9 +1047,17 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         sales_utterance_audio_data, sales_utterance_duration = await tts.generate_speech(extracted_response)
         print(f"{datetime.now()} Lead Interviewer Audio Generation Returned for call_id: {call_id}")
 
-        print(f"{datetime.now()} Lead Interviewer Audio to Websocket Begun for call_id: {call_id}")
-        await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration, call_id)
-        print(f"{datetime.now()} Lead Interviewer Audio to Websocket Returned for call_id: {call_id}")
+        print(f"{datetime.now()} Lead Interviewer Audio to Queue Begun for call_id: {call_id}")
+        await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration, call_id, shared_data)
+        print(f"{datetime.now()} Lead Interviewer Audio to Queue Returned for call_id: {call_id}")
+
+        # Wait for all audio to be sent
+        while not await shared_data.audio_queue.is_empty():
+            await asyncio.sleep(0.1)
+
+        # Clear the queue after all audio has been sent
+        await shared_data.audio_queue.clear()
+        print(f"{datetime.now()} Audio queue cleared for call_id: {call_id}")
 
         # Calculate timing information
         end_time = time.time()
@@ -1052,6 +1074,7 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         print(f"Error in generate_and_send_speech for call_id {call_id}: {e}")
         print(f"Error in generate_and_send_speech: {type(e).__name__}: {e}")
         print(traceback.format_exc())
+
 
 
 def extract_desired_response(response):
@@ -1128,34 +1151,89 @@ def extract_desired_response(response):
 #         logging.error(traceback.format_exc())
 
 
-async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str):
+# async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str):
+#     try:
+#         print(f"{datetime.now()} Sending Audio Stream - Begun for call_id: {call_id}")
+#         samples = bytearray(audio_data)
+#         chunk_size = 640  # 320 * 2 bytes per chunk (16-bit audio)
+#         chunk_duration = 0.018  # 20ms per chunk
+#         buffer_duration = 0  # 2 seconds buffer
+#         chunks_in_buffer = int(buffer_duration / chunk_duration)
+
+#         print(f"{datetime.now()} Sending Audio Stream - Begun")
+#         start_time = time.time()
+#         chunk_count = 0
+
+#         # Send the initial 2-second buffer immediately
+#         for _ in range(chunks_in_buffer):
+#             if len(samples) >= chunk_size:
+#                 chunk = samples[:chunk_size]
+#                 await vonage_websocket.send_bytes(chunk)
+#                 samples = samples[chunk_size:]
+#                 chunk_count += 1
+#             else:
+#                 break
+
+#         # Continue with the regular streaming
+#         while samples:
+#             chunk = samples[:chunk_size]
+#             if len(chunk) < chunk_size:
+#                 # Pad the last chunk if it's not full
+#                 chunk = chunk.ljust(chunk_size, b'\x00')
+            
+#             await vonage_websocket.send_bytes(chunk)
+#             samples = samples[chunk_size:]
+            
+#             chunk_count += 1
+#             expected_time = start_time + (chunk_count * chunk_duration)
+#             current_time = time.time()
+            
+#             if current_time < expected_time:
+#                 await asyncio.sleep(expected_time - current_time)
+
+#         print(f"{datetime.now()} Sending Audio Stream - Finished for call_id: {call_id}")
+#         print(f"Sent {chunk_count} chunks, total duration: {chunk_count * chunk_duration:.2f} seconds")
+
+#     except Exception as e:
+#         logging.error(f"Error in send_audio: {e}")
+#         logging.error(f"Error in send_audio: {type(e).__name__}: {e}")
+#         logging.error(traceback.format_exc())
+
+async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
+    chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
+    delay = 0.018  # 18ms delay
+
+    while True:
+        audio_chunk = await shared_data.audio_queue.dequeue()
+        if audio_chunk is not None:
+            await vonage_websocket.send_bytes(audio_chunk)
+            await asyncio.sleep(delay)
+        else:
+            await asyncio.sleep(0.001)  # Small sleep to prevent busy-waiting
+
+
+async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str, shared_data: SharedData):
     try:
-        print(f"{datetime.now()} Sending Audio Stream - Begun for call_id: {call_id}")
+        print(f"{datetime.now()} Queueing Audio Stream - Begun for call_id: {call_id}")
         samples = bytearray(audio_data)
         chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
-        delay = 0.018  # 18ms delay, slightly less than 20ms to account for processing time
 
-        print(f"{datetime.now()} Sending Audio Stream - Begun")
         while len(samples) >= chunk_size:
             chunk = samples[:chunk_size]
-            await vonage_websocket.send_bytes(chunk)
+            await shared_data.audio_queue.enqueue(chunk)
             samples = samples[chunk_size:]
-            await asyncio.sleep(delay)
         
-        # If there are any remaining bytes that don't form a complete chunk, send a padded chunk
         if len(samples) > 0:
             padding_size = chunk_size - len(samples)
             padded_chunk = samples + bytearray(padding_size)
-            await vonage_websocket.send_bytes(padded_chunk)
-            await asyncio.sleep(delay)
+            await shared_data.audio_queue.enqueue(padded_chunk)
 
-        print(f"{datetime.now()} Sending Audio Stream - Finished for call_id: {call_id}")
+        print(f"{datetime.now()} Queueing Audio Stream - Finished for call_id: {call_id}")
 
     except Exception as e:
         logging.error(f"Error in send_audio: {e}")
         logging.error(f"Error in send_audio: {type(e).__name__}: {e}")
         logging.error(traceback.format_exc())
-
 
 
 
@@ -1254,6 +1332,9 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     websocket_manager = WebSocketManager(websocket, shared_data)
     await websocket_manager.connect()
 
+    # Start the audio sending task
+    audio_send_task = asyncio.create_task(send_queued_audio(websocket, shared_data))
+
     deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"])
     dg_connection = deepgram.listen.live.v("1")
 
@@ -1293,15 +1374,6 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         dg_connection.start(options)
         print(f"{datetime.now()}: Deepgram connection started successfully for call_id: {call_id}")
 
-        # while True:
-        #     try:
-        #         message = await websocket_manager.receive_message()
-        #         if message["type"] == "websocket.receive":
-        #             if "bytes" in message:
-        #                 audio_data = message["bytes"]
-        #                 dg_connection.send(audio_data)
-
-        # Testing audio    
         audio_packet_count = 0
         last_audio_time = time.time()
 
@@ -1314,16 +1386,9 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
                         audio_packet_count += 1
                         current_time = time.time()
                         
-                        # print(f"{datetime.now()}: Received audio packet {audio_packet_count} for call_id: {call_id}")
-                        # print(f"    Packet size: {len(audio_data)} bytes")
-                        # print(f"    Time since last packet: {current_time - last_audio_time:.2f} seconds")
-                        
                         dg_connection.send(audio_data)
                         
                         last_audio_time = current_time
-
-                        # if audio_packet_count % 100 == 0:  # Log every 100 packets
-                        #     print(f"{datetime.now()}: Sent {audio_packet_count} audio packets to Deepgram for call_id: {call_id}")
                     
             except WebSocketDisconnect as e:
                 logger.error(f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}")
@@ -1348,17 +1413,24 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         print(traceback.format_exc())
 
     finally:
-        if dg_connection:
-            dg_connection.finish()
-            print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
+            if dg_connection:
+                dg_connection.finish()
+                print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
 
-        try:
-            if websocket_manager.websocket.client_state.name != "DISCONNECTED":
-                await websocket_manager.disconnect()
-                print(f"{datetime.now()}: WebSocket disconnected successfully for call_id: {call_id}")
-        except Exception as e:
-            print(f"{datetime.now()}: Error closing WebSocket connection for call_id {call_id}: {e}")
-            print(traceback.format_exc())
+            # Cancel the audio sending task
+            audio_send_task.cancel()
+            try:
+                await audio_send_task
+            except asyncio.CancelledError:
+                pass
+
+            try:
+                if websocket_manager.websocket.client_state.name != "DISCONNECTED":
+                    await websocket_manager.disconnect()
+                    print(f"{datetime.now()}: WebSocket disconnected successfully for call_id: {call_id}")
+            except Exception as e:
+                print(f"{datetime.now()}: Error closing WebSocket connection for call_id {call_id}: {e}")
+                print(traceback.format_exc())
 
 
 if __name__ == "__main__":

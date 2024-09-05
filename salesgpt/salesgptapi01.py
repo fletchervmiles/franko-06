@@ -97,7 +97,7 @@ class SalesGPTAPI:
                 yield {
                     "empathy_statement": "Hi there, this is Franko! I'm super excited to chat with you today!",
                     "key_points": "",
-                    "current_goal_review": "This is the very turn of the interview conversation. Focus on introducing the interview. Here's an example Lead Interviewer response to get started, \"The purpose of our call will be to discuss your experience with [client_name]. It will be recorded and shared with the team, I know they'll appreciate your insights! The interview will take approximately 45 minutes. Are you in a quiet place and ready to get started?\""
+                    "current_goal_review": "This is the very turn of the interview conversation. Focus on introducing the interview. Here's an example Lead Interviewer response to get started, \"The purpose of our call will be to discuss your experience with [replace with client name]. It will be recorded and shared with the team, I know they'll appreciate your insights! The interview will take approximately 45 minutes. Are you in a quiet place and ready to get started?\""
                 }
             else:
                 # Run both chains concurrently

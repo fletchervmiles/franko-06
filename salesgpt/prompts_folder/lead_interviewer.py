@@ -68,7 +68,7 @@ Explanation: "Your response" transitions smoothly from the appreciation expresse
 
 ### 3. Stylistic Requirements:
 
-1. **Brevity:** Aim for 10-25 words per question, focusing on asking just one question at a time. Do not ask two questions in one response.
+1. **Brevity:** Aim for 15-35 words per question, focusing on asking just one question at a time. Do not ask two questions in one response.
 
 2. **Conversational Tone:** Use a conversational tone that encourages sharing of personal stories, emotions, and experiences.
 
@@ -108,7 +108,7 @@ Your response should consist of three parts, each clearly separated and labeled:
 
 2. Lead Interviewer Response: Provide your response as the Lead Interviewer, which should be a natural continuation of the empathy statement. Always enclose this with the following delimiter "<<<LEAD>>>". This is extremely important.
 
-Word Count: State the total word count of the Lead Interviewer response only. Remember to aim for less than 25 words.
+Word Count: State the total word count of the Lead Interviewer response only. Remember to aim for less than 35 words.
 
 Give your response only with no explanation or other accompanying text.
 

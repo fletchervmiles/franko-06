@@ -41,13 +41,13 @@ Your task is to analyze the status of the current interview section and assess i
 
 **Analysis 1 - Information Already Covered in the Current Interview Section** 
 
-Review the conversation history and list out the key objectives from the Current Interview Section already covered. Provide this as a list in bullet point format. For each objective, give a rating of whether the objective is partially covered or sufficiently covered.
+Review the conversation history and list out the key objectives from the Current Interview Section already covered. Note, DO NOT include bonus objectives in your analysis, simply ignore these. Provide this as a list in bullet point format. For each objective, give a rating of whether the objective is partially covered or sufficiently covered.
 
 Limit your response to 50 words total.
 
 **Analysis 2 - Information Gaps in the Current Interview Section** 
 
-Review the conversation history and list out the key objectives from the Current Interview Section which are still outstanding, i.e. have not been discussed at all or only partially covered. Provide this as a list in bullet point format. For each objective, give a rating of whether the objective is partially covered or sufficiently covered.
+Review the conversation history and list out the key objectives from the Current Interview Section which are still outstanding, i.e. have not been discussed at all or only partially covered.  Note, DO NOT include bonus objectives in your analysis, simply ignore these. Provide this as a list in bullet point format. For each objective, give a rating of whether the objective is partially covered or sufficiently covered.
 
 Limit your response to 50 words total.
 
