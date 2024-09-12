@@ -32,7 +32,7 @@ Review the Conversation History, Current Interview Section, and the Most Recent 
 a. **Conversation History:** Review the recent conversation history, with a focus on the most recent response. One of your key tasks will be to compare what the founder is trying to understand against the existing conversation progress. The conversation history is provided between "&&&" markers.The conversation history is provided between "&&&" markers.
 
 &&&
-{conversation_history} 
+{short_conversation_history} 
 &&&
 
 b. **Current Interview Section:** Examine the current section of the interview guide being addressed. Pay attention to what the founder is trying to understand and how this relates to the conversation so far. This component is enclosed between "***" markers.

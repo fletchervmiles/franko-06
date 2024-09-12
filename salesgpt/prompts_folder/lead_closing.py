@@ -21,7 +21,7 @@ Your first task is to carefully review all provided inputs. This step is crucial
 1.Review the recent conversation history provided between "&&&" markers.
 
 &&&
-{conversation_history} 
+{short_conversation_history} 
 &&&
 
 2. Review the current interview section. This is a set of instructions on how to construct the right sort of follow-up question.

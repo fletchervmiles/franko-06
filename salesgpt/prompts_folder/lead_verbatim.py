@@ -10,19 +10,19 @@ Continue below for detailed instructions.
 
 **## Task 1. Review the Current Interview Section (Do this internally, this should not appear in your output response)**
 
-Below between “***” is the interview section currently in progress. This will contain the extraction question you need to extract. The extraction question will be in quotation marks. 
+Below between "***" is the interview section currently in progress. This will contain the extraction question you need to extract. The extraction question will be enclosed within the following delimiters: <extraction_question>...</extraction_question>
 
 ***{current_conversation_stage}***
 
-**## Task 3. Prepare Your Response**
+## Task 2. Prepare Your Response
+Your response should consist of one part, clearly labeled:
 
-Your response should consist of two parts, each clearly separated and labeled:
-
-1. Lead Interviewer Response: Restate the extraction question as shared earlier, enclosed with the delimiter shown below.
+Lead Interviewer Response: Restate the entire extraction question verbatim as shared earlier, enclosed with the delimiter shown below.
 
 <<<LEAD_RESPONSE>>>
-[insert question here]
+[insert entire extraction question here verbatim]
 <<<LEAD_RESPONSE>>>
+Give your response only with no explanation or other accompanying text, or quotation marks.
 
 Give your response only with no explanation or other accompanying text, or quotation marks.
 

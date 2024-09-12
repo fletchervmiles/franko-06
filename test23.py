@@ -229,6 +229,9 @@ class StateMachine:
         self.shared_data.set_call_id(call_id)  # Add this line
         self.cleanup_task = None
 
+        # Get the interviewee name from the sales_api config
+        self.interviewee_name = self.sales_api.config.get('interviewee_name', 'Interviewee')
+
     def get_current_state(self):
         return self.state
 
@@ -294,6 +297,11 @@ class StateMachine:
                 self.shared_data  # Add this line to pass shared_data
             )
 
+            # Get the current timestamp in minutes since the start of the call
+            current_time = time.time()
+            interview_start_time = self.sales_api.sales_agent.interview_start_time
+            timestamp = f"[{((current_time - interview_start_time) / 60):.2f}]"
+            
             agent_name = "Franko"
             ai_message = f"{empathy_statement} {extracted_response}"
 
@@ -302,12 +310,18 @@ class StateMachine:
 
             clean_ai_message = strip_break_tags(ai_message)
 
+            # Add timestamp to the agent's response
+            timestamped_ai_message = f"{timestamp} {agent_name}: {clean_ai_message}"
+
             # Print the cleaned AI message
             print(f"\nCleaned AI Message:\n{clean_ai_message}\n")
 
             self.r.set(f'{self.call_id}_agent_response', clean_ai_message)
-            conversation_history.append(f"{agent_name}: {clean_ai_message}")
+            conversation_history.append(timestamped_ai_message)
             self.r.set(f'{self.call_id}_conversation_history', json.dumps(conversation_history))
+
+            # Update the short conversation history (without timestamp)
+            self.sales_api.sales_agent.update_short_conversation_history(agent_name, clean_ai_message)
 
             # Run the update_conversation_stage method as a separate task
             print(f"{datetime.now()} Update Conversation Stage (same as determine but in test14 file) Begun")
@@ -338,6 +352,11 @@ class StateMachine:
 
         # This resets the transcripts before checking again
         self.shared_data.reset_transcripts()
+    
+        # Get the current timestamp in minutes since the start of the call
+        current_time = time.time()
+        interview_start_time = self.sales_api.sales_agent.interview_start_time
+        timestamp = f"[{((current_time - interview_start_time) / 60):.2f}]"
 
         print(f"[{datetime.now()}] Entering Interviewee Response Time Checker Loop")
         while True:
@@ -353,13 +372,20 @@ class StateMachine:
         self.shared_data.reset_transcripts()
         print(f"[{datetime.now()}] Transcripts Reset")
 
-        interviewee_name = "Fletcher"
-        human_input = f"{interviewee_name}: " + full_transcript.strip()
+        # Use the interviewee_name from the instance variable
+        interviewee_name = self.interviewee_name
+
+        human_input = f"{timestamp} {interviewee_name}: " + full_transcript.strip()
         # print(f"[{datetime.now()}] Appended Human Input: {human_input}")
+
         conversation_history = json.loads(self.r.get(f'{self.call_id}_conversation_history').decode("utf-8"))
         conversation_history.append(human_input)
         self.r.set(f'{self.call_id}_conversation_history', json.dumps(conversation_history))
         # print(f"Updated Conversation History: {conversation_history}")
+        
+        # Update the short conversation history (without timestamp)
+        self.sales_api.sales_agent.update_short_conversation_history(self.interviewee_name, full_transcript.strip())
+
 
         self.r.set(f'{self.call_id}_human_response', full_transcript.strip())
         print(f"{datetime.now()} Listen for User Response Returned")
@@ -663,7 +689,7 @@ async def make_outgoing_call(call_request: CallRequest):
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://fe41-58-136-107-61.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -671,7 +697,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://fe41-58-136-107-61.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -681,7 +707,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     ]
                 }
             ],
-            'event_url': [f'https://fe41-58-136-107-61.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -893,18 +919,18 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-# # PROD CHANGE
-# async def play_audio_file(websocket: WebSocket, call_id: str):
-#     # Specify the exact file path
-#     audio_folder_path = "/mnt/buffer_audio"
-#     audio_file_name = "understood_okay_audio.raw"
-#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
-
-# LOCAL
-async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
+# PROD CHANGE
+async def play_audio_file(websocket: WebSocket, call_id: str):
+    # Specify the exact file path
+    audio_folder_path = "/mnt/buffer_audio"
     audio_file_name = "understood_okay_audio.raw"
-    audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+
+# # LOCAL
+# async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
+#     audio_file_name = "understood_okay_audio.raw"
+#     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
+#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     
     try:
         print(f"[{datetime.now()}] - Queueing Audio Buffer File Begun for call_id {call_id}: {audio_file_path}")

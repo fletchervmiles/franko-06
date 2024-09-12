@@ -143,6 +143,7 @@ class SalesGPT(Chain):
     # current_date: str = Field(default_factory=lambda: datetime.now(pytz.timezone('America/Los_Angeles')).strftime('%Y-%m-%d'))
     current_date: str = Field(default_factory=lambda: datetime.now().strftime('%Y-%m-%d'))
     conversation_stage_dict: Dict[str, Dict[str, str]] = Field(default="")
+    short_conversation_history: List[str] = Field(default_factory=list)
 
 
 
@@ -178,6 +179,7 @@ class SalesGPT(Chain):
         self.conversation_stage_id = "1"
         self.current_conversation_stage = self.retrieve_conversation_stage("1")
         self.conversation_history = []
+        self.short_conversation_history = []
         self.conversation_stage_history = []
         self.stage_counts = {}
         self.has_progressed = True
@@ -210,8 +212,11 @@ class SalesGPT(Chain):
     #     self.story_component_start_time = 0.0
     #     self.current_date = datetime.now(sf_tz).strftime('%Y-%m-%d')
 
-
-    
+    def update_short_conversation_history(self, speaker: str, message: str):
+        self.short_conversation_history.append(f"{speaker}: {message}")
+        # Keep only the last 5 turns (10 messages) in the short history
+        if len(self.short_conversation_history) > 10:
+            self.short_conversation_history = self.short_conversation_history[-10:]
 
     def retrieve_conversation_stage(self, key):
         """
@@ -324,6 +329,7 @@ class SalesGPT(Chain):
             # Always run current_goal_review_chain
             current_goal_review_result = await self.current_goal_review_chain.ainvoke({
                 "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
+                "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
                 "current_conversation_stage": self.current_conversation_stage,
                 "client_name": self.client_name,
                 "call_id": self.call_id,
@@ -354,6 +360,7 @@ class SalesGPT(Chain):
             print(f"[{datetime.now()}] Run Empathy Statement Chain Begun")
             empathy_statement_result = await self.empathy_statement_chain.ainvoke({
                 "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
+                "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
                 "client_name": self.client_name,
                 "human_response": self.human_response,
                 "agent_response": self.agent_response,
@@ -378,16 +385,22 @@ class SalesGPT(Chain):
         try:
             print(f"[{datetime.now()}] Determine Conversation Stage Begun")
             
-            # Create tasks for potentially long-running operations
-            increment_task = asyncio.create_task(self.increment_story_component_turn_count())
-            # goal_completeness_task = asyncio.create_task(self.run_goal_completeness_chain())
-            question_count_task = asyncio.create_task(self.run_question_count_chain())
+            # # Create tasks for potentially long-running operations
+            # increment_task = asyncio.create_task(self.increment_story_component_turn_count())
+            # # goal_completeness_task = asyncio.create_task(self.run_goal_completeness_chain())
+            # question_count_task = asyncio.create_task(self.run_question_count_chain())
+
+            # # # Await all tasks concurrently
+            # # await asyncio.gather(increment_task, goal_completeness_task, question_count_task)
 
             # # Await all tasks concurrently
-            # await asyncio.gather(increment_task, goal_completeness_task, question_count_task)
+            # await asyncio.gather(increment_task, question_count_task)
 
-            # Await all tasks concurrently
-            await asyncio.gather(increment_task, question_count_task)
+            # First, increment the turn count
+            await self.increment_story_component_turn_count()
+        
+            # Then, run the question count chain
+            await self.run_question_count_chain()
 
 
             previous_stage_id = self.conversation_stage_id
@@ -396,6 +409,7 @@ class SalesGPT(Chain):
                 stage_analyzer_output = await self.stage_analyzer_chain.ainvoke(
                     input_data={
                         "conversation_history": "\n".join(self.conversation_history).rstrip("\n"),
+                        "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
                         "conversation_stage_id": self.conversation_stage_id,
                         "conversation_stages": "\n".join(
                             [
@@ -543,6 +557,7 @@ class SalesGPT(Chain):
                 input_data={
                     "client_name": self.client_name,
                     "conversation_history": "\n".join(self.conversation_history),
+                    "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
                     "current_conversation_stage": self.current_conversation_stage,
                     "has_progressed": self.has_progressed,
                     "human_response": self.human_response,
@@ -692,6 +707,7 @@ class SalesGPT(Chain):
             "input": "",
             "conversation_stage": self.current_conversation_stage,
             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
+            "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
             "customer_type": self.customer_type,
             "client_product_summary": self.client_product_summary,
             "conversation_type": self.conversation_type,

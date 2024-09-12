@@ -5,11 +5,9 @@ CONVERSATION_STAGES = {
         "content": f"""
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
-To introduce the interview, ask the following question…
-
 Extraction Question:
 
-“Hi there, this is Francesca! I'm super excited to chat with you today! So, before we kick things off. I want to let you know that the purpose of our call is to discuss your experience with Cursor. The interview will be recorded and shared with the team. The interview will take approximately 45 minutes, but we'll aim for a little less. It's a little counterintuitive but if you're able to give more comprehensive answers, it'll help us get through sections a bit quicker.<break time="0.75s" />Ok, now that's covered, are you in a quiet place and ready to get started?”
+<extraction_question>Hi there, this is Francesca! I'm super excited to chat with you today! So, before we kick things off. I want to let you know that the purpose of our call is to discuss your experience with Cursor. The interview will be recorded and shared with the team. The interview will take approximately 45 minutes, but we'll aim for a little less.<break time="0.75s" />Ok, now that's covered, are you in a quiet place and ready to get started?</extraction_question>
         """
     },
   
@@ -19,11 +17,9 @@ Extraction Question:
         "content": f"""
 GOAL 2: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - VERBATIM
 
-To introduce the interview, ask the following question…
-
 Extraction Question:
 
-“Great, I’m super excited to hear about your experiences! To kick us off, I’d love to learn a bit about your professional background. <break time="0.50s" /> Hmm, could you tell me about the company you work for, your current role, the type of project you’re working on, etc. <break time="0.50s" />Details like these will really help us start to paint a picture.”
+<extraction_question>Great, I’m super excited to hear about your experiences! To kick us off, I’d love to learn a bit about your professional background. <break time="0.50s" /> Hmm, could you tell me about the company you work for, your current role and the type of project you’re working on. <break time="0.50s" />Details like these will really help us start to paint a picture.</extraction_question>
         """
     },
 
@@ -40,6 +36,8 @@ The interviewee's
 - who they work with.
 - the part coding plays in their professional life
 - the sort of projects they work on (if it’s just one, that’s ok)
+
+Note: If the initial focus does not yield detailed insights, don’t be afraid to shift to related aspects of their persona. For example, if the interviewee cannot recall specifics, use this as an opportunity to probe other factors or circumstances that help us build a quantified customer persona.
 
 This is because:
 
@@ -69,15 +67,9 @@ Things to avoid:
         "content": f"""
 GOAL 4: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - VERBATIM
 
-As a founder, I want to understand:
-
-At a high-level what the interviewee likes and dislikes about their job. 
-
-To do this, ask the following question:
-
 Extraction Question
 
-“Ok, before we move on to the next section, what’s one thing you absolutely love about your work and what’s one thing you don’t love so much? Just let me know whatever comes to mind.”
+<extraction_question>Ok, before we move on to the next section, what’s one thing you absolutely love about your work and what’s one thing you don’t love so much? Just let me know whatever comes to mind.</extraction_question>
         """
     },
 
@@ -87,15 +79,9 @@ Extraction Question
         "content": f"""
 GOAL 5: INTERVIEW SECTION: CODING (EDUCATION) - VERBATIM
 
-As a founder, I want to understand:
-
-How the interviewee learned to code and their current self-reported level.
-
-To do this, ask the following question:
-
 Extraction Question
 
-“Ok, next up! Let’s talk a bit about coding itself.  <break time="0.5s" /> To get us started on this topic, I'd love to understand your coding background. Everyone seems to have a slightly different pathway into coding.  <break time="0.5s" /> So, what is your story? <break time="5.0s" /> how did you initially get started?”
+<extraction_question>Ok, next up! Let’s talk a bit about coding itself.  <break time="0.5s" /> To get us started on this topic, I'd love to understand your coding background. Everyone seems to have a slightly different pathway into coding.  <break time="0.5s" /> So, what is your story? <break time="0.5s" /> how did you initially get started?</extraction_question>
         """
     },
 
@@ -105,15 +91,9 @@ Extraction Question
         "content": f"""
 GOAL 6: INTERVIEW SECTION: CODING (EDUCATION) - VERBATIM
 
-As a founder, I want to understand:
-
-How the interviewee learned to code and their current self-reported level.
-
-To do this, ask the following question:
-
 Extraction Question
 
-“Building on that, I'm curious about your personal likes and dislikes. <break time="0.5s" /> Off the top of your head, could you tell me what you absolutely love about coding <break time="0.5s" /> and also something that you really don’t like? <break time="0.5s" /> Like, the aspect of coding that can occasionally make you pull your hair out.”
+<extraction_question>Building on that, I'm curious about your personal likes and dislikes. <break time="0.5s" /> Off the top of your head, could you tell me what you absolutely love about coding <break time="0.5s" /> and also something that you really don’t like? <break time="0.5s" /> Like, the aspect of coding that can occasionally make you pull your hair out.</extraction_question>
         """
     },
   
@@ -128,6 +108,8 @@ As a founder, I want to understand:
 Further explore the interviewees recent responses on their coding background and experience. The focus should be helping them explore and open up further about their coding dislikes. 
 
 A good way to do this is to ask them how they remedy the situation when something happens they don’t like. I.e., if they don’t like bugs, what is their go to process in trying to fix them. And does this usually work for them? Etc. 
+
+Note: If the current conversation does not yield detailed insights, don’t be afraid to shift to asking about different coding dislikes. For example, if the interviewee cannot recall specifics or gives a vague response, use this as an opportunity to probe other coding dislikes that might have not been discussed yet.
 
 This is because:
 
@@ -157,15 +139,9 @@ Things to avoid:
         "content": f"""
 GOAL 8: INTERVIEW SECTION: INTERVIEW SECTION: DISCOVERY - VERBATIM
 
-As a founder, I want to understand:
-
-How the interviewee learned to code and their current self-reported level.
-
-To do this, ask the following question:
-
 Extraction Question
 
-“Ok, we’re making great progress. Let’s move on. I want to discuss how you first discovered Cursor. <break time="0.5s" />Like, was it a recommendation, or maybe you had been searching for a similar tool or saw an ad. So over to you, <break time="0.5s" /> can you remember how and when you came across Cursor?”
+<extraction_question>Ok, we’re making great progress. Let’s move on. I want to discuss how you first discovered Cursor. <break time="0.5s" />For example, was it a recommendation, or maybe you had been searching for a similar tool or saw an ad. So over to you, <break time="0.5s" /> can you remember how and when you came across Cursor?</extraction_question>
         """
     },
   
@@ -177,32 +153,34 @@ GOAL 9: INTERVIEW SECTION: INTERVIEW SECTION: DISCOVERY - EXPLORATORY
 
 As a founder, I want to understand:
 
-The context around how the interviewee first discovered Cursor. This includes understanding their complete discovery narrative. For example
+The complete story of how the interviewee first discovered Cursor, focusing on:
+- The conditions and context when they encountered Cursor.
+- Whether they were actively seeking a solution, and what motivated that search.
+  - Were they addressing a specific problem?
+  - Was the discovery facilitated by recommendations or influential sources?
+  - Any other compelling reasons or accidental findings?
 
-- the circumstances when they came across Cursor
-- if they were searching for it, why?
-  - were they searching for a solution to a problem they were having?
-  - were they searching as someone recommended?
-  - any other compelling reasons?
+Note: If the initial focus does not yield detailed insights, don’t be afraid to shift to related aspects of the discovery narrative. For example, if the interviewee cannot recall specifics, use this as an opportunity to probe other factors or circumstances that might have led them to discover and adopt the tool.
 
 This is because:
 
-Understanding this narrative gives valuable data into customer acquisition and product positioning.
+These insights provide valuable data on customer acquisition pathways and refine product positioning strategies.
 
 Focus on:
 
-- Building on their last response, this is very important.
-- Learning more about them, your attitude should be “wow, so interesting, I’d love to learn more”.
-- Stimulating a narrative that paints the bigger picture rather than delving into minor details.
+- Building on previous responses, drawing out deeper insights into their discovery narrative.
+- If specifics are unclear or the response is vague, shift the focus to explore broader search behaviors or motivations. 
+- Cultivating a narrative that conveys the larger context rather than isolated details.
 
 Remember, it’s important to:
 
-- Keep the conversation engaging, brief, and focused on the interviewee. 
-- Making them the hero of the story, we're here to listen, understand, and paint a picture of who they are.
+- Keep the conversation engaging, streamlined, and centered on the interviewee.
+- Elevate them as the center of their story, listening to comprehend and depict their journey comprehensively.
+- Use any gaps or uncertainties in their responses to investigate further aspects of their discovery narrative, such as motivations or unforeseen needs that led to using Cursor.
 
 Things to avoid:
 
-- Avoid asking about Cursor features or benefits. This is because this topic will have a specific section later in the interview. For now, it’s about understanding the interviewee and their experiences and preferences.
+- Avoid asking about the clients features or benefits. This is because this topic will have a specific section later in the interview. For now, it’s about understanding the interviewee and their experiences and preferences.
 - Avoid asking for specifics or challenges. Focus on learning more, asking questions that allow the interviewee to give you a story in their own words. You’re there to listen and let their story unfold, not ask them corporate jargon like “what are your pain points?” AVOID THIS.
         """
     },
@@ -211,17 +189,12 @@ Things to avoid:
     "10": {
         "category": "verbatim",
         "content": f"""
+
 GOAL 10: INTERVIEW SECTION: INTERVIEW SECTION: POINT OF CONVERSION - VERBATIM
-
-As a founder, I want to understand:
-
-I want to understand what ultimately led to the interviewee converting and whether they had any last minute hesitations.
-
-To do this, ask the following question:
 
 Extraction Question
 
-“Ok, just before we move into a discussion about your initial experiences, I'd like to ask one more thing. <break time="0.75s" /> When you ultimately made the decision to start using Cursor, was there anything that made you hesitate or have second thoughts? <break time="0.25s" /> And I guess if so, what ultimately convinced you to go ahead anyway?”
+<extraction_question>Ok, just before we move into a discussion about your initial experiences, I'd like to ask one more thing. <break time="0.75s" /> When you ultimately made the decision to start using Cursor, was there anything that made you hesitate or have second thoughts? <break time="0.25s" /> And I guess if so, what ultimately convinced you to go ahead anyway?</extraction_question>
         """
     },
 
@@ -231,15 +204,9 @@ Extraction Question
         "content": f"""
 GOAL 11: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - VERBATIM
 
-As a founder, I want to understand:
+Extraction Question:
 
-The interviewees experiences and perceptions of Cursor. This question is designed to open up the conversation and let them take the lead. 
-
-To do this, ask the following question:
-
-Extraction Question
-
-“Alright, thanks for sharing how you first discovered Cursor. <break time="0.75s" /> By the way, you’re awesome [insert interviewee name here], I’m really enjoying our conversation. <break time="0.75s" /> Now, let’s progress to discussing Cursor itself. <break time="0.5s" /> So, tell me, how are you finding it? <break time="0.25s" /> Like, for example, how often are you using it? <break time="0.25s" /> Or what are you mostly using it for? <break time="0.4s" /> You can take this question in whatever direction you like, I'm just keen to understand your experiences with Cursor up until this point.”
+<extraction_question>Alright, thanks for sharing how you first discovered Cursor. <break time="0.75s" /> By the way, you’re awesome {{{{interviewee_name}}}}, I’m really enjoying our conversation. <break time="0.75s" /> Now, let’s progress to discussing Cursor itself. <break time="0.5s" /> So, tell me, how often are you using it and what are you mostly using it for? <break time="0.4s" /> Basically, I’d really just love to get a sense of your overall experience with Cursor so far.</extraction_question>
         """
     },
   
@@ -251,21 +218,22 @@ GOAL 12: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - EXPL
 
 As a founder, I want to understand:
 
-The interviewees experiences, general perceptions and usage of Cursor. They have just been asked a question designed to open up the dialogue.
+The interviewees experiences, general perceptions and usage of {{{{client_name}}}}. They have just been asked a question designed to open up the dialogue.
 
 Based on what they have said, try to learn more and broaden the conversation. This may include for example
 
-- What problem / task they mostly use Cursor for
-- If their response so far isn’t as positive, what about Cursor didn’t meet their expectations?
+- What problem / task they mostly use {{{{client_name}}}} for
+- If their response so far isn’t as positive, what about {{{{client_name}}}} didn’t meet their expectations?
 - Explore how their usage has evolved over time, i.e. 
   - are they using the same features or perhaps more advanced their workflows, etc.
-  - have they been using it more or less since first using Cursor
-- If their response so far has been positive, what’s the main task they like using Cursor for
+  - have they been using it more or less since first using {{{{client_name}}}}
+- If their response so far has been positive, what’s the main task they like using {{{{client_name}}}} for
 
+Note: If the current conversation does not yield detailed insights, don’t be afraid to shift to related aspects of their experience narrative. For example, if the interviewee cannot recall specifics or gives a vague response, use this as an opportunity to probe other factors or circumstances listed in the interview section that might have not been discussed yet.
 
 This is because:
 
-Understanding this narrative gives us a generally good understanding of their usage and perceptions of Cursor. We want to get a sense for how they think and feel about the product.
+Understanding this narrative gives us a generally good understanding of their usage and perceptions of {{{{client_name}}}}. We want to get a sense for how they think and feel about the product.
 
 Focus on:
 
@@ -285,7 +253,7 @@ Things to avoid:
 - Do not ask about specific problems or challenges - there’s a separate section for this topic
 - Do not ask direct questions or about features - there’s a separate section for this topic
 
-- Avoid asking about Cursor features or benefits. This is because this topic will have a specific section later in the interview. For now, it’s about understanding the interviewee and their experiences and preferences.
+- Avoid asking about the clients features or benefits. This is because this topic will have a specific section later in the interview. For now, it’s about understanding the interviewee and their experiences and preferences.
 - Avoid asking for specifics or challenges. Focus on learning more, asking questions that allow the interviewee to give you a story in their own words. You’re there to listen and let their story unfold, not ask them corporate jargon like “what are your pain points?” AVOID THIS.
         """
     },
@@ -295,15 +263,9 @@ Things to avoid:
         "content": f"""
 GOAL 13: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - VERBATIM
 
-As a founder, I want to understand:
-
-The interviewees' relative preference for key Cursor features.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-“Ok, thanks for that! You’re really smashing this! We’re making great progress. Let’s try a new format. <break time="0.25s" />  I’m going to list 5 of the main Cursor features <break time="0.25s" /> And then I’ll ask you to pick the feature that is most important to you.
+<extraction_question>Ok, thanks for that! You’re really smashing this! We’re making great progress. Let’s try a new format. <break time="0.25s" />  I’m going to list 5 of the main Cursor features <break time="0.25s" /> And then I’ll ask you to pick the feature that is most important to you.
 
 <break time="0.5s" />
 
@@ -327,21 +289,15 @@ Ok, so here they are:
 
 5. Documentation embeddings:<break time="0.25s" />Upload, manage and ask questions over custom docs you’ve added.
 
-<break time="0.5s" /> Quick recap… Cursor Tab, Chat which is command L, Editor which is command K, Codebase Indexing and Documentation. So Fletcher,<break time="0.5s" /> which is the most important to you and why?”
+<break time="0.5s" /> Quick recap… Cursor Tab, Chat which is command L, Editor which is command K, Codebase Indexing and Documentation. So Fletcher,<break time="0.5s" /> which is the most important to you and why?</extraction_question>
         """
     },
   
 
     "14": {
-        "category": "exploratory",
+        "category": "verbatim",
         "content": f"""
-GOAL 14: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - EXPLORATORY
-
-As a founder, I want to understand:
-
-The interviewees' relative preference for key Cursor features.
-
-To do this, ask the following question:
+GOAL 14: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - VERBATIM
 
 Extraction Question:
 
@@ -357,15 +313,9 @@ Extraction Question:
         "content": f"""
 GOAL 15: INTERVIEW SECTION: INTERVIEW SECTION: MAIN BENEFITS - VERBATIM
 
-As a founder, I want to understand:
-
-What the interviewee feels is the main overall benefit they get from Cursor.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-<break time="0.75s" />
+<extraction_question>
 
 Ok, thanks for sharing the most and least important features to you. 
 
@@ -379,7 +329,7 @@ I know this may feel a little repetitive but this time we’re really focusing o
 
 <break time="0.5s" />
 
-Remember, your opinions are really valuable so take as much time as you need.
+Remember, your opinions are really valuable so take as much time as you need.</extraction_question>
         """
     },
 
@@ -471,6 +421,8 @@ Here’s example language (include something similar to this in analysis 5):
 
 Ultimately, the objective is to comprehend their given example to its fullest, thereby appreciating the benefit in its true manifestation. If possible, understanding the practical implications will be very valuable.
 
+Note: If the current conversation does not yield detailed insights, don’t be afraid to shift to asking about different benefits. For example, if the interviewee cannot recall specifics or gives a vague response, use this as an opportunity to probe other factors or circumstances listed in the interview section that might have not been discussed yet.
+
 This is because:
 
 We want to facilitate and help the interviewee share the full narrative of their story.
@@ -502,15 +454,10 @@ Things to avoid:
         "content": f"""
 GOAL 18: INTERVIEW SECTION: INTERVIEW SECTION: IMPROVEMENT - VERBATIM
 
-As a founder, I want to understand:
-
-What the interviewee feels is the main overall benefit they get from Cursor.
-
-To do this, ask the following question:
 
 Extraction Question:
 
-“Alright, thanks so much for giving your perspective on the main benefit, I really appreciate it. 
+<extraction_question>Alright, thanks so much for giving your perspective on the main benefit, I really appreciate it. 
 
 <break time="0.5s" />
 
@@ -518,7 +465,7 @@ Let’s keep things moving, next up, you’re going to love this,<break time="0.
 
 <break time="0.5s" />
 
-So, can you think of any feedback, <break time="0.4s" />feature requests<break time="0.4s" /> or generally anything that you think would help to improve Cursor?”
+So, can you think of any feedback, <break time="0.4s" />feature requests<break time="0.4s" /> or generally anything that you think would help to improve Cursor?</extraction_question>
         """
     },
   
@@ -536,6 +483,10 @@ As a founder, I want to understand improvements suggestions from the interviewee
 
 - If they have not provided an example of an improvement, gently nudge them again, stressing the importance of their inputs
 - if they have a suggestion, seek to understand the context further. We need to understand their reasoning and practical desire for their suggestions. For example, when did the lack of this feature last impact them? What task were they trying to accomplish?
+- If they are unsure, shift to broader aspects of their experience to uncover any other areas for improvement.
+
+Note: If the current conversation does not yield detailed insights, don’t be afraid to shift to asking about different improvement opportunities. For example, if the interviewee cannot recall specifics or gives a vague response, use this as an opportunity to probe other factors or circumstances listed in the interview section that might have not been discussed yet.
+
 
 This is because:
 
@@ -567,19 +518,13 @@ Things to avoid:
         "content": f"""
 GOAL 20: INTERVIEW SECTION: INTERVIEW SECTION: COMPETITOR DIFFERENTIATION - VERBATIM
 
-As a founder, I want to understand:
-
-How the interviewee perceives Cursor relative to competitors.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-“Ok, we’re keeping this train moving forward as always! Next up, let’s have a quick chat about competitors. 
+<extraction_question>Ok, we’re keeping this train moving forward as always! Next up, let’s have a quick chat about competitors. 
 
 <break time="0.75s" />
 
-So, to kick things off, prior to using Cursor, did you use any other AI tools or was this your initial introduction to using AI for coding?”
+So, to kick things off, prior to using Cursor, did you use any other AI tools or was this your initial introduction to using AI for coding?</extraction_question>
         """
     },
 
@@ -597,6 +542,8 @@ The following questions
   - This should be covered in the last response but expand if necessary
 - Did they research competitors or try other products prior to deciding on Cursor?
 - Determine and investigate how the interviewee perceives Cursor vs competitors - i.e. perceptions of key differentiators
+
+Note: If the current conversation does not yield detailed insights, don’t be afraid to shift to by asking a different open ended question about competitor differentiation. For example, if the interviewee cannot recall specifics or gives a vague response, use this as an opportunity to probe other factors or circumstances listed in the interview section that might have not been discussed yet.
 
 This is because:
 
@@ -625,15 +572,10 @@ Things to avoid:
         "content": f"""
 GOAL 22: INTERVIEW SECTION: INTERVIEW SECTION: RELATIVE DISAPPOINTMENT - VERBATIM
 
-As a founder, I want to understand:
-
-The relative disappointment of the interviewee if they could no longer use Cursor.
-
-To do this, ask the following question:
 
 Extraction Question:
 
-“Alright, thanks for your insights in the last section, you’re doing excellent! 
+<extraction_question>Alright, thanks for your insights in the last section, you’re doing excellent! 
 
 <break time="0.75s" />
 
@@ -641,17 +583,17 @@ Next up, I’ve got a multiple choice question for you. So, listen carefully ple
 
 <break time="0.75s" />
 
-How would you feel if you could no longer use Cursor?
+How would you feel if you could no longer use Cursor? <break time="0.75s" />
 
-a.) Very disappointed
+a.) Very disappointed <break time="0.75s" />
 
-b.) Somewhat disappointed
+b.) Somewhat disappointed <break time="0.75s" />
 
-c.) Not disappointed
+c.) Not disappointed <break time="0.75s" />
 
 <break time="0.5s" />
 
-Just pick one and if you can, give a short explanation as to why.”
+Just pick one and if you can, give a short explanation as to why.</extraction_question>
         """
     },
 
@@ -661,19 +603,13 @@ Just pick one and if you can, give a short explanation as to why.”
         "content": f"""
 GOAL 23: INTERVIEW SECTION: INTERVIEW SECTION: PRICE SENSITIVITY- VERBATIM
 
-As a founder, I want to understand:
-
-The price sensitivity of the customer.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-“Ok, next section. This one will be rapid fire. I’m going to be asking some simple pricing questions and just expecting short answers back. We’re so close to the end, hang in there!
+<extraction_question>Ok, next section. This one will be rapid fire. I’m going to be asking some simple pricing questions and just expecting short answers back. We’re so close to the end, hang in there!
 
 <break time="0.75s" />
 
-Ok, here we go. First pricing question. <break time="0.5s" />At what point would you consider Cursor way too expensive? Like, soooo expensive that you would never consider purchasing it?”
+Ok, here we go. First pricing question. <break time="0.5s" />At what point would you consider Cursor way too expensive? Like, soooo expensive that you would never consider purchasing it?</extraction_question>
         """
     },
   
@@ -683,16 +619,9 @@ Ok, here we go. First pricing question. <break time="0.5s" />At what point would
         "content": f"""
 GOAL 24: INTERVIEW SECTION: INTERVIEW SECTION: PRICE SENSITIVITY- VERBATIM
 
-As a founder, I want to understand:
-
-The price sensitivity of the customer.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-“Next up. At what point would you consider Cursor to be starting to get expensive, but you’d still consider purchasing it?”
-        """
+<extraction_question>Next up. At what point would you consider Cursor to be starting to get expensive, but you’d still consider purchasing it?</extraction_question>        """
     },
 
 
@@ -701,15 +630,9 @@ Extraction Question:
         "content": f"""
 GOAL 25: INTERVIEW SECTION: INTERVIEW SECTION: PRICE SENSITIVITY- VERBATIM
 
-As a founder, I want to understand:
-
-The price sensitivity of the customer.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-Alright, almost there. And at what price point would you consider Cursor to be a really good deal? Like, you’d buy it right away.
+<extraction_question>Alright, almost there. And at what price point would you consider Cursor to be a really good deal? Like, you’d buy it right away.</extraction_question>
         """
     },
 
@@ -719,15 +642,9 @@ Alright, almost there. And at what price point would you consider Cursor to be a
         "content": f"""
 GOAL 26: INTERVIEW SECTION: INTERVIEW SECTION: PRICE SENSITIVITY- VERBATIM
 
-As a founder, I want to understand:
-
-The price sensitivity of the customer.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-And Final pricing question, here we go! So, at what price point is Cursor way too cheap that you’d question the quality of it? Like, strangely cheap.
+<extraction_question>And Final pricing question, here we go! So, at what price point is Cursor way too cheap that you’d question the quality of it? Like, strangely cheap.</extraction_question>
         """
     },
   
@@ -737,23 +654,15 @@ And Final pricing question, here we go! So, at what price point is Cursor way to
         "content": f"""
 GOAL 27: INTERVIEW SECTION: INTERVIEW SECTION: IDEAL USER AND WORLD OF MOUTH - VERBATIM
 
-As a founder, I want to understand:
-
-How the interviewee perceives Cursor relative to competitors.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-Ok, we’re so close to the end now. This is the second to last section and then we’re done! So stay with me! So, we’ve discussed a bunch about your experience and thoughts on Cursor. As you reflect on this, I’d love to know, what type of people do you think would most benefit from using Cursor? 
-
-<break time="0.75s" />
+<extraction_question>Ok, we’re so close to the end now. This is the second to last section and then we’re done! So stay with me! So, we’ve discussed a bunch about your experience and thoughts on Cursor. As you reflect on this, I’d love to know, what type of people do you think would most benefit from using Cursor?</extraction_question>
         """
     },
 
 
     "28": {
-        "category": "verbatim",
+        "category": "exploratory",
         "content": f"""
 GOAL 28: INTERVIEW SECTION: INTERVIEW SECTION: IDEAL USER AND WORLD OF MOUTH - EXPLORATORY
 
@@ -763,6 +672,8 @@ As a founder, I want the interviewee to describe in their own words who they thi
 - If they have described a user, investigate whether they have recommended Cursor to this user type and if so, explore the conversation such as
   - what aspects of Cursor they highlighted 
   - what sort of language did they use, i.e. what did they actually say
+
+Note: If the current conversation does not yield detailed insights, don’t be afraid to shift to by asking a different open ended question about their view of an ideal user. For example, if the interviewee cannot recall specifics or gives a vague response, use this as an opportunity to probe other factors or circumstances listed in the interview section that might have not been discussed yet.
 
 This is because:
 
@@ -791,13 +702,9 @@ Things to avoid:
         "content": f"""
 GOAL 29: INTERVIEW SECTION: INTERVIEW SECTION: OPEN FEEDBACK AND CLOSING - VERBATIM
 
-As a founder, I want to ask the interviewee for any last feedback and close the interview.
-
-To do this, ask the following question:
-
 Extraction Question:
 
-“Alright, you’ve done it [insert interviewee name here]! We’re at the end. Congratulations on your hard work. 
+<extraction_question>Alright, you’ve done it {{{{interviewee_name}}}}! We’re at the end. Congratulations on your hard work. 
 
 <break time="0.5s" />
 
@@ -809,7 +716,7 @@ Often this is where participants really give their best insights.
 
 <break time="0.5s" />
 
-So, any final words of wisdom for the Cursor team?”
+So, any final words of wisdom for the Cursor team?</extraction_question>
         """
     },
 
@@ -854,36 +761,36 @@ MOST IMPORTANT - DO NOT ASK ANOTHER QUESTION!!!!
 
 GOAL_TARGET_NUMBERS = {
     # Goal number: [min_questions, target_questions, min_seconds, target_seconds, overall cumulative time]
-    "1": [0, 0, 00, 00, 000],
-    "2": [0, 0, 00, 00, 000],
-    "3": [0, 0, 00, 00, 000],
-    "4": [0, 0, 00, 00, 000],
-    "5": [0, 0, 00, 00, 000],
-    "6": [0, 0, 00, 00, 000],
-    "7": [0, 0, 00, 00, 000],
-    "8": [0, 0, 00, 00, 000],
-    "9": [0, 0, 00, 00, 000],
-    "10": [0, 0, 00, 00, 000],
-    "11": [0, 0, 00, 00, 000],
-    "12": [0, 0, 00, 00, 000],
-    "13": [0, 0, 00, 00, 000],
-    "14": [0, 0, 00, 00, 000],
-    "15": [0, 0, 00, 00, 000],
-    "16": [0, 0, 00, 00, 000],
-    "17": [0, 0, 00, 00, 000],
-    "18": [0, 0, 00, 00, 000],
-    "19": [0, 0, 00, 00, 000],
-    "20": [0, 0, 00, 00, 000],
-    "21": [0, 0, 00, 00, 000],
-    "22": [0, 0, 00, 00, 000],
-    "23": [0, 0, 00, 00, 000],
-    "24": [0, 0, 00, 00, 000],
-    "25": [0, 0, 00, 00, 000],
-    "26": [0, 0, 00, 00, 000],
-    "27": [0, 0, 00, 00, 000],
-    "28": [0, 0, 00, 00, 000],
-    "29": [0, 0, 00, 00, 000],
-    "30": [1000, 1000, 1000, 1000, 1000]
+    "1": [0, 0, 00, 00, 000], #Verbatim - Intro
+    "2": [0, 0, 00, 00, 000], #Verbatim - Persona
+    "3": [2, 2, 00, 00, 000], #Exploratory - Persona (two questions)
+    "4": [0, 0, 00, 00, 000], #Verbatim - Persona
+    "5": [0, 0, 00, 00, 000], #Verbatim - Coding
+    "6": [0, 0, 00, 00, 000], #Verbatim - Coding
+    "7": [1, 1, 00, 00, 000], #Exploratory - Coding (one question)
+    "8": [0, 0, 00, 00, 000], #Verbatim - Discovery
+    "9": [2, 2, 00, 00, 000], #Exploratory - Discovery (two questions)
+    "10": [0, 0, 00, 00, 000], #Verbatim - Point of Conversation
+    "11": [0, 0, 00, 00, 000], #Verbatim - Experience and Perceptions
+    "12": [2, 2, 00, 00, 000], #Exploratory - Experience and Perceptions
+    "13": [0, 0, 00, 00, 000], #Verbatim - Experience and Perceptions
+    "14": [0, 0, 00, 00, 000], #Verbatim - Experience and Perceptions
+    "15": [0, 0, 00, 00, 000], #Verbatim - Main Benefits
+    "16": [0, 0, 00, 00, 000], #Concrete - Main Benefits
+    "17": [2, 2, 00, 00, 000], #Exploratory - Main benefits
+    "18": [0, 0, 00, 00, 000], #Verbatim - Improvements
+    "19": [2, 2, 00, 00, 000], #Exploratory - Improvements
+    "20": [0, 0, 00, 00, 000], #Verbatim - Competitor Differentation
+    "21": [1, 1, 00, 00, 000], #Exploratory - Competitor Differentation
+    "22": [0, 0, 00, 00, 000], #Verbatim - Relative Disappointment
+    "23": [0, 0, 00, 00, 000], #Verbatim - Price Sensitivity
+    "24": [0, 0, 00, 00, 000], #Verbatim - Price Sensitivity
+    "25": [0, 0, 00, 00, 000], #Verbatim - Price Sensitivity
+    "26": [0, 0, 00, 00, 000], #Verbatim - Price Sensitivity
+    "27": [0, 0, 00, 00, 000], #Verbatim - Ideal User and World of Mouth
+    "28": [1, 1, 00, 00, 000], #Exploratory - Ideal User and World of Mouth
+    "29": [0, 0, 00, 00, 000], #Verbatim - Open Feedback and Closing
+    "30": [1000, 1000, 1000, 1000, 1000] #Closing - Closing
 }
 
 
