@@ -920,7 +920,7 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 # PROD CHANGE
-async def play_audio_file(websocket: WebSocket, call_id: str):
+async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
     # Specify the exact file path
     audio_folder_path = "/mnt/buffer_audio"
     audio_file_name = "understood_okay_audio.raw"
