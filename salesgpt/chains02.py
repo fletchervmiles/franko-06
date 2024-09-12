@@ -107,8 +107,8 @@ class SalesConversationChain(TracedLLMChain):
 
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=LEAD_INTERVIEWER_PROMPT,
@@ -156,8 +156,8 @@ class KeyPointsChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=KEY_POINTS_PROMPT,
@@ -179,8 +179,8 @@ class EmpathyStatementChain(TracedLLMChain):
         # llm_alt = ChatLiteLLM(temperature=0, model_name="groq/llama3-70b-8192", api_key=os.getenv("GROQ_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-opus-20240229", api_key=os.getenv("ANTHROPIC_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="together_ai/meta-llama/Llama-3-70b-chat-hf", api_key="b39a51c976619c8f1e44718c5a0edb7e1780a51ad44667e78931dbe65a2cfb9d")
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=EMPATHY_STATEMENT_PROMPT,
@@ -201,8 +201,8 @@ class GoalCompletenessChain(TracedLLMChain):
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-opus-20240229", api_key=os.getenv("ANTHROPIC_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="together_ai/meta-llama/Llama-3-70b-chat-hf", api_key="b39a51c976619c8f1e44718c5a0edb7e1780a51ad44667e78931dbe65a2cfb9d")
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
         
         prompt = PromptTemplate(
             template=GOAL_COMPLETENESS_STATUS_PROMPT,
@@ -223,8 +223,8 @@ class CurrentGoalReviewChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=CURRENT_GOAL_REVIEW_PROMPT,
@@ -249,8 +249,8 @@ class StageAnalyzerChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         """Get the response parser."""
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
 
         prompt = PromptTemplate(
@@ -273,8 +273,8 @@ class StageAnalyzerChain(TracedLLMChain):
 class QuestionCountChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=QUESTION_COUNT_PROMPT,
@@ -310,8 +310,8 @@ class VerbatimChain(TracedLLMChain):
 
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=VERBATIM_PROMPT,
@@ -341,8 +341,8 @@ class ExploratoryChain(TracedLLMChain):
 
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=EXPLORATORY_PROMPT,
@@ -374,8 +374,8 @@ class ConcreteExampleChain(TracedLLMChain):
 
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=CONCRETE_EXAMPLE_PROMPT,
@@ -406,8 +406,8 @@ class ClosingChain(TracedLLMChain):
 
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=CLOSING_PROMPT,
