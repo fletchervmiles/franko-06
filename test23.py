@@ -426,7 +426,7 @@ class StateMachine:
 def check_for_silence(last_word_time, last_no_word_time):
     if last_word_time and last_no_word_time:
         time_diff = last_no_word_time - last_word_time
-        if time_diff > timedelta(seconds=3):
+        if time_diff > timedelta(seconds=2.5):
             return True
             print(f"{datetime.now()}: - Interviewee Response Time Checker Loop Condition Met")
     return False

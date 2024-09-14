@@ -24,3 +24,6 @@ GOAL_TARGET_NUMBERS = {
 "1": [0, 0, 0, 0, 0],
 "2": [0, 0, 0, 0, 0]
 }
+
+# Add this line to the file
+CLIENT_PRODUCT_SUMMARY = "Default product summary. Please update for specific clients."

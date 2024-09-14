@@ -14,6 +14,7 @@ from .prompts_folder.current_goal_review import CURRENT_GOAL_REVIEW_PROMPT
 from .prompts_folder.empathy_statement import EMPATHY_STATEMENT_PROMPT
 from .prompts_folder.key_points import KEY_POINTS_PROMPT
 from .prompts_folder.lead_interviewer import LEAD_INTERVIEWER_PROMPT
+from .prompts_folder.response_selector import RESPONSE_SELECTOR_PROMPT
 
 from .prompts_folder.question_count import QUESTION_COUNT_PROMPT
 from .prompts_folder.stage_analyzer import STAGE_ANALYZER_PROMPT
@@ -22,6 +23,11 @@ from .prompts_folder.goal_completeness_status import GOAL_COMPLETENESS_STATUS_PR
 
 from .prompts_folder.lead_verbatim import VERBATIM_PROMPT
 from .prompts_folder.lead_exploratory import EXPLORATORY_PROMPT
+
+from .prompts_folder.lead_exploratory_01 import LEAD_EXPLORATORY_01
+from .prompts_folder.lead_exploratory_02 import LEAD_EXPLORATORY_02
+from .prompts_folder.lead_exploratory_03 import LEAD_EXPLORATORY_03
+
 from .prompts_folder.lead_concrete_example import CONCRETE_EXAMPLE_PROMPT
 from .prompts_folder.lead_closing import CLOSING_PROMPT
 
@@ -236,6 +242,7 @@ class CurrentGoalReviewChain(TracedLLMChain):
                 "client_product_summary",
                 "goal_completeness_status",
                 "interviewee_name",
+                "agent_response",
                 "has_progressed",
             ],
         )
@@ -367,6 +374,94 @@ class ExploratoryChain(TracedLLMChain):
 
 
 
+class ExploratoryChain1(TracedLLMChain):
+    """Chain to generate exploratory responses for the conversation."""
+
+    @classmethod
+    def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+
+        prompt = PromptTemplate(
+            template=LEAD_EXPLORATORY_01,
+            input_variables=[
+                "conversation_type",
+                "conversation_history",
+                "short_conversation_history",
+                "empathy_statement",
+                "key_points",
+                "current_goal_review",
+                "client_name",
+                "client_product_summary",
+                "interviewee_name",
+                "customer_type",
+                "agent_response",
+                "human_response",
+                "has_progressed",
+                "current_conversation_stage",
+            ],
+        )
+        return cls(prompt=prompt, llm=llm_alt, verbose=verbose)
+
+
+class ExploratoryChain2(TracedLLMChain):
+    """Chain to generate exploratory responses for the conversation."""
+
+    @classmethod
+    def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+
+        prompt = PromptTemplate(
+            template=LEAD_EXPLORATORY_02,
+            input_variables=[
+                "conversation_type",
+                "conversation_history",
+                "short_conversation_history",
+                "empathy_statement",
+                "key_points",
+                "current_goal_review",
+                "client_name",
+                "client_product_summary",
+                "interviewee_name",
+                "customer_type",
+                "agent_response",
+                "human_response",
+                "has_progressed",
+                "current_conversation_stage",
+            ],
+        )
+        return cls(prompt=prompt, llm=llm_alt, verbose=verbose)
+
+
+class ExploratoryChain3(TracedLLMChain):
+    """Chain to generate exploratory responses for the conversation."""
+
+    @classmethod
+    def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+
+        prompt = PromptTemplate(
+            template=LEAD_EXPLORATORY_03,
+            input_variables=[
+                "conversation_type",
+                "conversation_history",
+                "short_conversation_history",
+                "empathy_statement",
+                "key_points",
+                "current_goal_review",
+                "client_name",
+                "client_product_summary",
+                "interviewee_name",
+                "customer_type",
+                "agent_response",
+                "human_response",
+                "has_progressed",
+                "current_conversation_stage",
+            ],
+        )
+        return cls(prompt=prompt, llm=llm_alt, verbose=verbose)
 
 
 class ConcreteExampleChain(TracedLLMChain):
@@ -430,3 +525,24 @@ class ClosingChain(TracedLLMChain):
         )
         return cls(prompt=prompt, llm=llm_alt, verbose=verbose)
 
+
+class SelectorChain(TracedLLMChain):
+    """Chain to select the best response from multiple options."""
+
+    @classmethod
+    def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
+        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+
+        prompt = PromptTemplate(
+            template=RESPONSE_SELECTOR_PROMPT,
+            input_variables=[
+                "short_conversation_history",
+                "empathy_statement",
+                "client_name",
+                "agent_response",
+                "human_response",
+                "current_conversation_stage",
+                "call_id",
+            ],
+        )
+        return cls(prompt=prompt, llm=llm_alt, verbose=verbose)

@@ -19,7 +19,7 @@ GOAL 2: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - VERBATIM
 
 Extraction Question:
 
-<extraction_question>Great, I’m super excited to hear about your experiences! To kick us off, I’d love to learn a bit about your professional background. <break time="0.50s" /> Hmm, could you tell me about the company you work for, your current role and the type of project you’re working on. <break time="0.50s" />Details like these will really help us start to paint a picture.</extraction_question>
+<extraction_question>To kick us off, I’d love to learn a bit about your professional background. <break time="0.50s" /> Hmm, could you tell me about the company you work for, your current role and the type of project you’re working on. <break time="0.50s" />Details like these will really help us start to paint a picture.</extraction_question>
         """
     },
 
@@ -34,7 +34,6 @@ The interviewee's
 - current role 
 - the type of company they work for 
 - who they work with.
-- the part coding plays in their professional life
 - the sort of projects they work on (if it’s just one, that’s ok)
 
 Note: If the initial focus does not yield detailed insights, don’t be afraid to shift to related aspects of their persona. For example, if the interviewee cannot recall specifics, use this as an opportunity to probe other factors or circumstances that help us build a quantified customer persona.
@@ -793,6 +792,9 @@ GOAL_TARGET_NUMBERS = {
     "30": [1000, 1000, 1000, 1000, 1000] #Closing - Closing
 }
 
+CLIENT_PRODUCT_SUMMARY = """
+Cursor is an AI-powered code editor that helps developers write, edit, and understand code more efficiently. It integrates advanced language models to provide intelligent code completion, refactoring suggestions, and contextual explanations, enhancing productivity and code quality.
+"""
 
 # IMPORTANT - whatever the last number is, it needs to be LARGE so it doesn't skip to the next stage
 # Will fix this so it terminates on its own at some point
