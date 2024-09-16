@@ -937,7 +937,7 @@ async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: Share
     audio_file_name = "understood_okay_audio.raw"
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
 
-# # LOCAL
+# LOCAL
 # async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
 #     audio_file_name = "understood_okay_audio.raw"
 #     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
