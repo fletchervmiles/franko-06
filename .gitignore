@@ -202,3 +202,10 @@ internal/*
 wandb
 depot/*
 litellm_uuid.txt
+
+# .gitignore
+*
+!pyproject.toml
+!poetry.lock
+!.gitignore
+# Add other files you want to track
