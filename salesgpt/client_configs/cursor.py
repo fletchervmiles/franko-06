@@ -7,7 +7,7 @@ GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 Extraction Question:
 
-<extraction_question>Hi there, this is Francesca! I'm super excited to chat with you today! So, before we kick things off. I want to let you know that the purpose of our call is to discuss your experience with Cursor. The interview will be recorded and shared with the team. The interview will take approximately 45 minutes, but we'll aim for a little less.<break time="0.75s" />Ok, now that's covered, are you in a quiet place and ready to get started?</extraction_question>
+<extraction_question>Hi there, this is Francesca! I'm super excited to chat with you today! So, before we kick things off. I want to let you know that the purpose of our call is to discuss your experience with Cursor. The interview will be recorded, shared with the team and take approximately 30 minutes.<break time="0.75s" />Ok, now that's covered, are you in a quiet place and ready to get started?</extraction_question>
         """
     },
   
