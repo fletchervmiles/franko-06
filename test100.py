@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query, Body, WebSocket, Request, WebSocketDisconnect
 from starlette.websockets import WebSocketState
-from websockets.exceptions import ConnectionClosedError, WebSocketException
+from websockets.exceptions import ConnectionClosedError, WebSocketException, ConnectionClosed
 import vonage
 from vonage import Client as VonageClient, Voice
 import os
@@ -30,13 +30,19 @@ import psutil
 import random
 import aiohttp
 from collections import deque
+# from deepgram import (
+#     DeepgramClient,
+#     DeepgramClientOptions,
+#     LiveTranscriptionEvents,
+#     LiveOptions,
+# )
+
 from deepgram import (
     DeepgramClient,
-    DeepgramClientOptions,
     LiveTranscriptionEvents,
     LiveOptions,
+    DeepgramClientOptions,
 )
-
 
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -931,14 +937,14 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-# PROD CHANGE
+# # PROD CHANGE
 async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
     # Specify the exact file path
     audio_folder_path = "/mnt/buffer_audio"
     audio_file_name = "understood_okay_audio.raw"
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
 
-# # LOCAL
+# LOCAL
 # async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
 #     audio_file_name = "understood_okay_audio.raw"
 #     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
@@ -1357,6 +1363,119 @@ class WebSocketManager:
 
 
 
+# @app.websocket("/ws")
+# async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
+#     print(f"{datetime.now()}: WebSocket connection opened for call_id: {call_id}")
+
+#     if call_id not in call_instances:
+#         print(f"{datetime.now()}: Error: No call instance found for call_id: {call_id}")
+#         await websocket.close(code=1000)
+#         return
+
+#     shared_data = call_instances[call_id]["shared_data"]
+#     websocket_manager = WebSocketManager(websocket, shared_data)
+#     await websocket_manager.connect()
+
+#     # Start the audio sending task
+#     audio_send_task = asyncio.create_task(send_queued_audio(websocket, shared_data))
+
+#     deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"])
+#     dg_connection = deepgram.listen.live.v("1")
+
+#     def on_open(self, open, **kwargs):
+#         print(f"{datetime.now()}: Deepgram connection opened for call_id: {call_id}")
+
+#     def on_message(self, result, **kwargs):
+#         if result.channel.alternatives[0].words:
+#             shared_data.update_word_timestamp()
+#         else:
+#             shared_data.update_no_word_timestamp()
+        
+#         handle_transcription(result, shared_data)
+
+#     def on_error(self, error, **kwargs):
+#         print(f"{datetime.now()}: Deepgram Error for call_id {call_id}: {error}")
+
+#     def on_close(self, close, **kwargs):
+#         print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
+
+#     dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+#     dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+#     dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+#     dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+
+#     options = LiveOptions(
+#         model="nova-2",
+#         punctuate=True,
+#         language="en-US",
+#         encoding="linear16",
+#         channels=1,
+#         sample_rate=16000,
+#         interim_results=True,
+#     )
+
+#     try:
+#         dg_connection.start(options)
+#         print(f"{datetime.now()}: Deepgram connection started successfully for call_id: {call_id}")
+
+#         audio_packet_count = 0
+#         last_audio_time = time.time()
+
+#         while True:
+#             try:
+#                 message = await websocket_manager.receive_message()
+#                 if message["type"] == "websocket.receive":
+#                     if "bytes" in message:
+#                         audio_data = message["bytes"]
+#                         audio_packet_count += 1
+#                         current_time = time.time()
+                        
+#                         dg_connection.send(audio_data)
+                        
+#                         last_audio_time = current_time
+                    
+#             except WebSocketDisconnect as e:
+#                 logger.error(f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}")
+#                 logger.error(f"{datetime.now()}: Disconnection reason for call_id {call_id}: {getattr(e, 'reason', 'Unknown')}")
+                
+#                 if await websocket_manager.should_reconnect():
+#                     print(f"{datetime.now()}: Attempting to reconnect for call_id: {call_id}")
+#                     dg_connection = deepgram.listen.live.v("1")
+#                     dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+#                     dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+#                     dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+#                     dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+#                     dg_connection.start(options)
+#                     print(f"{datetime.now()}: Deepgram connection restarted successfully for call_id: {call_id}")
+#                     continue
+#                 else:
+#                     print(f"{datetime.now()}: Call terminated for call_id: {call_id}. WebSocket will not reconnect.")
+#                     break
+
+#     except Exception as e:
+#         print(f"{datetime.now()}: Error in WebSocket endpoint for call_id {call_id}: {e}")
+#         print(traceback.format_exc())
+
+#     finally:
+#             if dg_connection:
+#                 dg_connection.finish()
+#                 print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
+
+#             # Cancel the audio sending task
+#             audio_send_task.cancel()
+#             try:
+#                 await audio_send_task
+#             except asyncio.CancelledError:
+#                 pass
+
+#             try:
+#                 if websocket_manager.websocket.client_state.name != "DISCONNECTED":
+#                     await websocket_manager.disconnect()
+#                     print(f"{datetime.now()}: WebSocket disconnected successfully for call_id: {call_id}")
+#             except Exception as e:
+#                 print(f"{datetime.now()}: Error closing WebSocket connection for call_id {call_id}: {e}")
+#                 print(traceback.format_exc())
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     print(f"{datetime.now()}: WebSocket connection opened for call_id: {call_id}")
@@ -1373,8 +1492,17 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     # Start the audio sending task
     audio_send_task = asyncio.create_task(send_queued_audio(websocket, shared_data))
 
-    deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"])
-    dg_connection = deepgram.listen.live.v("1")
+    # Configure the DeepgramClientOptions
+    config = DeepgramClientOptions(
+        options={"keepalive": "true"},
+        verbose=logging.DEBUG,
+    )
+
+    # Create a Deepgram client
+    deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"], config)
+
+    # Create a websocket connection
+    dg_connection = deepgram.listen.websocket.v("1")
 
     def on_open(self, open, **kwargs):
         print(f"{datetime.now()}: Deepgram connection opened for call_id: {call_id}")
@@ -1391,7 +1519,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         print(f"{datetime.now()}: Deepgram Error for call_id {call_id}: {error}")
 
     def on_close(self, close, **kwargs):
-        print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
+        print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}. Reason: {close}")
 
     dg_connection.on(LiveTranscriptionEvents.Open, on_open)
     dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
@@ -1406,6 +1534,8 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         channels=1,
         sample_rate=16000,
         interim_results=True,
+        utterance_end_ms="1000",
+        vad_events=True,
     )
 
     try:
@@ -1429,12 +1559,12 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
                         last_audio_time = current_time
                     
             except WebSocketDisconnect as e:
-                logger.error(f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}")
-                logger.error(f"{datetime.now()}: Disconnection reason for call_id {call_id}: {getattr(e, 'reason', 'Unknown')}")
-                
+                disconnect_message = f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}, reason={e.reason}"
+                print(disconnect_message)  # This will print to the terminal
+                        
                 if await websocket_manager.should_reconnect():
                     print(f"{datetime.now()}: Attempting to reconnect for call_id: {call_id}")
-                    dg_connection = deepgram.listen.live.v("1")
+                    dg_connection = deepgram.listen.websocket.v("1")
                     dg_connection.on(LiveTranscriptionEvents.Open, on_open)
                     dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
                     dg_connection.on(LiveTranscriptionEvents.Error, on_error)
@@ -1451,24 +1581,26 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         print(traceback.format_exc())
 
     finally:
-            if dg_connection:
+        if dg_connection:
+            try:
                 dg_connection.finish()
                 print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
+            except Exception as close_error:
+                print(f"{datetime.now()}: Error closing Deepgram connection for call_id {call_id}: {close_error}")
+        # Cancel the audio sending task
+        audio_send_task.cancel()
+        try:
+            await audio_send_task
+        except asyncio.CancelledError:
+            pass
 
-            # Cancel the audio sending task
-            audio_send_task.cancel()
-            try:
-                await audio_send_task
-            except asyncio.CancelledError:
-                pass
-
-            try:
-                if websocket_manager.websocket.client_state.name != "DISCONNECTED":
-                    await websocket_manager.disconnect()
-                    print(f"{datetime.now()}: WebSocket disconnected successfully for call_id: {call_id}")
-            except Exception as e:
-                print(f"{datetime.now()}: Error closing WebSocket connection for call_id {call_id}: {e}")
-                print(traceback.format_exc())
+        try:
+            if websocket_manager.websocket.client_state.name != "DISCONNECTED":
+                await websocket_manager.disconnect()
+                print(f"{datetime.now()}: WebSocket disconnected successfully for call_id: {call_id}")
+        except Exception as e:
+            print(f"{datetime.now()}: Error closing WebSocket connection for call_id {call_id}: {e}")
+            print(traceback.format_exc())
 
 
 if __name__ == "__main__":
