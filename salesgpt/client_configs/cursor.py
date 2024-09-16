@@ -32,8 +32,8 @@ As a founder, I want to understand:
 
 The interviewee's 
 - current role 
-- the type of company they work for 
-- who they work with.
+- the type of company they work for including things like size and industry
+- who they work with, i.e. their team
 - the sort of projects they work on (if it’s just one, that’s ok)
 
 Note: If the initial focus does not yield detailed insights, don’t be afraid to shift to related aspects of their persona. For example, if the interviewee cannot recall specifics, use this as an opportunity to probe other factors or circumstances that help us build a quantified customer persona.
@@ -260,7 +260,7 @@ Things to avoid:
     "13": {
         "category": "verbatim",
         "content": """
-GOAL 13: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - VERBATIM
+GOAL 13: INTERVIEW SECTION: INTERVIEW SECTION: RELATIVE FEATURE PREFERENCE - VERBATIM
 
 Extraction Question:
 
@@ -282,13 +282,9 @@ Ok, so here they are:
 
 <break time="0.5s" />
 
-4. Codebase Indexing:<break time="0.25s" /> Index your entire codebase for more accurate codebase answers.
+4. <break time="0.25s" />Composer<break time="0.25s" /> command i to access; allows you to insert general instructions to create multiple pages or components in the context of your existing codebase.
 
-<break time="0.5s" />
-
-5. Documentation embeddings:<break time="0.25s" />Upload, manage and ask questions over custom docs you’ve added.
-
-<break time="0.5s" /> Quick recap… Cursor Tab, Chat which is command L, Editor which is command K, Codebase Indexing and Documentation. So Fletcher,<break time="0.5s" /> which is the most important to you and why?</extraction_question>
+<break time="0.5s" /> Quick recap… 1. Cursor Tab, 2. Chat which is command L, 3. Editor which is command K, and 4. Composer which is command i. So {client_name},<break time="0.5s" /> which is the most important to you and why?</extraction_question>
         """
     },
   
@@ -296,13 +292,11 @@ Ok, so here they are:
     "14": {
         "category": "verbatim",
         "content": """
-GOAL 14: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - VERBATIM
+GOAL 14: INTERVIEW SECTION: INTERVIEW SECTION: RELATIVE FEATURE PREFERENCE - VERBATIM
 
 Extraction Question:
 
-“So, you can probably guess what is coming next <break time="0.75s" />. Of the previously listed features, <break time="0.5s" /> which is the least important to you and why? <break time="0.5s" /> Here are the options again.<break time="0.50s" /> 1. Cursor Tab, <break time="0.4s" /> 2, Chat which is command L, <break time="0.4s" /> 3. Editor which is command K, <break time="0.4s" /> 4. Codebase Indexing <break time="0.25s" /> AND <break time="0.4s" /> 5. Documentation embeddings. 
-
- <break time="0.5s" /> So,<break time="0.4s" /> which is the least important to you and why?
+<extraction_question>So, you can probably guess what is coming next <break time="0.75s" />. Of the previously listed features, <break time="0.5s" /> which is the least important to you and why? <break time="0.5s" /> Here are the options again. 1. Cursor Tab, <break time="0.4s" /> 2, Chat which is command L, <break time="0.4s" /> 3. Editor which is command K, and <break time="0.4s" /> 4. Composer which is command i.<break time="0.5s" /> So,<break time="0.4s" /> which is the least important to you and why?</extraction_question>
         """
     },
 
