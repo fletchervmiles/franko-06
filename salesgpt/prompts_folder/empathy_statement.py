@@ -49,6 +49,9 @@ d. Offer choices or collaborative problem-solving (e.g., "We could either... or.
 
 ## Step 2. Review the Last Response - CURRENT INPUTS
 
+**CONVERSATION HISTORY:**
+{short_conversation_history}
+
 **CURRENT TASK INPUT: Interviewer’s (you) Last Question:**
 {agent_response}
 
@@ -58,20 +61,25 @@ d. Offer choices or collaborative problem-solving (e.g., "We could either... or.
 ---
 
 ## Step 3. Craft an Empathetic Statement Based on the Last Responses in Step 2.
-
 Based on the last responses:
+1) Craft 1 response sentence that each conveys empathy and understanding. 
+2) SUPER IMPORTANT: Ensure the response logically connects to the interviewee’s most recent message but uses mostly generic and new language, don’t repeat verbatim what the interviewee has said. Reason: This is because the follow-up question that will be appended to this empathy statement will have contextually relevant information, i.e. repeat words from the last response so it’s not needed in this response.
+3) Keep the response concise: Aim for 12 to 20 words.
+4) Only return the response text. Do not return any explanatory text or quotations, just the text response.
+5) DO NOT ASK A FOLLOW UP QUESTION OR HINT AT AN INQUIRY. STATEMENT ONLY.
+6) DO NOT USE THE INTERVIEWEE’S NAME.
+7) Verify the accuracy of mentioned tools, names, or terminologies against commonly known industry standards or common sense. Automatically correct any recognizable yet mistyped or mispronounced terms.
+8) IF THE QUESTION INVOLVES PRICING, i.e. PRICING QUESTION, PRICE POINT, the empathy statement should simplify be, “Hmm, yep, that makes sense.”
+9) Enhance Transcript Accuracy and Contextual Coherence and avoid potential using mistyped or mispronounced terms in your response. 
+Contextual Verification: Examine each term and phrase for contextual appropriateness, especially focusing on words that sound similar but have different meanings. Ensure that the transcription makes sense within the flow and subject of the conversation.
+Common Misinterpretations: Pay special attention to common transcription errors, such as numbers that might have been misheard, homophones, or industry-specific jargon that may be prone to misinterpretation.
+Logical Consistency: Confirm that the transcribed text is logically consistent with the broader discussion topics. This includes checking that transitions between sentences and ideas are smooth and make sense.
+Plausibility Check: Consider the likelihood of the spoken words based on the context of the conversation. If a phrase seems out of place or unlikely given the subject matter, it may be worth avoiding.
 
-1) Craft 1 response sentence that each conveys empathy and understanding. Ensure the response logically connects to the interviewee’s most recent message but uses mostly generic and new language, don’t repeat verbatim what the interviewee has said. This is because the follow-up question that will be appended to this empathy statement will have contextually relevant information, i.e. repeat words from the last response so it’s not needed in this response.
-
-2) Keep the response concise: Aim for 12 to 20 words.
-
-3) Only return the response text. Do not return any explanatory text or quotations, just the text response.
-4) DO NOT ASK A FOLLOW UP QUESTION OR HINT AT AN INQUIRY. STATEMENT ONLY.
-5) DO NOT USE THE INTERVIEWEE’S NAME.
-6) Verify the accuracy of mentioned tools, names, or terminologies against commonly known industry standards or common sense. Automatically correct any recognizable yet mistyped or mispronounced terms.
-7) IF THE QUESTION INVOLVES PRICING, i.e. PRICING QUESTION, PRICE POINT, the empathy statement should simplify be, “Hmm, yep, that makes sense.”
 
 **Response:**
+
+
 
 # EXAMPLE SECTION (DO NOT FOCUS ON THIS SECTION FOR THE CURRENT TASK)
 
@@ -207,6 +215,23 @@ Interviewee’s last response: Probably it was, like, ten dollars a month or som
 
 ^^^
 Empathy Statement: Hmm, yep, that makes sense.
+^^^
+
+### EXAMPLE 8
+
+EXAMPLE INPUT - THE INTERVIEWER’S (YOU) LAST QUESTION, THE INTERVIEWEE’S LAST RESPONSE AND THE EMPATHY STATEMENT:
+
+~~~
+Interviewer’s (you) Last Question: Alright, thanks so much for giving your perspective on the main benefit, I really appreciate it. Let’s keep things moving. Next up, you’re going to love this, I want to understand how the team at ElevenLabs could improve the product for you. So, can you think of any feedback, feature requests or generally anything that you think would help to improve ElevenLabs?
+~~~
+
+!!!
+Interviewee’s last response: Yeah, I guess one thing is the playground area of their site, like where you can test and generate different bits of speech, they don’t tell you the latency of how long it takes to generate the speech. This seems like an easy thing they could do and not having it is really quite frustrating.
+
+!!!
+
+^^^
+Empathy Statement: That must be frustrating when something seemingly simple causes inconvenience.
 ^^^
 
 """

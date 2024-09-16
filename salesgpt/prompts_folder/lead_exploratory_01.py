@@ -43,15 +43,18 @@ Your first task is to carefully review all provided inputs. This step is crucial
 
 4. The interviewer’s (you) last question, the interviewee’s last response and the empathy statement. The empathy statement is the first response back from the interviewer which acts to acknowledge what has been said. The next response we create now will flow from the empathy statement.
 ~~~
-**CURRENT TASK INTERVIEWER’S (YOU) LAST QUESTION:** {agent_response}
+**CURRENT TASK INTERVIEWER’S (YOU) LAST QUESTION:** 
+{agent_response}
 ~~~
 
 !!!
-**CURRENT TASK MOST RECENT INTERVIEWEE RESPONSE:** {human_response}
+**CURRENT TASK MOST RECENT INTERVIEWEE RESPONSE:** 
+{human_response}
 !!!
 
 ^^^
-**CURRENT TASK EMPATHY STATEMENT:** {empathy_statement}
+**CURRENT TASK EMPATHY STATEMENT:** 
+{empathy_statement}
 ^^^
 ---
 

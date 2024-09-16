@@ -693,6 +693,7 @@ async def make_outgoing_call(call_request: CallRequest):
         voice = Voice(vonage_client)
 
         # PROD CHANGE
+        # franko-06.onrender.com
         response = vonage_client.voice.create_call({
             'to': [{'type': 'phone', 'number': call_request.to_number}], # Use to_number from the request
             'from': {'type': 'phone', 'number': VONAGE_NUMBER},
@@ -937,7 +938,7 @@ async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: Share
     audio_file_name = "understood_okay_audio.raw"
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
 
-# LOCAL
+# # LOCAL
 # async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
 #     audio_file_name = "understood_okay_audio.raw"
 #     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
@@ -1238,7 +1239,7 @@ def extract_desired_response(response):
 
 async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
-    delay = 0.018  # 18ms delay
+    delay = 0.019  # 19ms delay
 
     while True:
         audio_chunk = await shared_data.audio_queue.dequeue()

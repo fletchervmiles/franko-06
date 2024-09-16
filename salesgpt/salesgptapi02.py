@@ -202,6 +202,7 @@ class SalesGPTAPI:
             # Yield empathy statement if it's not the first turn
             if empathy_task:
                 empathy_statement = await empathy_task
+                self.empathy_statement = empathy_statement
                 yield {"empathy_statement": empathy_statement}
             else:
                 yield {"empathy_statement": ""}  # Empty string for the first turn

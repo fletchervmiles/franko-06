@@ -386,6 +386,7 @@ class SalesGPT(Chain):
             empathy_statement_result["text"] = (
                 f'{empathy_statement_result["text"]}<break time="1.0s" />'
             )
+            self.empathy_statement = empathy_statement_result["text"]
             
             print(f"[{datetime.now()}] Run Empathy Statement Chain Returned")
             return empathy_statement_result["text"]
