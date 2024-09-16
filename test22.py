@@ -1393,8 +1393,10 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         log(f"Received Deepgram message for call_id: {call_id}")
         if result.channel.alternatives[0].words:
             shared_data.update_word_timestamp()
+            log(f"Words detected: {result.channel.alternatives[0].transcript}")  # Add this line
         else:
             shared_data.update_no_word_timestamp()
+            log("No words detected in this message")  # Add this line
         
         handle_transcription(result, shared_data)
 
@@ -1437,7 +1439,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
                         current_time = time.time()
                         
                         dg_connection.send(audio_data)
-                        # log(f"Sent audio packet {audio_packet_count} to Deepgram for call_id: {call_id}")
+                        log(f"Sent audio packet {audio_packet_count} to Deepgram for call_id: {call_id}")
                         
                         last_audio_time = current_time
                     else:
