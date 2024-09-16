@@ -2,7 +2,7 @@ CONVERSATION_STAGES = {
 
     "1": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 Extraction Question:
@@ -14,7 +14,7 @@ Extraction Question:
 
     "2": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 2: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - VERBATIM
 
 Extraction Question:
@@ -25,7 +25,7 @@ Extraction Question:
 
     "3": {
         "category": "exploratory",
-        "content": f"""
+        "content": """
 GOAL 3: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - EXPLORATORY
 
 As a founder, I want to understand:
@@ -63,7 +63,7 @@ Things to avoid:
 
     "4": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 4: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - VERBATIM
 
 Extraction Question
@@ -75,7 +75,7 @@ Extraction Question
 
     "5": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 5: INTERVIEW SECTION: CODING (EDUCATION) - VERBATIM
 
 Extraction Question
@@ -87,7 +87,7 @@ Extraction Question
 
     "6": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 6: INTERVIEW SECTION: CODING (EDUCATION) - VERBATIM
 
 Extraction Question
@@ -99,7 +99,7 @@ Extraction Question
 
     "7": {
         "category": "exploratory",
-        "content": f"""
+        "content": """
 GOAL 7: INTERVIEW SECTION: INTERVIEW SECTION: CODING - EXPLORING THEIR CODING EXPERIENCES - EXPLORATORY
 
 As a founder, I want to understand:
@@ -135,7 +135,7 @@ Things to avoid:
 
     "8": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 8: INTERVIEW SECTION: INTERVIEW SECTION: DISCOVERY - VERBATIM
 
 Extraction Question
@@ -147,7 +147,7 @@ Extraction Question
 
     "9": {
         "category": "exploratory",
-        "content": f"""
+        "content": """
 GOAL 9: INTERVIEW SECTION: INTERVIEW SECTION: DISCOVERY - EXPLORATORY
 
 As a founder, I want to understand:
@@ -187,7 +187,7 @@ Things to avoid:
 
     "10": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 
 GOAL 10: INTERVIEW SECTION: INTERVIEW SECTION: POINT OF CONVERSION - VERBATIM
 
@@ -200,39 +200,39 @@ Extraction Question
 
     "11": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 11: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - VERBATIM
 
 Extraction Question:
 
-<extraction_question>Alright, thanks for sharing how you first discovered Cursor. <break time="0.75s" /> By the way, you’re awesome {{{{interviewee_name}}}}, I’m really enjoying our conversation. <break time="0.75s" /> Now, let’s progress to discussing Cursor itself. <break time="0.5s" /> So, tell me, how often are you using it and what are you mostly using it for? <break time="0.4s" /> Basically, I’d really just love to get a sense of your overall experience with Cursor so far.</extraction_question>
+<extraction_question>Alright, thanks for sharing how you first discovered Cursor. <break time="0.75s" /> By the way, you’re awesome {interviewee_name}, I’m really enjoying our conversation. <break time="0.75s" /> Now, let’s progress to discussing Cursor itself. <break time="0.5s" /> So, tell me, how often are you using it and what are you mostly using it for? <break time="0.4s" /> Basically, I’d really just love to get a sense of your overall experience with Cursor so far.</extraction_question>
         """
     },
   
 
     "12": {
         "category": "exploratory",
-        "content": f"""
+        "content": """
 GOAL 12: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - EXPLORATORY
 
 As a founder, I want to understand:
 
-The interviewees experiences, general perceptions and usage of {{{{client_name}}}}. They have just been asked a question designed to open up the dialogue.
+The interviewees experiences, general perceptions and usage of {client_name}. They have just been asked a question designed to open up the dialogue.
 
 Based on what they have said, try to learn more and broaden the conversation. This may include for example
 
-- What problem / task they mostly use {{{{client_name}}}} for
-- If their response so far isn’t as positive, what about {{{{client_name}}}} didn’t meet their expectations?
+- What problem / task they mostly use {client_name} for
+- If their response so far isn’t as positive, what about {client_name} didn’t meet their expectations?
 - Explore how their usage has evolved over time, i.e. 
   - are they using the same features or perhaps more advanced their workflows, etc.
-  - have they been using it more or less since first using {{{{client_name}}}}
-- If their response so far has been positive, what’s the main task they like using {{{{client_name}}}} for
+  - have they been using it more or less since first using {client_name}
+- If their response so far has been positive, what’s the main task they like using {client_name} for
 
 Note: If the current conversation does not yield detailed insights, don’t be afraid to shift to related aspects of their experience narrative. For example, if the interviewee cannot recall specifics or gives a vague response, use this as an opportunity to probe other factors or circumstances listed in the interview section that might have not been discussed yet.
 
 This is because:
 
-Understanding this narrative gives us a generally good understanding of their usage and perceptions of {{{{client_name}}}}. We want to get a sense for how they think and feel about the product.
+Understanding this narrative gives us a generally good understanding of their usage and perceptions of {client_name}. We want to get a sense for how they think and feel about the product.
 
 Focus on:
 
@@ -259,7 +259,7 @@ Things to avoid:
 
     "13": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 13: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - VERBATIM
 
 Extraction Question:
@@ -295,7 +295,7 @@ Ok, so here they are:
 
     "14": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 14: INTERVIEW SECTION: INTERVIEW SECTION: EXPERIENCE AND PERCEPTIONS - VERBATIM
 
 Extraction Question:
@@ -309,7 +309,7 @@ Extraction Question:
 
     "15": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 15: INTERVIEW SECTION: INTERVIEW SECTION: MAIN BENEFITS - VERBATIM
 
 Extraction Question:
@@ -335,7 +335,7 @@ Remember, your opinions are really valuable so take as much time as you need.</e
 
     "16": {
         "category": "concrete_example",
-        "content": f"""
+        "content": """
 GOAL 16: INTERVIEW SECTION: INTERVIEW SECTION: MAIN BENEFITS - CONCRETE
 
 Context: The interviewee should have just given in the conversation history an explanation of what they see as the main benefit.
@@ -399,7 +399,7 @@ Things to avoid:
 
     "17": {
         "category": "exploratory",
-        "content": f"""
+        "content": """
 GOAL 17: INTERVIEW SECTION: INTERVIEW SECTION: MAIN BENEFITS - EXPLORATORY
 
 Context:
@@ -450,7 +450,7 @@ Things to avoid:
 
     "18": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 18: INTERVIEW SECTION: INTERVIEW SECTION: IMPROVEMENT - VERBATIM
 
 
@@ -471,7 +471,7 @@ So, can you think of any feedback, <break time="0.4s" />feature requests<break t
 
     "19": {
         "category": "exploratory",
-        "content": f"""
+        "content": """
 GOAL 19: INTERVIEW SECTION: INTERVIEW SECTION: IMPROVEMENT - EXPLORATORY
 
 Context:
@@ -514,7 +514,7 @@ Things to avoid:
 
     "20": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 20: INTERVIEW SECTION: INTERVIEW SECTION: COMPETITOR DIFFERENTIATION - VERBATIM
 
 Extraction Question:
@@ -530,7 +530,7 @@ So, to kick things off, prior to using Cursor, did you use any other AI tools or
 
     "21": {
         "category": "exploratory",
-        "content": f"""
+        "content": """
 GOAL 21: INTERVIEW SECTION: INTERVIEW SECTION: COMPETITOR DIFFERENTIATION - EXPLORATORY
 
 As a founder, I want to understand
@@ -568,7 +568,7 @@ Things to avoid:
 
     "22": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 22: INTERVIEW SECTION: INTERVIEW SECTION: RELATIVE DISAPPOINTMENT - VERBATIM
 
 
@@ -599,7 +599,7 @@ Just pick one and if you can, give a short explanation as to why.</extraction_qu
 
     "23": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 23: INTERVIEW SECTION: INTERVIEW SECTION: PRICE SENSITIVITY- VERBATIM
 
 Extraction Question:
@@ -615,7 +615,7 @@ Ok, here we go. First pricing question. <break time="0.5s" />At what point would
 
     "24": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 24: INTERVIEW SECTION: INTERVIEW SECTION: PRICE SENSITIVITY- VERBATIM
 
 Extraction Question:
@@ -626,7 +626,7 @@ Extraction Question:
 
     "25": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 25: INTERVIEW SECTION: INTERVIEW SECTION: PRICE SENSITIVITY- VERBATIM
 
 Extraction Question:
@@ -638,7 +638,7 @@ Extraction Question:
 
     "26": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 26: INTERVIEW SECTION: INTERVIEW SECTION: PRICE SENSITIVITY- VERBATIM
 
 Extraction Question:
@@ -650,7 +650,7 @@ Extraction Question:
 
     "27": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 27: INTERVIEW SECTION: INTERVIEW SECTION: IDEAL USER AND WORLD OF MOUTH - VERBATIM
 
 Extraction Question:
@@ -662,7 +662,7 @@ Extraction Question:
 
     "28": {
         "category": "exploratory",
-        "content": f"""
+        "content": """
 GOAL 28: INTERVIEW SECTION: INTERVIEW SECTION: IDEAL USER AND WORLD OF MOUTH - EXPLORATORY
 
 As a founder, I want the interviewee to describe in their own words who they think would benefit most from using Cursor.
@@ -698,12 +698,12 @@ Things to avoid:
 
     "29": {
         "category": "verbatim",
-        "content": f"""
+        "content": """
 GOAL 29: INTERVIEW SECTION: INTERVIEW SECTION: OPEN FEEDBACK AND CLOSING - VERBATIM
 
 Extraction Question:
 
-<extraction_question>Alright, you’ve done it {{{{interviewee_name}}}}! We’re at the end. Congratulations on your hard work. 
+<extraction_question>Alright, you’ve done it {interviewee_name}! We’re at the end. Congratulations on your hard work. 
 
 <break time="0.5s" />
 
@@ -722,7 +722,7 @@ So, any final words of wisdom for the Cursor team?</extraction_question>
 
     "30": {
         "category": "closing",
-        "content": f"""
+        "content": """
 GOAL 30: INTERVIEW SECTION: INTERVIEW SECTION: CLOSING - CLOSING
 
 MOST IMPORTANT - DO NOT ASK ANOTHER QUESTION!!!!

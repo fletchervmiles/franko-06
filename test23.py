@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query, Body, WebSocket, Request, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 from websockets.exceptions import ConnectionClosedError, WebSocketException
+import vonage
 from vonage import Client as VonageClient, Voice
 import os
 import io
@@ -90,12 +91,12 @@ VONAGE_APPLICATION_PRIVATE_KEY_PATH = os.environ.get("VONAGE_APPLICATION_PRIVATE
 VONAGE_NUMBER = os.environ.get("VONAGE_NUMBER")
 TO_NUMBER = os.environ.get("TO_NUMBER")
 
-# Initialize Vonage client
-vonage_client = VonageClient(
-    application_id=VONAGE_APPLICATION_ID,
-    private_key=VONAGE_APPLICATION_PRIVATE_KEY_PATH,
-)
-voice = Voice(vonage_client)
+# # Initialize Vonage client
+# vonage_client = VonageClient(
+#     application_id=VONAGE_APPLICATION_ID,
+#     private_key=VONAGE_APPLICATION_PRIVATE_KEY_PATH,
+# )
+# voice = Voice(vonage_client)
 
 
 class CallRequest(BaseModel):
@@ -216,10 +217,10 @@ class SharedData:
 
 
 class StateMachine:
-    def __init__(self, call_id, r, vonage_client, shared_data, sales_api):
+    def __init__(self, call_id, r, shared_data, sales_api):
         self.call_id = call_id
         self.r = r
-        self.vonage_client = vonage_client
+        # self.vonage_client = vonage_client
         self.shared_data = shared_data
         self.sales_api = sales_api
         self.set_state(CallState.CALL_SETUP)
@@ -659,7 +660,9 @@ async def make_outgoing_call(call_request: CallRequest):
         # sales_gpt_api = SalesGPTAPI(config_path=temp_config_path, call_id=call_id)
         sales_gpt = sales_gpt_api.initialize_agent()
         shared_data = SharedData()
-        state_machine = StateMachine(call_id=call_id, r=r, vonage_client=vonage_client, shared_data=shared_data, sales_api=sales_gpt_api)
+        # state_machine = StateMachine(call_id=call_id, r=r, vonage_client=vonage_client, shared_data=shared_data, sales_api=sales_gpt_api)
+        state_machine = StateMachine(call_id=call_id, r=r, shared_data=shared_data, sales_api=sales_gpt_api)
+
 
         # Store instances in the dictionary
         call_instances[call_id] = {
@@ -681,6 +684,13 @@ async def make_outgoing_call(call_request: CallRequest):
         
         if not os.access(VONAGE_APPLICATION_PRIVATE_KEY_PATH, os.R_OK):
             raise PermissionError(f"Cannot read Vonage private key file: {VONAGE_APPLICATION_PRIVATE_KEY_PATH}")
+
+        # Initialize Vonage client inside the function
+        vonage_client = VonageClient(
+            application_id=VONAGE_APPLICATION_ID,
+            private_key=VONAGE_APPLICATION_PRIVATE_KEY_PATH,
+        )
+        voice = Voice(vonage_client)
 
         # PROD CHANGE
         response = vonage_client.voice.create_call({
@@ -866,6 +876,7 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
                 private_key=VONAGE_APPLICATION_PRIVATE_KEY_PATH,
             )
             voice = Voice(vonage_client)
+
             recording_bytes = voice.get_recording(recording_url)
 
             # Upload the recording to Supabase

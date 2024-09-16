@@ -169,6 +169,13 @@ class SalesGPT(Chain):
         # print(f"Loaded GOAL_TARGET_NUMBERS: {self.GOAL_TARGET_NUMBERS}")
         # print(f"Loaded conversation_stage_dict: {self.conversation_stage_dict}")
 
+        # Format the content strings with client_name and other variables
+        for key, stage_info in self.conversation_stage_dict.items():
+            stage_info['content'] = stage_info['content'].format(
+                client_name=self.client_name,
+                interviewee_name=self.interviewee_name,
+            )
+
     def get_client_module(self, client_name: str):
         try:
             return importlib.import_module(f'salesgpt.client_configs.{client_name.lower()}')
