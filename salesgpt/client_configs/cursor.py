@@ -12,16 +12,16 @@ Extraction Question:
     },
   
 
-#     "2": {
-#         "category": "verbatim",
-#         "content": """
-# GOAL 2: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - VERBATIM
+    "2": {
+        "category": "verbatim",
+        "content": """
+GOAL 2: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - VERBATIM
 
-# Extraction Question:
+Extraction Question:
 
-# <extraction_question>To kick us off, I’d love to learn a bit about your professional background. <break time="0.50s" /> Hmm, could you tell me about the company you work for, your current role and the type of project you’re working on. <break time="0.50s" />Details like these will really help us start to paint a picture.</extraction_question>
-#         """
-#     },
+<extraction_question>To kick us off, I’d love to learn a bit about your professional background. <break time="0.50s" /> Hmm, could you tell me about the company you work for, your current role and the type of project you’re working on. <break time="0.50s" />Details like these will really help us start to paint a picture.</extraction_question>
+        """
+    },
 
     "2": {
         "category": "exploratory",
