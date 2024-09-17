@@ -1534,8 +1534,8 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         channels=1,
         sample_rate=16000,
         interim_results=True,
-        utterance_end_ms="1000",
-        vad_events=True,
+        # utterance_end_ms="1000",
+        # vad_events=True,
     )
 
     try:
