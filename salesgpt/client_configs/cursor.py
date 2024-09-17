@@ -23,7 +23,7 @@ Extraction Question:
         """
     },
 
-    "2": {
+    "3": {
         "category": "exploratory",
         "content": """
 GOAL 3: INTERVIEW SECTION: EXPLORING THEIR PROFESSIONAL PERSONA - EXPLORATORY
