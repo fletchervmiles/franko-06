@@ -284,7 +284,7 @@ Ok, so here they are:
 
 4. <break time="0.25s" />Composer<break time="0.25s" /> command i to access; allows you to insert general instructions to create multiple pages or components in the context of your existing codebase.
 
-<break time="0.5s" /> Quick recap… 1. Cursor Tab, 2. Chat which is command L, 3. Editor which is command K, and 4. Composer which is command i. So {client_name},<break time="0.5s" /> which is the most important to you and why?</extraction_question>
+<break time="0.5s" /> Quick recap… 1. Cursor Tab, 2. Chat which is command L, 3. Editor which is command K, and 4. Composer which is command i. So {interviewee_name},<break time="0.5s" /> which is the most important to you and why?</extraction_question>
         """
     },
   
@@ -762,7 +762,7 @@ GOAL_TARGET_NUMBERS = {
     "6": [0, 0, 00, 00, 000], #Verbatim - Coding
     "7": [1, 1, 00, 00, 000], #Exploratory - Coding (one question)
     "8": [0, 0, 00, 00, 000], #Verbatim - Discovery
-    "9": [2, 2, 00, 00, 000], #Exploratory - Discovery (two questions)
+    "9": [1, 1, 00, 00, 000], #Exploratory - Discovery (two questions)
     "10": [0, 0, 00, 00, 000], #Verbatim - Point of Conversation
     "11": [0, 0, 00, 00, 000], #Verbatim - Experience and Perceptions
     "12": [2, 2, 00, 00, 000], #Exploratory - Experience and Perceptions

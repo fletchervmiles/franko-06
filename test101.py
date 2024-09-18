@@ -28,6 +28,8 @@ import tracemalloc
 import traceback
 import psutil
 import random
+import websockets
+import base64
 import aiohttp
 from collections import deque
 # from deepgram import (
@@ -59,6 +61,11 @@ app = FastAPI(debug=True)
 CONFIG_PATH = "examples/example_agent_setup.json"
 # print(f"Config path: {CONFIG_PATH}")
 
+# AssemblyAI endpoint URL
+URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
+
+# Retrieve the AssemblyAI API key from environment variables
+auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
 
 # Create an instance of SalesGPTAPI
 # # the SalesGPTAPI class is initialised once when the server starts with the config path getting passed in.
@@ -1492,111 +1499,78 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     # Start the audio sending task
     audio_send_task = asyncio.create_task(send_queued_audio(websocket, shared_data))
 
-    # Configure the DeepgramClientOptions
-    config = DeepgramClientOptions(
-        options={"keepalive": "true"},
-        verbose=logging.DEBUG,
-    )
+    # AssemblyAI setup
+    # The AssemblyAI endpoint
+    URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
 
-    # Create a Deepgram client
-    deepgram = DeepgramClient(os.environ["DEEPGRAM_API_KEY"], config)
+    # Retrieve the AssemblyAI API key from environment variables
+    auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
 
-    # Create a websocket connection
-    dg_connection = deepgram.listen.websocket.v("1")
+    # Initialize audio_buffer in shared_data
+    shared_data.audio_buffer = bytearray()
 
-    def on_open(self, open, **kwargs):
-        print(f"{datetime.now()}: Deepgram connection opened for call_id: {call_id}")
-
-    def on_message(self, result, **kwargs):
-        if result.channel.alternatives[0].words:
-            shared_data.update_word_timestamp()
-        else:
-            shared_data.update_no_word_timestamp()
-        
-        handle_transcription(result, shared_data)
-
-    def on_error(self, error, **kwargs):
-        print(f"{datetime.now()}: Deepgram Error for call_id {call_id}: {error}")
-
-    def on_close(self, close, **kwargs):
-        print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}. Reason: {close}")
-        print(f"Close event details: {close.__dict__}")  # Add this line
-        print(f"Close event details: {close}")
-        print(f"Close event type: {type(close)}")
-        print(f"Close event attributes: {dir(close)}")
-        if hasattr(close, 'reason'):
-            print(f"Close reason: {close.reason}")
-        if hasattr(close, 'code'):
-            print(f"Close code: {close.code}")
-
-    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
-    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
-    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
-
-    options = LiveOptions(
-        model="nova-2",
-        punctuate=True,
-        language="en-US",
-        encoding="linear16",
-        channels=1,
-        sample_rate=16000,
-        interim_results=True,
-        # utterance_end_ms="1000",
-        # vad_events=True,
-    )
-
-    try:
-        dg_connection.start(options)
-        print(f"{datetime.now()}: Deepgram connection started successfully for call_id: {call_id}")
-
-        audio_packet_count = 0
-        last_audio_time = time.time()
-
+    # Define send and receive functions
+    async def send(_ws):
         while True:
             try:
-                message = await websocket_manager.receive_message()
-                if message["type"] == "websocket.receive":
-                    if "bytes" in message:
-                        audio_data = message["bytes"]
-                        audio_packet_count += 1
-                        current_time = time.time()
-                        
-                        dg_connection.send(audio_data)
-                        
-                        last_audio_time = current_time
-                    
-            except WebSocketDisconnect as e:
-                disconnect_message = f"{datetime.now()}: WebSocket disconnected for call_id {call_id}: code={e.code}, reason={e.reason}"
-                print(disconnect_message)  # This will print to the terminal
-                        
-                if await websocket_manager.should_reconnect():
-                    print(f"{datetime.now()}: Attempting to reconnect for call_id: {call_id}")
-                    dg_connection = deepgram.listen.websocket.v("1")
-                    dg_connection.on(LiveTranscriptionEvents.Open, on_open)
-                    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-                    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
-                    dg_connection.on(LiveTranscriptionEvents.Close, on_close)
-                    dg_connection.start(options)
-                    print(f"{datetime.now()}: Deepgram connection restarted successfully for call_id: {call_id}")
-                    continue
-                else:
-                    print(f"{datetime.now()}: Call terminated for call_id: {call_id}. WebSocket will not reconnect.")
-                    break
+                message_data = await websocket.receive()
 
-    except Exception as e:
-        print(f"{datetime.now()}: Error in WebSocket endpoint for call_id {call_id}: {e}")
-        print(f"Exception type: {type(e)}")
-        print(f"Exception attributes: {dir(e)}")
-        print(traceback.format_exc())
+                if message_data.get("type") == "websocket.receive" and "bytes" in message_data:
+                    # Extract the binary data from the message
+                    audio_data = message_data["bytes"]
+                    # Append the binary data to the audio_buffer
+                    shared_data.audio_buffer.extend(audio_data)
 
-    finally:
-        if dg_connection:
+                    # If the audio_buffer has at least 3200 bytes of data (~100ms of audio)
+                    if len(shared_data.audio_buffer) >= 3200:
+                        # Base64 encode the audio_buffer
+                        data = base64.b64encode(shared_data.audio_buffer).decode("utf-8")
+                        # Create a JSON string that contains the base64-encoded audio data
+                        json_data = json.dumps({"audio_data": data})
+                        # Send the JSON string to the AssemblyAI WebSocket connection
+                        await _ws.send(json_data)
+                        # Reset the audio_buffer to an empty bytearray
+                        shared_data.audio_buffer = bytearray()
+            except Exception as e:
+                print(f"Error in send function: {e}")
+                break
+
+    async def receive(_ws):
+        while True:
             try:
-                dg_connection.finish()
-                print(f"{datetime.now()}: Deepgram connection closed for call_id: {call_id}")
-            except Exception as close_error:
-                print(f"{datetime.now()}: Error closing Deepgram connection for call_id {call_id}: {close_error}")
+                result_str = await _ws.recv()
+                result = json.loads(result_str)
+                if 'text' in result:
+                    # Update the word or no-word timestamp
+                    if result['text'].strip():
+                        shared_data.update_word_timestamp()
+                    else:
+                        shared_data.update_no_word_timestamp()
+
+                    # Handle transcription
+                    if result['message_type'] == 'FinalTranscript' and result['text'].strip():
+                        shared_data.add_part(result['text'])
+                        print(f"{datetime.now()}: Appending final transcript - {result['text']}")
+                    elif result['message_type'] == 'PartialTranscript' and result['text'].strip():
+                        print(f"{datetime.now()}: Partial transcript - {result['text']}")
+            except Exception as e:
+                print(f"Error in receive function: {e}")
+                break
+
+    # Establish connection to AssemblyAI
+    async with websockets.connect(
+        URL,
+        extra_headers=(("Authorization", auth_key),),
+        ping_interval=5,
+        ping_timeout=120
+    ) as _ws:
+        await asyncio.gather(send(_ws), receive(_ws))
+
+    # Handle exceptions and cleanup
+    try:
+        # Your existing code or any additional cleanup
+        pass
+    finally:
         # Cancel the audio sending task
         audio_send_task.cancel()
         try:
