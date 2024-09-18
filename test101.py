@@ -1500,11 +1500,17 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     audio_send_task = asyncio.create_task(send_queued_audio(websocket, shared_data))
 
     # AssemblyAI setup
-    # The AssemblyAI endpoint
     URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
 
     # Retrieve the AssemblyAI API key from environment variables
     auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
+
+    # Check if auth_key is None or empty
+    if not auth_key:
+        print(f"{datetime.now()}: Error: ASSEMBLYAI_API_KEY is not set in the environment variables.")
+        # Close the WebSocket connection and return
+        await websocket.close(code=1000)
+        return
 
     # Initialize audio_buffer in shared_data
     shared_data.audio_buffer = bytearray()
@@ -1514,7 +1520,6 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         while True:
             try:
                 message_data = await websocket.receive()
-
                 if message_data.get("type") == "websocket.receive" and "bytes" in message_data:
                     # Extract the binary data from the message
                     audio_data = message_data["bytes"]
@@ -1531,14 +1536,18 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
                         await _ws.send(json_data)
                         # Reset the audio_buffer to an empty bytearray
                         shared_data.audio_buffer = bytearray()
+                else:
+                    print(f"{datetime.now()}: Received non-bytes message: {message_data}")
             except Exception as e:
-                print(f"Error in send function: {e}")
+                print(f"{datetime.now()}: Error in send function for call_id {call_id}: {e}")
+                print(traceback.format_exc())
                 break
 
     async def receive(_ws):
         while True:
             try:
                 result_str = await _ws.recv()
+                print(f"{datetime.now()}: Received message from AssemblyAI for call_id {call_id}: {result_str}")
                 result = json.loads(result_str)
                 if 'text' in result:
                     # Update the word or no-word timestamp
@@ -1554,23 +1563,25 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
                     elif result['message_type'] == 'PartialTranscript' and result['text'].strip():
                         print(f"{datetime.now()}: Partial transcript - {result['text']}")
             except Exception as e:
-                print(f"Error in receive function: {e}")
+                print(f"{datetime.now()}: Error in receive function for call_id {call_id}: {e}")
+                print(traceback.format_exc())
                 break
 
     # Establish connection to AssemblyAI
-    async with websockets.connect(
-        URL,
-        extra_headers=(("Authorization", auth_key),),
-        ping_interval=5,
-        ping_timeout=120
-    ) as _ws:
-        await asyncio.gather(send(_ws), receive(_ws))
-
-    # Handle exceptions and cleanup
     try:
-        # Your existing code or any additional cleanup
-        pass
+        async with websockets.connect(
+            URL,
+            extra_headers=(("Authorization", auth_key),),
+            ping_interval=5,
+            ping_timeout=120
+        ) as _ws:
+            print(f"{datetime.now()}: Connected to AssemblyAI WebSocket for call_id {call_id}")
+            await asyncio.gather(send(_ws), receive(_ws))
+    except Exception as e:
+        print(f"{datetime.now()}: Exception occurred while connecting to AssemblyAI for call_id {call_id}: {e}")
+        print(traceback.format_exc())
     finally:
+        # Handle exceptions and cleanup
         # Cancel the audio sending task
         audio_send_task.cancel()
         try:
