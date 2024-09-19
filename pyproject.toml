@@ -23,7 +23,7 @@ keywords = ["openai", "sales", "gpt", "autonomous", "agi"]
 
 
 [tool.poetry.dependencies]
-python = "^3.8.1"
+python = "^3.10"
 langchain = "0.1.12"
 openai = "^1.37.0"
 chromadb = "^0.4.18"

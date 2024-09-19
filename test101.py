@@ -74,7 +74,7 @@ auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
 # Load environment variables
 load_dotenv()
 tracemalloc.start()
-app = FastAPI()
+
 call_instances = {}
 
 # Supabase URL, API key
