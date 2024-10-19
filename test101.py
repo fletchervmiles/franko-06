@@ -1299,7 +1299,7 @@ def extract_desired_response(response):
 async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
     chunk_duration = 0.02  # 20ms per chunk
-    initial_buffer_duration = 0.5  # Buffer 0.5 seconds of audio
+    initial_buffer_duration = 2  # Buffer 0.5 seconds of audio
     initial_buffer_chunks = int(initial_buffer_duration / chunk_duration)
     buffer = []
 
