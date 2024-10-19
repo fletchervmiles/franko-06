@@ -706,7 +706,7 @@ GOAL_TARGET_NUMBERS = {
     # Goal number: [min_questions, target_questions, min_seconds, target_seconds, overall cumulative time]
     "1": [0, 0, 00, 00, 000], #Verbatim - Intro
     "2": [0, 0, 00, 00, 000], #Verbatim - Persona
-    "3": [2, 2, 00, 00, 000], #Exploratory - Persona (two questions)
+    "3": [1, 1, 00, 00, 000], #Exploratory - Persona (two questions)
     "4": [0, 0, 00, 00, 000], #Verbatim - Persona
     "5": [0, 0, 00, 00, 000], #Verbatim - Discovery
     "6": [1, 1, 00, 00, 000], #Exploratory - Discovery (two questions)
