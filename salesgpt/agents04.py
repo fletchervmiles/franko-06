@@ -384,7 +384,7 @@ class SalesGPT(Chain):
             
             # Insert text at the beginning and end of the empathy statement
             empathy_statement_result["text"] = (
-                f'{empathy_statement_result["text"]}<break time="1.0s" />'
+                f'{empathy_statement_result["text"]}'
             )
             self.empathy_statement = empathy_statement_result["text"]
             
