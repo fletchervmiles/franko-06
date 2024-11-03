@@ -80,7 +80,7 @@ GOAL 5: INTERVIEW SECTION: INTERVIEW SECTION: MAIN BENEFITS - VERBATIM
 
 Extraction Question:
 
-<extraction_question>Alright, thanks for completing the first part of the interview. <break time="0.75s" /> By the way, you’re awesome {interview_name}, I’m really enjoying our conversation.<break time="0.75s" />. So, next up, I'd love to hear about the most significant benefit you received from using AgeMate. <break time="0.75s" />Can you please describe this benefit to me using your own words?<break time="0.5s" />
+<extraction_question>Alright, thanks for completing the first part of the interview. <break time="0.75s" /> By the way, you’re awesome {interviewee_name}, I’m really enjoying our conversation.<break time="0.75s" />. So, next up, I'd love to hear about the most significant benefit you received from using AgeMate. <break time="0.75s" />Can you please describe this benefit to me using your own words?<break time="0.5s" />
         """
     },
   
