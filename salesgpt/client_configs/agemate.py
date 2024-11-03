@@ -7,7 +7,7 @@ GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 Extraction Question:
 
-<extraction_question>Hi there, this is Francesca! I'm super excited to chat with you today! So, before we kick things off. I want to let you know that the purpose of our call is to discuss your experience with AgeMate. The interview will be recorded, shared with the team and take approximately 15 minutes.<break time="0.75s" />Ok, now that's covered, are you in a quiet place and ready to get started?</extraction_question>
+<extraction_question>Hi there, this is Charlie! I'm excited to get chatting with you today! So, before we kick things off, I want to let you know that our conversation will be divided into a few parts.  We'll start by talking about how you discovered AgeMate, then discuss your experiences with it, and finally, we'll touch on any feedback you might have. <break time="0.5s" />The interview will be recorded, shared with the team, and take approximately 5 to 10 minutes. <break time="0.5s" />Ok, now that's covered, are you in a quiet place and ready to get started?</extraction_question>
         """
     },
   
@@ -15,11 +15,11 @@ Extraction Question:
     "2": {
         "category": "verbatim",
         "content": """
-GOAL 8: INTERVIEW SECTION: INTERVIEW SECTION: DISCOVERY - VERBATIM
+GOAL 2: INTERVIEW SECTION: INTERVIEW SECTION: DISCOVERY - VERBATIM
 
 Extraction Question
 
-<extraction_question>To kick us off, I’d love to hear how you first discovered AgeMate. <break time="0.5s" />For example, was it a recommendation, or maybe you had been searching for a similar product or saw an ad. So over to you, <break time="0.5s" /> can you remember how and when you came across AgeMate?</extraction_question>
+<extraction_question>To kick off the first part of our conversation, <break time="0.3s" /> I'd love to hear how you first discovered AgeMate. <break time="0.5s" />So,<break time="0.4s" /> can you remember when you first came across it <break time="0.3s" />and perhaps<break time="0.3s" /> any first impressions of AgeMate you may have had at the time?</extraction_question>
         """
     },
 
@@ -66,11 +66,9 @@ Things to avoid:
     "4": {
         "category": "verbatim",
         "content": """
-GOAL 4: INTERVIEW SECTION: INTERVIEW SECTION: POINT OF CONVERSION - VERBATIM
-
 Extraction Question
 
-<extraction_question>Thanks for sharing that! <break time="0.75s" /> When you ultimately made the decision to start using AgeMate, was there anything that made you hesitate or have second thoughts before purchasing? <break time="0.25s" /> And I guess if so, what ultimately convinced you to go ahead with your purchase anyway?</extraction_question>
+<extraction_question>Ok, thanks for sharing how you discovered AgeMate. <break time="0.75s" />Now, I'd love for you to think back to the point when you actually made the purchase. <break time="0.75s" />Do you remember if there was anything that made you hesitate or have second thoughts before clicking the buy button? <break time="0.5s" /> And I guess if so, what ultimately convinced you to go ahead with your purchase anyway?</extraction_question>
         """
     },
 
@@ -82,21 +80,7 @@ GOAL 5: INTERVIEW SECTION: INTERVIEW SECTION: MAIN BENEFITS - VERBATIM
 
 Extraction Question:
 
-<extraction_question>
-
-Alright, thanks for sharing how you first discovered AgeMate. <break time="0.75s" /> By the way, you’re awesome {interviewee_name}, I’m really enjoying our conversation. <break time="0.75s" />
-
-<break time="0.75s" />
-
-Next up, I’d love it if you could describe to me, in your own words and in as much detail as possible please, the most significant benefit you received from AgeMate? 
-
-<break time="0.5s" />
-
-I know you’ve canceled your plan now, but we’d love to understand if there’s anything you really loved about it. 
-
-<break time="0.5s" />
-
-Remember, your opinions are really valuable so take as much time as you need.</extraction_question>
+<extraction_question>Alright, thanks for completing the first part of the interview. <break time="0.75s" /> By the way, you’re awesome {interview_name}, I’m really enjoying our conversation.<break time="0.75s" />. So, next up, I'd love to hear about the most significant benefit you received from using AgeMate. <break time="0.75s" />Can you please describe this benefit to me using your own words?<break time="0.5s" />
         """
     },
   
@@ -161,15 +145,7 @@ GOAL 7: INTERVIEW SECTION: INTERVIEW SECTION: IMPROVEMENT - VERBATIM
 
 Extraction Question:
 
-<extraction_question>Alright, thanks so much for giving your perspective on the main benefit, I really appreciate it. 
-
-<break time="0.5s" />
-
-Let’s keep things moving, next up, you’re going to love this,<break time="0.5s" />I want to understand how the team at AgeMate could improve the product for you.
-
-<break time="0.5s" />
-
-So, can you think of any feedback? <break time="0.4s" />. Anything that comes to mind will be extremely useful, even small things!</extraction_question>
+<extraction_question>Thanks so much for giving your perspective on the main benefit, now let's move to the next part of the interview.<break time="0.75s" />I want to understand how the team at AgeMate could improve the product for you.<break time="0.5s" />Even small things are extremely useful and appreciated!<break time="0.3s" />So {interview_name}, can you think of any feedback or improvement opportunities for the team at AgeMate?</extraction_question>
         """
     },
 
@@ -224,15 +200,7 @@ GOAL 9: INTERVIEW SECTION: INTERVIEW SECTION: OPEN FEEDBACK AND CLOSING - VERBAT
 
 Extraction Question:
 
-<extraction_question>Alright, you’ve done it {interviewee_name}! We’re at the end. Congratulations on your hard work. 
-
-<break time="0.5s" />
-
-But just before we end the call, I want to double check whether there’s anything that the team at AgeMate could do to get you back as a customer?
-
-<break time="0.5s" />
-
-</extraction_question>
+<extraction_question>Alright, you’ve almost done it, {interviewee_name}! Just one more question.<break time="0.5s" />So, before we wrap up, I’d love to know if there’s anything specific the team at AgeMate could do to win you back as a customer. <break time="0.5s" />For example, would enhancements in ingredients, pricing changes or anything else that comes to mind,<break time="0.5s" /> make a difference in your decision to cancel your plan?</extraction_question>
         """
     },
 
@@ -260,11 +228,6 @@ Things to avoid:
 
 - Do not ask any further substantive questions.
 - Do not ask any follow up questions.
-
-Additional context if necessary:
-
-- A representative from the Franko team will be in touch to process their compensation payment.
-- If the interviewee has further questions, direct them to the Franko website where they can find relevant contact information.
 
 MOST IMPORTANT - DO NOT ASK ANOTHER QUESTION!!!!
         """

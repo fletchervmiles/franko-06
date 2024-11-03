@@ -520,7 +520,8 @@ class TextToSpeech:
 
     # Set your ElevenLabs API Key and desired voice ID
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-    VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
+    # VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
+    VOICE_ID = "IKne3meq5aSn9XLyUdCD" # Charlie
 
     # def generate_speech(self, text):
     #     start_time = time.time()
@@ -1299,7 +1300,7 @@ def extract_desired_response(response):
 async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
     chunk_duration = 0.02  # 20ms per chunk
-    initial_buffer_duration = 0.5   # Buffer 0.5 seconds of audio
+    initial_buffer_duration = 2   # Buffer 0.5 seconds of audio
     initial_buffer_chunks = int(initial_buffer_duration / chunk_duration)
     buffer = []
 
