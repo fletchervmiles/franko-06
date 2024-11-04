@@ -836,7 +836,7 @@ async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: Share
     # audio_file_name = "understood_okay_audio.raw"
     audio_file_name =  "charlie_voice.raw"
 
-#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+    audio_file_path = os.path.join(audio_folder_path, audio_file_name)
 
 # # # LOCAL
 # async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
