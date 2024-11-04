@@ -465,8 +465,8 @@ class TextToSpeech:
 
     # Set your ElevenLabs API Key and desired voice ID
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-    VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
-    # VOICE_ID = "IKne3meq5aSn9XLyUdCD" # Charlie
+    # VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
+    VOICE_ID = "IKne3meq5aSn9XLyUdCD" # Charlie
 
 
     async def generate_speech(self, text):
