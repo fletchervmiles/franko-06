@@ -176,6 +176,7 @@ class SharedData:
 
         # New
         self.audio_queue = AudioQueue()  # New audio queue
+        self.audio_sending_completed = asyncio.Event()
 
 
 
@@ -460,129 +461,12 @@ def strip_break_tags(text):
 
 
 
-# class TextToSpeech:
-#     # Set your Deepgram API Key and desired voice model
-#     DG_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-#     MODEL_NAME = "aura-asteria-en"  # Example model name, change as needed
-
-
-#     def generate_speech(self, text):
-#         start_time = time.time()
-#         DEEPGRAM_URL = f"https://api.deepgram.com/v1/speak?model={self.MODEL_NAME}&performance=some&encoding=linear16&sample_rate=16000&container=none"
-#         headers = {
-#             "Authorization": f"Token {self.DG_API_KEY}",
-#             "Content-Type": "application/json"
-#         }
-#         payload = {
-#             "text": text
-#         }
-
-#         response = requests.post(DEEPGRAM_URL, headers=headers, json=payload)
-#         response.raise_for_status()
-#         print(f"Time taken for Deepgram API request: {time.time() - start_time} seconds")
-        
-#         duration = 2
-
-#         return response.content, duration
-
-# class TextToSpeech:
-#     # Set your ElevenLabs API Key and desired voice ID
-#     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-#     VOICE_ID = "TSsWwtgLq1gLBwl617e4"  # Replace with the desired voice ID
-
-#     def generate_speech(self, text):
-#         # start_time = time.time()
-#         ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
-#         headers = {
-#             "xi-api-key": self.ELEVENLABS_API_KEY,
-#             "Content-Type": "application/json"
-#         }
-#         payload = {
-#             "seed": -1,
-#             "model_id": "eleven_turbo_v2",
-#             "text": text,
-#             "voice_settings": {
-#                 "similarity_boost": 0.5,
-#                 "stability": 0.5
-#             }
-#         }
-
-#         response = requests.post(ELEVENLABS_URL, headers=headers, json=payload)
-#         response.raise_for_status()
-#         # print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-
-#         # Fixed Duration
-#         duration = 5
-
-#         return response.content, duration
-
 class TextToSpeech:
 
     # Set your ElevenLabs API Key and desired voice ID
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-    # VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
-    VOICE_ID = "IKne3meq5aSn9XLyUdCD" # Charlie
-
-    # def generate_speech(self, text):
-    #     start_time = time.time()
-    #     ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
-    #     headers = {
-    #         "xi-api-key": self.ELEVENLABS_API_KEY,
-    #         "Content-Type": "application/json"
-    #     }
-    #     payload = {
-    #         "model_id": "eleven_turbo_v2_5",
-    #         # "model_id": "eleven_multilingual_v2",
-    #         # "model_id": "eleven_monolingual_v1",
-    #         "text": text,
-    #         "voice_settings": {
-    #             "similarity_boost": 0.5,
-    #             "stability": 0.5
-    #         }
-    #     }
-    #     try:
-    #         response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)  # Added timeout
-    #         response.raise_for_status()  # This will raise an exception for HTTP error codes
-    #         print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-    #         return response.content, 0  # Assuming a fixed duration for simplicity
-    #     except requests.exceptions.HTTPError as e:
-    #         logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
-    #     except requests.exceptions.RequestException as e:
-    #         logging.error(f"Error during ElevenLabs API request: {e}")
-    #     print(f"Failed to generate speech for text: {text}")
-    #     return None, 0  # Indicate failure
-
-
-    # def generate_speech(self, text):
-    #     start_time = time.time()
-    #     ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
-    #     headers = {
-    #         "xi-api-key": self.ELEVENLABS_API_KEY,
-    #         "Content-Type": "application/json"
-    #     }
-    #     payload = {
-    #         "model_id": "eleven_turbo_v2_5",
-    #         "text": text,
-    #         "voice_settings": {
-    #             "similarity_boost": 1,
-    #             "stability": 1
-    #         }
-    #     }
-    #     try:
-    #         response = requests.post(ELEVENLABS_URL, headers=headers, json=payload, timeout=10)
-    #         response.raise_for_status()
-    #         print(f"Time taken for ElevenLabs API request: {time.time() - start_time} seconds")
-            
-    #         audio_content = response.content
-    #         duration = self.calculate_audio_duration(audio_content)
-            
-    #         return audio_content, duration
-    #     except requests.exceptions.HTTPError as e:
-    #         logging.error(f"HTTPError during ElevenLabs API request: {e.response.status_code} {e.response.text}")
-    #     except requests.exceptions.RequestException as e:
-    #         logging.error(f"Error during ElevenLabs API request: {e}")
-    #     print(f"Failed to generate speech for text: {text}")
-    #     return None, 0
+    VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
+    # VOICE_ID = "IKne3meq5aSn9XLyUdCD" # Charlie
 
 
     async def generate_speech(self, text):
@@ -714,7 +598,7 @@ async def make_outgoing_call(call_request: CallRequest):
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://c73c-58-136-106-213.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -722,7 +606,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
+                            'uri': f'wss://c73c-58-136-106-213.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -732,7 +616,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     ]
                 }
             ],
-            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://c73c-58-136-106-213.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -945,14 +829,16 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-# # # PROD CHANGE
+# # PROD CHANGE
 async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
     # Specify the exact file path
     audio_folder_path = "/mnt/buffer_audio"
-    audio_file_name = "understood_okay_audio.raw"
-    audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+    # audio_file_name = "understood_okay_audio.raw"
+    audio_file_name =  "charlie_voice.raw"
 
-# # LOCAL
+#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+
+# # # LOCAL
 # async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
 #     audio_file_name = "understood_okay_audio.raw"
 #     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"  # Update this path
@@ -972,82 +858,6 @@ async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: Share
 
         
 
-
-
-# async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversation_history: list, human_response: str, agent_response: str):
-#     try:
-#         start_time = time.time()
-#         print(f"{datetime.now()} Generate and Send Speech Begun for call_id: {call_id}")
-        
-#         results = {}
-#         empathy_statement_processed = False
-#         tts = TextToSpeech()  # Create a single instance of TextToSpeech
-
-#         # Check if it's the first turn in the conversation
-#         is_first_turn = len(conversation_history) == 0
-
-#         play_audio_file_duration = 5.2 if not is_first_turn else 0  # seconds
-#         empathy_duration = 0
-#         sales_utterance_duration = 0
-
-#         # Only play the audio file if it's not the first turn
-#         if not is_first_turn:
-#             # Start playing the audio file asynchronously without awaiting
-#             asyncio.create_task(play_audio_file(websocket, call_id))
-#         else:
-#             play_audio_file_duration = 0  # Don't count this if it's the first turn
-        
-#         sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
-        
-#         async for partial_result in sales_gpt_api.run_chains(conversation_history, human_response, agent_response):
-#             results.update(partial_result)
-            
-#             # Skip empathy statement generation on the first turn
-#             if not is_first_turn and "empathy_statement" in partial_result and not empathy_statement_processed:
-#                 print(f"{datetime.now()} Empathy Statement Audio Generation Begun for call_id: {call_id}")
-                
-#                 empathy_audio_data, empathy_duration = await tts.generate_speech(results["empathy_statement"])
-#                 print(f"{datetime.now()} Empathy Statement Audio Generation Returned for call_id: {call_id}")
-                
-#                 await send_audio(websocket, empathy_audio_data, empathy_duration, call_id)
-#                 print(f"{datetime.now()} Empathy Statement Audio Sent for call_id: {call_id}")
-                
-#                 empathy_statement_processed = True
-
-#         # Generate sales utterance audio
-#         print(f"{datetime.now()} Lead Interviewer Statement Generation Begun for call_id: {call_id}")
-#         sales_utterance_response = await sales_gpt_api.do(
-#             conversation_history,
-#             human_response,
-#             empathy_statement=results.get("empathy_statement", ""),  # Use empty string if no empathy statement
-#             current_goal_review=results["current_goal_review"],
-#         )
-#         print(f"[sales_gpt_api.do output] Full response:\n{sales_utterance_response}")
-#         extracted_response = extract_desired_response(sales_utterance_response)
-#         print(f"{datetime.now()} Lead Interviewer Statement Generation Returned for call_id: {call_id}")
-
-#         sales_utterance_audio_data, sales_utterance_duration = await tts.generate_speech(extracted_response)
-#         print(f"{datetime.now()} Lead Interviewer Audio Generation Returned for call_id: {call_id}")
-
-#         print(f"{datetime.now()} Lead Interviewer Audio to Websocket Begun for call_id: {call_id}")
-#         await send_audio(websocket, sales_utterance_audio_data, sales_utterance_duration, call_id)
-#         print(f"{datetime.now()} Lead Interviewer Audio to Websocket Returned for call_id: {call_id}")
-
-#         # Calculate timing information
-#         end_time = time.time()
-#         elapsed_time = end_time - start_time
-#         audio_playback_time = play_audio_file_duration + empathy_duration + sales_utterance_duration
-#         audio_state_delay = max(0, audio_playback_time - elapsed_time)
-
-#         print(f"{datetime.now()} Generate and Send Speech Returned for call_id: {call_id}")
-#         print(f"Elapsed time: {elapsed_time:.2f}s, Audio playback time: {audio_playback_time:.2f}s, Audio state delay: {audio_state_delay:.2f}s")
-
-#         return results.get("empathy_statement", ""), extracted_response, audio_state_delay
-
-#     except Exception as e:
-#         print(f"Error in generate_and_send_speech for call_id {call_id}: {e}")
-#         print(f"Error in generate_and_send_speech: {type(e).__name__}: {e}")
-#         print(traceback.format_exc())
 
 async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversation_history: list, human_response: str, agent_response: str, shared_data: SharedData):
     try:
@@ -1162,147 +972,58 @@ def extract_desired_response(response):
 
 
 
-# async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str):
-#     try:
-#         print(f"{datetime.now()} Sending Audio Stream - Begun for call_id: {call_id}")
-#         samples = bytearray(audio_data)
-#         # Set the buffer size to 6 chunks of 20ms audio (320 * 2 bytes per chunk)
-#         buffer_size = int(1 / 0.02)
-#         chunk_size = 320 * 2
-
-#         print(f"{datetime.now()} Sending Audio Stream - Begun")
-#         while len(samples) >= chunk_size * buffer_size:
-#             for i in range(buffer_size):
-#                 chunk = samples[i*chunk_size:(i+1)*chunk_size]
-#                 await vonage_websocket.send_bytes(chunk)
-#                 # print(f"Sent audio chunk of size {len(chunk)} bytes")
-#             samples = samples[buffer_size*chunk_size:]
-#             await asyncio.sleep(0.018)
-        
-#         # Send the remaining audio data only if it forms complete chunks of 640 bytes
-#         while len(samples) >= chunk_size:
-#             chunk = samples[:chunk_size]
-#             await vonage_websocket.send_bytes(chunk)
-#             # print(f"Sent remaining audio chunk of size {len(chunk)} bytes")
-#             samples = samples[chunk_size:]
-#             await asyncio.sleep(0.018)
-        
-#         # If there are any remaining bytes that don't form a complete chunk, send an empty chunk
-#         if len(samples) > 0:
-#             padding_size = chunk_size - len(samples)
-#             padded_chunk = samples + bytearray(padding_size)
-#             await vonage_websocket.send_bytes(padded_chunk)
-
-
-#         print(f"{datetime.now()} Sending Audio Stream - Finished for call_id: {call_id}")
-
-    
-#     except Exception as e:
-#         logging.error(f"Error in send_audio: {e}")
-#         logging.error(f"Error in send_audio: {type(e).__name__}: {e}")
-#         logging.error(traceback.format_exc())
-
-
-# async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str):
-#     try:
-#         print(f"{datetime.now()} Sending Audio Stream - Begun for call_id: {call_id}")
-#         samples = bytearray(audio_data)
-#         chunk_size = 640  # 320 * 2 bytes per chunk (16-bit audio)
-#         chunk_duration = 0.018  # 20ms per chunk
-#         buffer_duration = 0  # 2 seconds buffer
-#         chunks_in_buffer = int(buffer_duration / chunk_duration)
-
-#         print(f"{datetime.now()} Sending Audio Stream - Begun")
-#         start_time = time.time()
-#         chunk_count = 0
-
-#         # Send the initial 2-second buffer immediately
-#         for _ in range(chunks_in_buffer):
-#             if len(samples) >= chunk_size:
-#                 chunk = samples[:chunk_size]
-#                 await vonage_websocket.send_bytes(chunk)
-#                 samples = samples[chunk_size:]
-#                 chunk_count += 1
-#             else:
-#                 break
-
-#         # Continue with the regular streaming
-#         while samples:
-#             chunk = samples[:chunk_size]
-#             if len(chunk) < chunk_size:
-#                 # Pad the last chunk if it's not full
-#                 chunk = chunk.ljust(chunk_size, b'\x00')
-            
-#             await vonage_websocket.send_bytes(chunk)
-#             samples = samples[chunk_size:]
-            
-#             chunk_count += 1
-#             expected_time = start_time + (chunk_count * chunk_duration)
-#             current_time = time.time()
-            
-#             if current_time < expected_time:
-#                 await asyncio.sleep(expected_time - current_time)
-
-#         print(f"{datetime.now()} Sending Audio Stream - Finished for call_id: {call_id}")
-#         print(f"Sent {chunk_count} chunks, total duration: {chunk_count * chunk_duration:.2f} seconds")
-
-#     except Exception as e:
-#         logging.error(f"Error in send_audio: {e}")
-#         logging.error(f"Error in send_audio: {type(e).__name__}: {e}")
-#         logging.error(traceback.format_exc())
-
-# async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
-#     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
-#     delay = 0.019  # 19ms delay
-
-#     while True:
-#         audio_chunk = await shared_data.audio_queue.dequeue()
-#         if audio_chunk is not None:
-#             await vonage_websocket.send_bytes(audio_chunk)
-#             await asyncio.sleep(delay)
-#         else:
-#             await asyncio.sleep(0.001)  # Small sleep to prevent busy-waiting
-
-
 # async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
 #     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
 #     chunk_duration = 0.02  # 20ms per chunk
-#     initial_buffer_duration = 0.5  # Buffer 0.5 seconds of audio
+#     initial_buffer_duration = 0.5   # Buffer 0.5 seconds of audio
 #     initial_buffer_chunks = int(initial_buffer_duration / chunk_duration)
 #     buffer = []
 
-#     while True:
+#     # Accumulate initial buffer
+#     while len(buffer) < initial_buffer_chunks:
 #         audio_chunk = await shared_data.audio_queue.dequeue()
 #         if audio_chunk is not None:
 #             buffer.append(audio_chunk)
-
-#             if len(buffer) >= initial_buffer_chunks:
-#                 # Start sending the buffered audio
-#                 for chunk in buffer:
-#                     await vonage_websocket.send_bytes(chunk)
-#                     await asyncio.sleep(chunk_duration)
-#                 buffer.clear()
-
-#                 # Send subsequent chunks as they come in
-#                 break
 #         else:
-#             await asyncio.sleep(0.001)  # Small sleep to prevent busy-waiting
+#             await asyncio.sleep(0.001)  # Prevent busy-waiting
+
+#     # Record the start time
+#     start_time = time.time()
+#     next_send_time = start_time
+
+#     # Send the initial buffer
+#     for chunk in buffer:
+#         await vonage_websocket.send_bytes(chunk)
+#         next_send_time += chunk_duration
+
+#     buffer.clear()
 
 #     # Continue sending audio chunks in real-time
 #     while True:
 #         audio_chunk = await shared_data.audio_queue.dequeue()
 #         if audio_chunk is not None:
+#             now = time.time()
+#             sleep_time = next_send_time - now
+
+#             if sleep_time > 0:
+#                 await asyncio.sleep(sleep_time)
+#             else:
+#                 # We're behind schedule
+#                 pass  # Optionally log the delay
+
 #             await vonage_websocket.send_bytes(audio_chunk)
-#             await asyncio.sleep(chunk_duration)
+#             next_send_time += chunk_duration
 #         else:
 #             await asyncio.sleep(0.001)
 
 async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
     chunk_duration = 0.02  # 20ms per chunk
-    initial_buffer_duration = 2   # Buffer 0.5 seconds of audio
+    initial_buffer_duration = 0.5   # Buffer 0.5 seconds of audio
     initial_buffer_chunks = int(initial_buffer_duration / chunk_duration)
     buffer = []
+    buffering_timeout = 1.0  # Maximum time to wait for buffering in seconds
+    buffering_start_time = time.time()
 
     # Accumulate initial buffer
     while len(buffer) < initial_buffer_chunks:
@@ -1310,6 +1031,9 @@ async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData
         if audio_chunk is not None:
             buffer.append(audio_chunk)
         else:
+            if time.time() - buffering_start_time > buffering_timeout:
+                print("Buffering timeout reached, proceeding with available audio.")
+                break
             await asyncio.sleep(0.001)  # Prevent busy-waiting
 
     # Record the start time
@@ -1339,6 +1063,10 @@ async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData
             await vonage_websocket.send_bytes(audio_chunk)
             next_send_time += chunk_duration
         else:
+            # Check if all audio has been sent
+            if shared_data.audio_sending_completed.is_set() and await shared_data.audio_queue.is_empty():
+                print("All audio data has been sent.")
+                break  # Exit the loop
             await asyncio.sleep(0.001)
 
 

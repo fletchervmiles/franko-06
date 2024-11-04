@@ -43,7 +43,7 @@ class CallStatus(BaseModel):
 class TextToSpeech:
     # Set your ElevenLabs API Key and desired voice ID
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-    VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Replace with the desired voice ID
+    VOICE_ID = "IKne3meq5aSn9XLyUdCD"  # Replace with the desired voice ID
 
     def generate_speech(self, text, save_path=None):
         start_time = time.time()
@@ -103,7 +103,7 @@ async def make_outgoing_call():
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://1fed-184-82-29-142.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://c73c-58-136-106-213.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -113,7 +113,7 @@ async def make_outgoing_call():
                     ]
                 }
             ],
-            'event_url': [f'https://1fed-184-82-29-142.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://c73c-58-136-106-213.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -169,9 +169,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     try:
         # Generate speech using TextToSpeech
         tts = TextToSpeech()
-        text = """Understood. <break time="0.5s" /> allow me a brief moment to think.
-        
-        <break time="1s" /> Okay<break time="0.7s" />."""
+        text = """Understood! <break time="0.5s" /> Please allow me a brief moment to think.<break time="1s" /> Okay."""
         
         save_path = f"audio_{call_id}.raw"
         audio_data = tts.generate_speech(text, save_path)
