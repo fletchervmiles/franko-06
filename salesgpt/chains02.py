@@ -182,7 +182,7 @@ class KeyPointsChain(TracedLLMChain):
 class EmpathyStatementChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        # llm_alt = ChatLiteLLM(temperature=0, model_name="groq/llama3-70b-8192", api_key=os.getenv("GROQ_API_KEY", ""))
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="groq/llama3-8b-8192", api_key=os.getenv("GROQ_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-opus-20240229", api_key=os.getenv("ANTHROPIC_API_KEY", ""))
         # llm_alt = ChatLiteLLM(temperature=0, model_name="together_ai/meta-llama/Llama-3-70b-chat-hf", api_key="b39a51c976619c8f1e44718c5a0edb7e1780a51ad44667e78931dbe65a2cfb9d")
         llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
@@ -318,7 +318,9 @@ class VerbatimChain(TracedLLMChain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-haiku-20240307", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-haiku-20240307", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=0, model_name="groq/llama3-8b-8192", api_key=os.getenv("GROQ_API_KEY", ""))
+
 
         prompt = PromptTemplate(
             template=VERBATIM_PROMPT,
