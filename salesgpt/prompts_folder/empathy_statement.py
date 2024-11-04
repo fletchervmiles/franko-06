@@ -69,8 +69,7 @@ Based on the last responses:
 5) DO NOT ASK A FOLLOW UP QUESTION OR HINT AT AN INQUIRY. STATEMENT ONLY.
 6) DO NOT USE THE INTERVIEWEE’S NAME.
 7) Verify the accuracy of mentioned tools, names, or terminologies against commonly known industry standards or common sense. Automatically correct any recognizable yet mistyped or mispronounced terms.
-8) IF THE QUESTION INVOLVES PRICING, i.e. PRICING QUESTION, PRICE POINT, the empathy statement should simplify be, “Hmm, yep, that makes sense.”
-9) Enhance Transcript Accuracy and Contextual Coherence and avoid potential using mistyped or mispronounced terms in your response. 
+8) Enhance Transcript Accuracy and Contextual Coherence and avoid potential using mistyped or mispronounced terms in your response. 
 Contextual Verification: Examine each term and phrase for contextual appropriateness, especially focusing on words that sound similar but have different meanings. Ensure that the transcription makes sense within the flow and subject of the conversation.
 Common Misinterpretations: Pay special attention to common transcription errors, such as numbers that might have been misheard, homophones, or industry-specific jargon that may be prone to misinterpretation.
 Logical Consistency: Confirm that the transcribed text is logically consistent with the broader discussion topics. This includes checking that transitions between sentences and ideas are smooth and make sense.

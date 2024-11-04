@@ -317,8 +317,8 @@ class VerbatimChain(TracedLLMChain):
 
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-        # llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-5-sonnet-20240620", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
+        # llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=0, model_name="claude-3-haiku-20240307", api_key=os.getenv("ANTHROPIC_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=VERBATIM_PROMPT,
