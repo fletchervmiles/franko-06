@@ -6,8 +6,7 @@ CONVERSATION_STAGES = {
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 Extraction Question:
-
-<extraction_question>Hi there, this is Charlie! I'm excited to get chatting with you today! So, before we kick things off, I want to let you know that our conversation will be divided into a few parts.  We'll start by talking about how you discovered AgeMate, then discuss your experiences with it, and finally, we'll touch on any feedback you might have. <break time="0.5s" />The interview will be recorded, shared with the team, and take approximately 5 to 10 minutes. <break time="0.5s" />Ok, now that's covered, are you in a quiet place and ready to get started?</extraction_question>
+<extraction_question>Hi there, this is Charlie!</extraction_question>
         """
     },
   
