@@ -100,7 +100,11 @@ class SalesGPTAPI:
                 chain_results = await chain_results_task
                 yield chain_results
             else:
-                yield {"current_goal_review": ""}
+                yield {
+                    "current_goal_review_narrative": "",
+                    "current_goal_review_outcome": "",
+                    "current_goal_review_product": ""
+                }
 
         except Exception as e:
             print(f"Error in run_chains: {e}")
@@ -116,10 +120,14 @@ class SalesGPTAPI:
             raise
 
     # Process a standard non-streaming response
-    async def do(self, conversation_history: list, human_input=None, empathy_statement=None, current_goal_review=None):
+    async def do(self, conversation_history: list, human_input=None, empathy_statement=None, 
+                 current_goal_review_narrative=None, current_goal_review_outcome=None, 
+                 current_goal_review_product=None):
         ai_log = await self.sales_agent._call({
             "empathy_statement": empathy_statement,
-            "current_goal_review": current_goal_review,
+            "current_goal_review_narrative": current_goal_review_narrative,
+            "current_goal_review_outcome": current_goal_review_outcome,
+            "current_goal_review_product": current_goal_review_product,
         })
 
         return ai_log["text"]

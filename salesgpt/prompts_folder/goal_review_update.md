@@ -1,5 +1,3 @@
-CURRENT_GOAL_REVIEW_PROMPT = """
-
 ### Role Title: REVIEW THE CURRENT GOAL
 
 #### Persona and Context:
@@ -33,7 +31,7 @@ Review the Conversation History, Current Interview Section, and the Most Recent 
 **1. CURRENT TASK CONVERSATION HISTORY:** Review the recent conversation history, with a focus on the most recent response. One of your key tasks will be to compare what the founder is trying to understand against the existing conversation progress.
 
 ```
-CURRENT TASK CONVERSATION HISTORY: {conversation_history}
+CURRENT TASK CONVERSATION HISTORY: {short_conversation_history}
 ```
 
 **2. CURRENT TASK INTERVIEW SECTION:** Examine the current section of the interview guide being addressed. Pay attention to what the founder is trying to understand and how this relates to the conversation so far. 
@@ -1276,6 +1274,3 @@ Alignment with the current interview section: Seeks to understand the reasoning 
 Differentiation: Probes into the specific impact of latency information instead of asking for general feature feedback again.
 Recommended Approach: Explore how the lack of latency information impacts their tasks or decisions, leveraging their expressed frustration to delve deeper.
 ```
-
-
-"""
