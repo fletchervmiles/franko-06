@@ -103,11 +103,11 @@ redis_port = os.getenv('REDIS_PORT')
 redis_db = os.getenv('REDIS_DB')
 r = redis.Redis(host=redis_host, port=redis_port, db=redis_db)
 
+
 # Vonage credentials
 VONAGE_APPLICATION_ID = os.environ.get("VONAGE_APPLICATION_ID")
 VONAGE_APPLICATION_PRIVATE_KEY_PATH = os.environ.get("VONAGE_APPLICATION_PRIVATE_KEY_PATH")
-VONAGE_NUMBER = os.environ.get("VONAGE_NUMBER")
-TO_NUMBER = os.environ.get("TO_NUMBER")
+
 
 # # Initialize Vonage client
 # vonage_client = VonageClient(
@@ -223,14 +223,14 @@ class BufferStats:
 
 class AudioBuffer:
     def __init__(self):
-        self.min_buffer_duration = 0.2     # Reduced to 1 second
-        self.max_buffer_duration = 2.0     # Reduced to 3 seconds
-        self.target_buffer_duration = 1.0  # Reduced to 2 seconds
+        self.min_buffer_duration = 1.0     # Reduced to 1 second
+        self.max_buffer_duration = 4.0     # Reduced to 3 seconds
+        self.target_buffer_duration = 2.5  # Reduced to 2 seconds
         self.sample_rate = 16000         
         self.buffer = deque(maxlen=int(self.max_buffer_duration * self.sample_rate))
         self.stats = BufferStats()
         self.lock = asyncio.Lock()
-        self.underrun_threshold = 0.1    # Reduced threshold
+        self.underrun_threshold = 0.2    # Reduced threshold
         
     async def fill_initial_buffer(self):
         """Wait until initial buffer is filled"""
@@ -515,9 +515,64 @@ class AudioChunkBatcher:
             return None
 
 
+class VonageNumberManager:
+    def __init__(self):
+        self.numbers = []
+        self.current_index = 0
+        self.in_use_numbers = set()
+        self.initialize_numbers()
+
+    def initialize_numbers(self):
+        """Initialize numbers from environment variables"""
+        # Get all environment variables that start with VONAGE_NUMBER
+        for i in range(1, 6):  # Assuming you have up to 5 numbers
+            # Update this line to match your .env format
+            number_key = f"VONAGE_NUMBER{str(i).zfill(2)}"  # This will create VONAGE_NUMBER01, VONAGE_NUMBER02, etc.
+            number = os.environ.get(number_key)
+            if number:
+                print(f"Found Vonage number: {number} for key: {number_key}")
+                self.numbers.append(number)
+            
+        if not self.numbers:
+            print("Warning: No Vonage numbers found in environment variables")
+            raise ValueError("No Vonage numbers found in environment variables")
+        
+        print(f"Initialized with Vonage numbers: {self.numbers}")
+
+    async def get_available_number(self):
+        """Get the next available number using round-robin"""
+        try:
+            if not self.numbers:
+                raise ValueError("No Vonage numbers available")
+            
+            # Get next number using round-robin
+            number = self.numbers[self.current_index]
+            print(f"Retrieved number from pool: {number}")
+            
+            # Update index for next time
+            self.current_index = (self.current_index + 1) % len(self.numbers)
+            
+            # Track number as in use
+            self.in_use_numbers.add(number)
+            
+            return number
+            
+        except Exception as e:
+            print(f"Error getting available number: {e}")
+            print(f"Falling back to VONAGE_NUMBER01")
+            fallback_number = os.environ.get("VONAGE_NUMBER01")
+            if not fallback_number:
+                raise ValueError("No fallback Vonage number available")
+            return fallback_number
+
+    def release_number(self, number):
+        """Release a number from being marked as in use"""
+        if number in self.in_use_numbers:
+            self.in_use_numbers.remove(number)
 
 
-
+# Initialize the VonageNumberManager at the module level
+vonage_number_manager = VonageNumberManager()
 
 
 # Class to store shared data across different components of the system
@@ -616,6 +671,36 @@ class SharedData:
     def update_audio_time(self):
         self.last_audio_time = datetime.now()
 
+
+    def reset(self):
+        """Reset all instance variables to their initial state"""
+        self._data = {}
+        self.websocket = None
+        self.websocket_ready = asyncio.Event()
+        self.call_completed = False
+        self.state_machine = None
+        self.is_reconnecting = False
+        self.reconnection_attempts = 0
+        self.call_id = None
+        
+        # Reset speech recognition variables
+        self.transcript_parts = []
+        self.last_word_time = None
+        self.last_no_word_time = None
+        self.empty_transcript_count = 0
+        
+        # Reset audio components
+        self.audio_queue = Queue()
+        self.audio_sending_completed = asyncio.Event()
+        self.audio_buffer = AudioBuffer()
+        self.audio_timing = AudioTiming()
+        self.audio_queue = EnhancedAudioQueue()
+        self.audio_monitor = AudioPlaybackMonitor()
+        self.chunk_batcher = AudioChunkBatcher()
+        
+        # Reset silence detection
+        self.silence_detection_task = None
+        self.last_audio_time = datetime.now()
 
 
 class StateMachine:
@@ -877,7 +962,7 @@ class TextToSpeech:
         
         # Prepare request payload with model settings and voice parameters
         payload = {
-            "model_id": "eleven_turbo_v2_5",  # Specify the TTS model to use
+            "model_id": "eleven_turbo_v2",  # Specify the TTS model to use
             "text": text,                      # Text to convert to speech
             "voice_settings": {
                 "similarity_boost": 1,         # Voice similarity parameter (1 = maximum)
@@ -947,6 +1032,13 @@ async def make_outgoing_call(call_request: CallRequest):
         call_id = str(uuid4())
         print(f"{datetime.now()}: Call initiated with call_id: {call_id}")
 
+        # Get an available Vonage number
+        vonage_number = await vonage_number_manager.get_available_number()
+        print(f"Using Vonage number: {vonage_number} for call_id: {call_id}")
+
+        # Store the number with the call for later release
+        r.hset(f"{call_id}_metadata", "vonage_number", vonage_number)
+
         # Create a dynamic configuration
         dynamic_config = {
             "client_name": call_request.client_name,
@@ -991,6 +1083,7 @@ async def make_outgoing_call(call_request: CallRequest):
 
         print(f"Vonage Application ID: {VONAGE_APPLICATION_ID}")
         print(f"Vonage Private Key Path: {VONAGE_APPLICATION_PRIVATE_KEY_PATH}")
+        print(f"Vonage Number in use: {vonage_number}")  # Add this line to log which number is being used
         
         # Check if the private key file exists and is readable
         if not os.path.isfile(VONAGE_APPLICATION_PRIVATE_KEY_PATH):
@@ -1010,7 +1103,7 @@ async def make_outgoing_call(call_request: CallRequest):
         # franko-06.onrender.com
         response = vonage_client.voice.create_call({
             'to': [{'type': 'phone', 'number': call_request.to_number}], # Use to_number from the request
-            'from': {'type': 'phone', 'number': VONAGE_NUMBER},
+            'from': {'type': 'phone', 'number': vonage_number},
             'ncco': [
                 {
                     'action': 'record',
@@ -1026,7 +1119,7 @@ async def make_outgoing_call(call_request: CallRequest):
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
-                                'caller-id': VONAGE_NUMBER
+                                'caller-id': vonage_number
                             }
                         }
                     ]
@@ -1077,10 +1170,17 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                     # Get instances from call_instances
                     state_machine = call_instances[call_id]["state_machine"]
                     shared_data = call_instances[call_id]["shared_data"]
-                    state_machine = call_instances[call_id]["state_machine"]
 
                     # Set the call_completed flag to True
                     shared_data.call_completed = True
+
+                    # Get and release the Vonage number used for this call
+                    vonage_number = r.hget(f"{call_id}_metadata", "vonage_number")
+                    if vonage_number:
+                        vonage_number = vonage_number.decode('utf-8')
+                        await vonage_number_manager.release_number(vonage_number)
+                        r.delete(f"{call_id}_metadata")
+                        print(f"{datetime.now()}: Released Vonage number {vonage_number} for call_id: {call_id}")
 
                     # Print conversation history before deleting
                     conversation_history = r.get(f'{call_id}_conversation_history')
@@ -1110,6 +1210,7 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                     r.delete(f'{call_id}_human_response')
                     r.delete(f'{call_id}_agent_response')
                     r.delete(f'{call_id}_conversation_history')
+                    r.delete(f"{call_id}_metadata")  # Add this line to ensure metadata is cleaned up
                     print(f"{datetime.now()}: Redis history deleted for call_id: {call_id}")
 
                     print(f"Call terminated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} for call_id: {call_id}")
@@ -1428,25 +1529,25 @@ def extract_desired_response(response):
     if start != -1:
         # Look for the next occurrence of the marker
         end = response.find(marker, start + len(marker))
-        print(f"End marker position: {end}")
         
         if end != -1:
             # Extract the content between the markers
             extracted = response[start + len(marker):end].strip()
-            print(f"Extracted LEAD_RESPONSE: {extracted}")
-            return extracted
         else:
             print("Could not find end marker, returning everything after start marker")
-            # If no end marker is found, return everything after the start marker
+            # If no end marker is not found, return everything after the start marker
             extracted = response[start + len(marker):].strip()
-            print(f"Extracted LEAD_RESPONSE: {extracted}")
-            return extracted
     else:
         print("Could not find start marker")
+        # If the start marker is not found, return the original response
+        extracted = response.strip()
+
+    # Print selected response after it's been extracted
+    print("\n=== Selected Lead Response ===")
+    print(f"{extracted}\n")
+    print("=======================\n")
     
-    # If the start marker is not found, return the original response
-    print(f"Returning original response: {response.strip()}")
-    return response.strip()
+    return extracted
 
 # Seems to be working from an audio quality
 # async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
@@ -1634,10 +1735,10 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id:
 async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
     chunk_duration = 0.02  # 20ms per chunk
-    initial_buffer_duration = 0.5   # Buffer 0.5 seconds of audio
+    initial_buffer_duration = 1.5   # Buffer 0.5 seconds of audio
     initial_buffer_chunks = int(initial_buffer_duration / chunk_duration)
     buffer = []
-    buffering_timeout = 1.0
+    buffering_timeout = 3.0
     buffering_start_time = time.time()
 
     try:

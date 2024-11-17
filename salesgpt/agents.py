@@ -295,8 +295,8 @@ class SalesGPT(Chain):
         try:
             print(f"[{datetime.now()}] Async Chain Runner Begun (goal reviews)")
 
-            # Run chains sequentially
-            narrative_result = await self.goal_review_narrative_chain.ainvoke({
+            # Prepare common inputs once
+            common_inputs = {
                 "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
                 "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
                 "current_conversation_stage": self.current_conversation_stage,
@@ -309,39 +309,18 @@ class SalesGPT(Chain):
                 "agent_response": self.agent_response,
                 "human_response": self.human_response,
                 "client_product_summary": self.client_product_summary,
-            })
+            }
+
+            # Run all chains concurrently
+            narrative_result, outcome_result, product_result = await asyncio.gather(
+                self.goal_review_narrative_chain.ainvoke(common_inputs),
+                self.goal_review_outcome_chain.ainvoke(common_inputs),
+                self.goal_review_product_chain.ainvoke(common_inputs)
+            )
+
+            # Store results
             self.current_goal_review_narrative = narrative_result["text"]
-
-            outcome_result = await self.goal_review_outcome_chain.ainvoke({
-                "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-                "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
-                "current_conversation_stage": self.current_conversation_stage,
-                "client_name": self.client_name,
-                "call_id": self.call_id,
-                "interviewee_name": self.interviewee_name,
-                "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
-                "customer_type": self.customer_type,
-                "has_progressed": self.has_progressed,
-                "agent_response": self.agent_response,
-                "human_response": self.human_response,
-                "client_product_summary": self.client_product_summary,
-            })
             self.current_goal_review_outcome = outcome_result["text"]
-
-            product_result = await self.goal_review_product_chain.ainvoke({
-                "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
-                "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
-                "current_conversation_stage": self.current_conversation_stage,
-                "client_name": self.client_name,
-                "call_id": self.call_id,
-                "interviewee_name": self.interviewee_name,
-                "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
-                "customer_type": self.customer_type,
-                "has_progressed": self.has_progressed,
-                "agent_response": self.agent_response,
-                "human_response": self.human_response,
-                "client_product_summary": self.client_product_summary,
-            })
             self.current_goal_review_product = product_result["text"]
 
             print(f"[{datetime.now()}] Async Chain Runner Returned (goal reviews)")
@@ -357,6 +336,7 @@ class SalesGPT(Chain):
             print(f"Error in async_chain_runner: {type(e).__name__}: {e}")
             print(traceback.format_exc())
             raise
+
 
     # With additional of Empathy statement insert
     async def run_empathy_statement_chain(self):
@@ -390,90 +370,59 @@ class SalesGPT(Chain):
         try:
             print(f"[{datetime.now()}] Determine Conversation Stage Begun")
             
-            # # Create tasks for potentially long-running operations
-            # increment_task = asyncio.create_task(self.increment_story_component_turn_count())
-            # # goal_completeness_task = asyncio.create_task(self.run_goal_completeness_chain())
-            # question_count_task = asyncio.create_task(self.run_question_count_chain())
-
-            # # # Await all tasks concurrently
-            # # await asyncio.gather(increment_task, goal_completeness_task, question_count_task)
-
-            # # Await all tasks concurrently
-            # await asyncio.gather(increment_task, question_count_task)
-
-            # First, increment the turn count
+            # Log initial state
+            print(f"BEFORE INCREMENT - Stage ID: {self.conversation_stage_id}, "
+                  f"Turns: {self.turns_per_story_component.get(self.conversation_stage_id, 0)}")
+            
+            # First increment the turn count
             await self.increment_story_component_turn_count()
-        
-            # Then, run the question count chain
-            await self.run_question_count_chain()
-
-
-            previous_stage_id = self.conversation_stage_id
-            try:
-                print(f"[{datetime.now()}] Stage Analyzer Chain Begun")
-                stage_analyzer_output = await self.stage_analyzer_chain.ainvoke(
-                    input_data={
-                        "conversation_history": "\n".join(self.conversation_history).rstrip("\n"),
-                        "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
-                        "conversation_stage_id": self.conversation_stage_id,
-                        "conversation_stages": "\n".join(
-                            [
-                                str(key) + ": " + str(value)
-                                for key, value in self.conversation_stage_dict.items()
-                            ]
-                        ),
-                        # "conversation_summary": self.conversation_summary,
-                        "call_id": self.call_id,
-                        "interviewee_name": self.interviewee_name, 
-                        "customer_type": self.customer_type,
-                        "goal_completeness_status": self.goal_completeness_status,
-                        "question_count_summary": self.question_count_summary,
-                        "client_name": self.client_name,
-                    },
-                    return_only_outputs=False,
-                )
-                print(f"[{datetime.now()}] Stage Analyzer Chain Returned")
-            except Exception as e:
-                print(f"Error during stage analysis: {e}")
-                stage_analyzer_output = {"text": self.conversation_stage_id}
-
-            # Extract the stage ID from the output
-            stage_analyzer_text = stage_analyzer_output.get("text", "")
-            import re
-            match = re.search(r'<<<<<(\d+)>>>>>', stage_analyzer_text)
-            if match:
-                new_stage_id = match.group(1)
-                print(f"[{datetime.now()}] New conversation stage ID set: {new_stage_id}")
-                self.conversation_stage_id = new_stage_id
+            
+            # Get the UPDATED turn count directly from the dictionary
+            current_stage_id = self.conversation_stage_id
+            current_category = self.conversation_stage_dict[current_stage_id]["category"].lower()
+            current_turns = self.turns_per_story_component[current_stage_id]  # Get directly from dictionary
+            
+            # Log state after increment
+            print(f"AFTER INCREMENT - Stage ID: {current_stage_id}, "
+                  f"Category: {current_category}, "
+                  f"Turns: {current_turns}")
+            
+            # Determine max turns based on category
+            max_turns = 2 if current_category == "exploratory" else 1
+            print(f"Max turns for this stage: {max_turns}")
+            
+            # Check if we should progress
+            if current_turns >= max_turns:
+                # Get next stage ID
+                next_stage_id = str(int(current_stage_id) + 1)
+                print(f"Current turns ({current_turns}) >= max turns ({max_turns}). "
+                      f"Attempting to progress to stage {next_stage_id}")
+                
+                # Check if next stage exists
+                if next_stage_id in self.conversation_stage_dict:
+                    self.conversation_stage_id = next_stage_id
+                    self.update_story_component_time()
+                    self.current_stage_start_time = time.time()
+                    self.has_progressed = True
+                    # Reset turn count for new stage
+                    self.turns_per_story_component[next_stage_id] = 0
+                    print(f"Progressed to stage {next_stage_id}")
+                else:
+                    self.has_progressed = False
+                    print(f"Stage {next_stage_id} does not exist. Staying in current stage.")
             else:
-                print("No valid stage ID found in the output. Keeping current stage ID.")
-
-
-            if self.conversation_stage_id != previous_stage_id:
-                self.update_story_component_time()  # Update time for the previous stage
-                self.current_stage_start_time = time.time()  # Reset timer for the new stage
-
-            # This adds it to the conversation_stage_history which is an input for the conversation stage counts
+                self.has_progressed = False
+                print(f"Staying in stage {current_stage_id} - Need {max_turns - current_turns} more turns")
+            
+            # Update conversation stage text and history
+            self.current_conversation_stage = self.retrieve_conversation_stage(self.conversation_stage_id)
             self.conversation_stage_history.append(self.conversation_stage_id)
-
-            # This updates the text of the current goal
-            self.current_conversation_stage = self.retrieve_conversation_stage(
-                self.conversation_stage_id
-            )
-
-            # 
             self.stage_counts = self.count_conversation_stages()
-            self.has_progressed = self.has_progressed_analysis()  
-            # self.run_transition_chain() - TO BE DELETED
 
+            # Log final state
+            print(f"Final turn counts: {self.turns_per_story_component}")
             print(f"[{datetime.now()}] Determine Conversation Stage Returned")
-        
-        except AttributeError as e:
-            print(f"AttributeError in determine_conversation_stage: {e}")
-        # Handle the error appropriately
-        except KeyError as e:
-            print(f"KeyError in determine_conversation_stage: {e}")
-        # Handle the error appropriately    
+            
         except Exception as e:
             print(f"An error occurred in determine_conversation_stage: {e}")
 
@@ -627,11 +576,16 @@ class SalesGPT(Chain):
     async def increment_story_component_turn_count(self):
         print(f"[{datetime.now()}] Increment Story Component Turn Count Begun")
         story_component_stage_id = self.conversation_stage_id
+        
+        # Initialize to 0 if not present, then increment
         if story_component_stage_id not in self.turns_per_story_component:
-            self.turns_per_story_component[story_component_stage_id] = 0
+            self.turns_per_story_component[story_component_stage_id] = 1  # Start at 1 for first turn
         else:
             self.turns_per_story_component[story_component_stage_id] += 1
-        # print(f"Turn count for story component {story_component_stage_id}: {self.turns_per_story_component[story_component_stage_id]}")
+        
+        # Add debug logging
+        print(f"Turn count for stage {story_component_stage_id} is now: {self.turns_per_story_component[story_component_stage_id]}")
+        
         print(f"[{datetime.now()}] Increment Story Component Turn Count Returned")
 
     def set_interview_start_time(self):
@@ -648,14 +602,11 @@ class SalesGPT(Chain):
         _, _, _, _, overall_target_time = self.GOAL_TARGET_NUMBERS.get(story_component_stage_id, (0, 0, 0, 0, 0))
         overall_time_met = overall_elapsed_time < overall_target_time
 
-        
-        # Print the values
         print(f"[{datetime.now()}] Time right now")
         print(f"Overall Interview Time Tracking:")
         print(f"  Overall Elapsed Time: {overall_elapsed_time:.2f} seconds")
         print(f"  Overall Target Time: {overall_target_time} seconds")
         print(f"  Overall Time Met: {overall_time_met}")
-        
 
         return {
             "overall_elapsed_time": overall_elapsed_time,
@@ -749,26 +700,101 @@ class SalesGPT(Chain):
         }
 
 
+    # async def _run_exploratory_chain(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    #     try:
+    #         # Generate 3 responses
+    #         tasks = [
+    #             self.exploratory_chain1.ainvoke(inputs),
+    #             self.exploratory_chain2.ainvoke(inputs),
+    #             self.exploratory_chain3.ainvoke(inputs)
+    #         ]
+    #         responses = await asyncio.gather(*tasks)
+
+    #         # Extract the text from each response
+    #         response_texts = [response["text"] for response in responses]
+
+    #         # Prepare inputs for the selector chain
+    #         selector_inputs = {
+    #             "response1": response_texts[0],
+    #             "response2": response_texts[1],
+    #             "response3": response_texts[2],
+    #             "context": inputs,
+    #             # Add the missing keys
+    #             "human_response": self.human_response,
+    #             "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
+    #             "empathy_statement": self.empathy_statement,
+    #             "agent_response": self.agent_response,
+    #             "current_conversation_stage": self.current_conversation_stage,
+    #             "client_name": self.client_name,
+    #             "call_id": self.call_id,
+    #             # Add the missing exploratory responses
+    #             "lead_exploratory_narrative": response_texts[0],
+    #             "lead_exploratory_outcome": response_texts[1],
+    #             "lead_exploratory_product": response_texts[2]
+    #         }
+
+    #         # Run the selector chain
+    #         selection_result = await self.selector_chain.ainvoke(selector_inputs)
+
+    #         # Get the selected response number, defaulting to 1 if invalid
+    #         try:
+    #             selected_number = int(selection_result["text"].strip())
+    #             if selected_number not in [1, 2, 3]:
+    #                 print(f"Warning: Invalid selection number {selected_number}. Defaulting to 1.")
+    #                 selected_number = 1
+    #         except ValueError:
+    #             print(f"Warning: Could not convert '{selection_result['text']}' to an integer. Defaulting to 1.")
+    #             selected_number = 1
+
+    #         # Return the selected response
+    #         return {"text": response_texts[selected_number - 1]}
+
+    #     except Exception as e:
+    #         print(f"Error in _run_exploratory_chain: {e}")
+    #         # If an error occurs, return the first response or a default message
+    #         default_response = responses[0]["text"] if responses else "I apologize, but I encountered an error while processing the response. Could you please rephrase your question or statement?"
+    #         return {"text": default_response}
+
+
     async def _run_exploratory_chain(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Run exploratory chains concurrently and select the best response.
+        """
         try:
-            # Generate 3 responses
-            tasks = [
+            print(f"[{datetime.now()}] Running exploratory chains...")
+
+            # Run all three exploratory chains concurrently
+            responses = await asyncio.gather(
                 self.exploratory_chain1.ainvoke(inputs),
                 self.exploratory_chain2.ainvoke(inputs),
-                self.exploratory_chain3.ainvoke(inputs)
-            ]
-            responses = await asyncio.gather(*tasks)
+                self.exploratory_chain3.ainvoke(inputs),
+                return_exceptions=True  # This prevents one failure from stopping all chains
+            )
 
-            # Extract the text from each response
-            response_texts = [response["text"] for response in responses]
+            # Process responses and handle any exceptions
+            response_texts = []
+            for i, response in enumerate(responses, 1):
+                if isinstance(response, Exception):
+                    print(f"Chain {i} failed: {str(response)}")
+                    continue
+                if isinstance(response, dict) and "text" in response:
+                    print(f"Chain {i} completed successfully")
+                    response_texts.append(response["text"])
 
-            # Prepare inputs for the selector chain
+            # If no responses succeeded, return default
+            if not response_texts:
+                return {"text": "I apologize, but I encountered an error. Could you please rephrase your question?"}
+
+            # Pad with copies of the first response if needed
+            while len(response_texts) < 3:
+                response_texts.append(response_texts[0])
+
+            # Prepare selector inputs
             selector_inputs = {
                 "response1": response_texts[0],
                 "response2": response_texts[1],
                 "response3": response_texts[2],
                 "context": inputs,
-                # Add the missing keys
                 "human_response": self.human_response,
                 "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
                 "empathy_statement": self.empathy_statement,
@@ -776,33 +802,26 @@ class SalesGPT(Chain):
                 "current_conversation_stage": self.current_conversation_stage,
                 "client_name": self.client_name,
                 "call_id": self.call_id,
-                # Add the missing exploratory responses
                 "lead_exploratory_narrative": response_texts[0],
                 "lead_exploratory_outcome": response_texts[1],
                 "lead_exploratory_product": response_texts[2]
             }
 
-            # Run the selector chain
-            selection_result = await self.selector_chain.ainvoke(selector_inputs)
-
-            # Get the selected response number, defaulting to 1 if invalid
+            # Run selector chain
             try:
+                selection_result = await self.selector_chain.ainvoke(selector_inputs)
                 selected_number = int(selection_result["text"].strip())
                 if selected_number not in [1, 2, 3]:
-                    print(f"Warning: Invalid selection number {selected_number}. Defaulting to 1.")
                     selected_number = 1
-            except ValueError:
-                print(f"Warning: Could not convert '{selection_result['text']}' to an integer. Defaulting to 1.")
-                selected_number = 1
-
-            # Return the selected response
-            return {"text": response_texts[selected_number - 1]}
+                return {"text": response_texts[selected_number - 1]}
+            except Exception as e:
+                print(f"Selector chain failed: {e}, defaulting to first response")
+                return {"text": response_texts[0]}
 
         except Exception as e:
             print(f"Error in _run_exploratory_chain: {e}")
-            # If an error occurs, return the first response or a default message
-            default_response = responses[0]["text"] if responses else "I apologize, but I encountered an error while processing the response. Could you please rephrase your question or statement?"
-            return {"text": default_response}
+            return {"text": "I apologize, but I encountered an error. Could you please rephrase your question?"}
+
 
 
     @classmethod
