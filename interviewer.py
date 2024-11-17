@@ -123,7 +123,12 @@ class CallRequest(BaseModel):
     interviewee_name: str     # First name of the person being interviewed
     interviewee_last_name: str # Last name of the person being interviewed
     interviewee_email: str    # Email address of the interviewee
-    to_number: str           # Phone number to call
+    interviewee_number: str   # Phone number to call
+    client_company_description: str  # Description of the client's company
+    agent_name: str           # Name of the AI agent
+    voice_id: str            # ID for the voice to be used
+    unique_customer_identifier: str  # Unique identifier for the customer
+    use_case: str            # Use case for this specific call
 
 # Define a model for call status updates from Vonage
 class CallStatus(BaseModel):
@@ -1045,7 +1050,12 @@ async def make_outgoing_call(call_request: CallRequest):
             "interviewee_name": call_request.interviewee_name,
             "interviewee_last_name": call_request.interviewee_last_name,
             "interviewee_email": call_request.interviewee_email,
-            "to_number": call_request.to_number,
+            "interviewee_number": call_request.interviewee_number,
+            "client_company_description": call_request.client_company_description,
+            "agent_name": call_request.agent_name,
+            "voice_id": call_request.voice_id,
+            "unique_customer_identifier": call_request.unique_customer_identifier,
+            "use_case": call_request.use_case,
         }
 
         # # Save the dynamic configuration to a temporary JSON file
@@ -1102,7 +1112,7 @@ async def make_outgoing_call(call_request: CallRequest):
         # PROD CHANGE
         # franko-06.onrender.com
         response = vonage_client.voice.create_call({
-            'to': [{'type': 'phone', 'number': call_request.to_number}], # Use to_number from the request
+            'to': [{'type': 'phone', 'number': call_request.interviewee_number}], # Use interviewee_number from the request
             'from': {'type': 'phone', 'number': vonage_number},
             'ncco': [
                 {
@@ -1264,7 +1274,7 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
             interviewee_name = dynamic_config.get('interviewee_name', '')
             interviewee_last_name = dynamic_config.get('interviewee_last_name', '')
             interviewee_email = dynamic_config.get('interviewee_email', '')
-            to_number = dynamic_config.get('to_number', '')
+            interviewee_number = dynamic_config.get('interviewee_number', '')
             client_name = dynamic_config.get('client_name', 'Default')
 
             # Get conversation history from Redis
@@ -1316,7 +1326,7 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
                 "interviewee_name": interviewee_name,
                 "interviewee_last_name": interviewee_last_name,
                 "interviewee_email": interviewee_email,
-                "to_number": to_number,
+                "interviewee_number": interviewee_number,
                 "client_name": client_name,
                 "current_date": datetime.now().isoformat(),
                 "interview_start_time": datetime.fromtimestamp(interview_start_time).isoformat(),

@@ -58,27 +58,6 @@ langfuse_handler = CallbackHandler(
 )
 
 
-# class TracedLLMChain(LLMChain):
-#     """Base chain class with Langfuse tracing integrated."""
-
-#     def invoke(self, input_data: dict, **kwargs) -> dict:
-#         config = kwargs.get('config', {})s
-#         callbacks = config.get('callbacks', [])
-#         callbacks.append(langfuse_handler)
-#         config['callbacks'] = callbacks
-#         kwargs['config'] = config
-#         return super().invoke(input_data, **kwargs)
-
-#     async def ainvoke(self, input_data: dict, **kwargs) -> dict:
-#         # Ensure that Langfuse handler is included in the callbacks
-#         config = kwargs.get('config', {})
-#         callbacks = config.get('callbacks', [])
-#         callbacks.append(langfuse_handler)
-#         config['callbacks'] = callbacks
-#         kwargs['config'] = config
-        
-#         # Call the superclass ainvoke with the updated config
-#         return await super().ainvoke(input_data, **kwargs)
 
 class TracedLLMChain(LLMChain):
     def _get_langfuse_handler(self, input_data):
@@ -128,7 +107,7 @@ class SalesConversationChain(TracedLLMChain):
                 "key_points",
                 "current_goal_review",
                 "client_name",
-                "client_product_summary",
+                "client_company_description",
                 "interviewee_name",
                 "customer_type",
                 "agent_response",
@@ -239,7 +218,7 @@ class GoalReviewNarrativeChain(TracedLLMChain):
                 "short_conversation_history", 
                 "client_name",
                 "current_conversation_stage",
-                "client_product_summary",
+                "client_company_description",
                 "goal_completeness_status",
                 "interviewee_name",
                 "agent_response",
@@ -260,7 +239,7 @@ class GoalReviewOutcomeChain(TracedLLMChain):
                 "short_conversation_history",
                 "client_name",
                 "current_conversation_stage", 
-                "client_product_summary",
+                "client_company_description",
                 "goal_completeness_status",
                 "interviewee_name",
                 "agent_response",
@@ -281,7 +260,7 @@ class GoalReviewProductChain(TracedLLMChain):
                 "short_conversation_history",
                 "client_name",
                 "current_conversation_stage",
-                "client_product_summary", 
+                "client_company_description", 
                 "goal_completeness_status",
                 "interviewee_name",
                 "agent_response",
@@ -372,7 +351,7 @@ class VerbatimChain(TracedLLMChain):
                 "key_points",
                 "current_goal_review",
                 "client_name",
-                "client_product_summary",
+                "client_company_description",
                 "interviewee_name",
                 "customer_type",
                 "agent_response",
@@ -384,37 +363,6 @@ class VerbatimChain(TracedLLMChain):
         return cls(prompt=prompt, llm=llm_alt, verbose=verbose)
 
 
-
-
-# class ExploratoryChain(TracedLLMChain):
-#     """Chain to generate exploratory responses for the conversation."""
-
-#     @classmethod
-#     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-#         llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
-
-#         prompt = PromptTemplate(
-#             template=EXPLORATORY_PROMPT,
-#             input_variables=[
-#                 "conversation_type",
-#                 "conversation_history",
-#                 "short_conversation_history",
-#                 "empathy_statement",
-#                 "key_points",
-#                 "current_goal_review_narrative",
-#                 "current_goal_review_outcome",
-#                 "current_goal_review_product",
-#                 "client_name",
-#                 "client_product_summary",
-#                 "interviewee_name",
-#                 "customer_type",
-#                 "agent_response",
-#                 "human_response",
-#                 "has_progressed",
-#                 "current_conversation_stage",
-#             ],
-#         )
-#         return cls(prompt=prompt, llm=llm_alt, verbose=verbose)
 
 
 
@@ -435,7 +383,7 @@ class ExploratoryChain1(TracedLLMChain):
                 "key_points",
                 "current_goal_review_narrative",
                 "client_name",
-                "client_product_summary",
+                "client_company_description",
                 "interviewee_name",
                 "customer_type",
                 "agent_response",
@@ -464,7 +412,7 @@ class ExploratoryChain2(TracedLLMChain):
                 "key_points",
                 "current_goal_review_outcome",
                 "client_name",
-                "client_product_summary",
+                "client_company_description",
                 "interviewee_name",
                 "customer_type",
                 "agent_response",
@@ -493,7 +441,7 @@ class ExploratoryChain3(TracedLLMChain):
                 "key_points",
                 "current_goal_review_product",
                 "client_name",
-                "client_product_summary",
+                "client_company_description",
                 "interviewee_name",
                 "customer_type",
                 "agent_response",
@@ -523,7 +471,7 @@ class ConcreteExampleChain(TracedLLMChain):
                 "key_points",
                 "current_goal_review",
                 "client_name",
-                "client_product_summary",
+                "client_company_description",
                 "interviewee_name",
                 "customer_type",
                 "agent_response",
@@ -555,7 +503,7 @@ class ClosingChain(TracedLLMChain):
                 "key_points",
                 "current_goal_review",
                 "client_name",
-                "client_product_summary",
+                "client_company_description",
                 "interviewee_name",
                 "customer_type",
                 "agent_response",
@@ -583,6 +531,7 @@ class SelectorChain(TracedLLMChain):
                 "agent_response",
                 "human_response",
                 "current_conversation_stage",
+                "client_company_description",
                 "call_id",
             ],
         )

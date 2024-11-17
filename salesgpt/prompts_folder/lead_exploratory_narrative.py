@@ -10,7 +10,7 @@ The interview is being conducted for:
 
 **CURRENT CLIENT:** {client_name}
 
-**CURRENT CLIENT - DETAILS SUMMARY:** {client_product_summary}
+**CURRENT CLIENT - DETAILS SUMMARY:** {client_company_description}
 
 **CURRENT INTERVIEWEE NAME:** {interviewee_name}
 

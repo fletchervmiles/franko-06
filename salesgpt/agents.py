@@ -7,7 +7,6 @@ from pydantic import Field
 from datetime import datetime
 import pytz
 import importlib
-from salesgpt.client_configs import default
 
 # from langchain.agents import (AgentExecutor, LLMSingleActionAgent,
 #                               create_openai_tools_agent)
@@ -125,7 +124,6 @@ class SalesGPT(Chain):
     call_id: str = Field(default="")
     model_name: str = Field(default="gpt-4o")
     client_name: str = Field(default="")
-    client_product_summary: Optional[str] = Field(default=None)
     interviewee_name: str = Field(default="")
     customer_type: Optional[str] = Field(default=None)
     lead_interviewer: str = Field(default="")
@@ -158,36 +156,39 @@ class SalesGPT(Chain):
     current_date: str = Field(default_factory=lambda: datetime.now().strftime('%Y-%m-%d'))
     short_conversation_history: List[str] = Field(default_factory=list)
 
-
+    # Add new attributes to the class
+    client_company_description: str = Field(default="")
+    agent_name: str = Field(default="")
+    voice_id: str = Field(default="")
+    unique_customer_identifier: str = Field(default="")
+    use_case: str = Field(default="churn")
 
     # def __init__(self, **data):
     #     super().__init__(**data)
     #     self.update_conversation_specific_data()
 
     def update_conversation_specific_data(self):
-        print(f"Updating conversation data for client: {self.client_name}")
-        client_module = self.get_client_module(self.client_name)
+        print(f"Loading configuration for use case: {self.use_case}")
+        client_module = self.get_client_module(self.use_case)
         print(f"Loaded module: {client_module.__name__}")
-        self.GOAL_TARGET_NUMBERS = getattr(client_module, 'GOAL_TARGET_NUMBERS', default.GOAL_TARGET_NUMBERS)
-        self.conversation_stage_dict = getattr(client_module, 'CONVERSATION_STAGES', default.CONVERSATION_STAGES)
-        self.client_product_summary = getattr(client_module, 'CLIENT_PRODUCT_SUMMARY', default.CLIENT_PRODUCT_SUMMARY)
-        # print(f"Loaded GOAL_TARGET_NUMBERS: {self.GOAL_TARGET_NUMBERS}")
-        # print(f"Loaded conversation_stage_dict: {self.conversation_stage_dict}")
-
-        # Format the content strings with client_name and other variables
+        
+        # Only load conversation stages
+        self.conversation_stage_dict = getattr(client_module, 'CONVERSATION_STAGES')
+        
+        # Format the content strings
         for key, stage_info in self.conversation_stage_dict.items():
             stage_info['content'] = stage_info['content'].format(
                 client_name=self.client_name,
                 interviewee_name=self.interviewee_name,
             )
 
-    def get_client_module(self, client_name: str):
+    def get_client_module(self, use_case: str):
         try:
-            return importlib.import_module(f'salesgpt.client_configs.{client_name.lower()}')
+            return importlib.import_module(f'salesgpt.client_configs.{use_case.lower()}')
         except ImportError as e:
-            print(f"Warning: No specific configuration found for {client_name}. Error: {e}")
-            print("Using default configuration.")
-            return importlib.import_module('salesgpt.client_configs.default')
+            print(f"Warning: No specific configuration found for {use_case}. Error: {e}")
+            print("Using churn configuration.")
+            return importlib.import_module('salesgpt.client_configs.churn')
 
     def seed_agent(self):
         """
@@ -308,7 +309,7 @@ class SalesGPT(Chain):
                 "has_progressed": self.has_progressed,
                 "agent_response": self.agent_response,
                 "human_response": self.human_response,
-                "client_product_summary": self.client_product_summary,
+                "client_company_description": self.client_company_description,
             }
 
             # Run all chains concurrently
@@ -679,7 +680,7 @@ class SalesGPT(Chain):
             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
             "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
             "customer_type": self.customer_type,
-            "client_product_summary": self.client_product_summary,
+            "client_company_description": self.client_company_description,
             "conversation_type": self.conversation_type,
             "empathy_statement": inputs.get("empathy_statement", self.empathy_statement),
             "key_points": inputs.get("key_points", self.key_points),
@@ -891,8 +892,8 @@ class SalesGPT(Chain):
         )
 
         # Get the client module and conversation stages
-        client_module = sales_gpt_instance.get_client_module(sales_gpt_instance.client_name)
-        conversation_stages = getattr(client_module, 'CONVERSATION_STAGES', default.CONVERSATION_STAGES)
+        client_module = sales_gpt_instance.get_client_module(sales_gpt_instance.use_case)
+        conversation_stages = getattr(client_module, 'CONVERSATION_STAGES')
 
         # Format the conversation stages
         sales_gpt_instance.conversation_stage_dict = {}

@@ -10,7 +10,7 @@ The interview is being conducted for our CURRENT CLIENT:
 
 ```
 Client name: {client_name}
-Client description: {client_product_summary}
+Client description: {client_company_description}
 ```
 
 #### Inputs:

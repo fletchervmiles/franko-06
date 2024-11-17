@@ -25,12 +25,13 @@ REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 class SalesGPTAPI:
-    # Initialize the SalesGPT API with configuration and call ID
     def __init__(self, config: dict, call_id: str):
-        # Store configuration and call ID
         self.config = config
         self.call_id = call_id
-        # Initialize the language model with temperature=1 for creative responses
+        # Initialize with client_company_description instead of client_product_summary
+        self.client_company_description = config.get('client_company_description', '')
+        # Add use_case initialization with default to 'churn'
+        self.use_case = config.get('use_case', 'churn')
         self.llm = ChatLiteLLM(temperature=1, model_name=GPT_MODEL)
         self.sales_agent = None
         self.first_turn = True
@@ -39,9 +40,8 @@ class SalesGPTAPI:
         for key, value in self.config.items():
             setattr(self, key, value)
 
-    # Create and configure a new sales agent instance
     def initialize_agent(self):
-        # Initialize SalesGPT agent with necessary parameters
+        """Create and configure a new sales agent instance."""
         self.sales_agent = SalesGPT.from_llm(
             self.llm,
             verbose=False,
@@ -50,10 +50,15 @@ class SalesGPTAPI:
             interviewee_name=self.interviewee_name,
             interviewee_last_name=self.interviewee_last_name,
             interviewee_email=self.interviewee_email,
-            to_number=self.to_number,
+            interviewee_number=self.interviewee_number,
+            client_company_description=self.client_company_description,  # Updated from client_product_summary
+            agent_name=self.agent_name,
+            voice_id=self.voice_id,
+            unique_customer_identifier=self.unique_customer_identifier,
+            use_case=self.use_case,  # Add use_case to agent initialization
         )
-        # Prepare the agent with initial context
         self.sales_agent.seed_agent()
+        return self.sales_agent
 
     # Record the start time of the interview
     def set_interview_start_time(self):

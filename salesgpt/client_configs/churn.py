@@ -67,7 +67,7 @@ By the end of this segment of the interview, the agent should have a clear and n
 Extraction Question
 
 <extraction_question>
-Alright, thanks for sharing, Fletcher! You’re awesome, and I’m really enjoying this conversation. Next up, I’d love to hear your overall thoughts on {client_name}. So, when you think back on your experience, how would you describe the value it brought to you personally? For example, were there specific benefits you found valuable and might miss? Or perhaps there were areas where it didn’t quite live up to what you were hoping for? Ok, over to you.
+Alright, thanks for sharing, {interviewee_name}! You’re awesome, and I’m really enjoying this conversation. Next up, I’d love to hear your overall thoughts on {client_name}. So, when you think back on your experience, how would you describe the value it brought to you personally? For example, were there specific benefits you found valuable and might miss? Or perhaps there were areas where it didn’t quite live up to what you were hoping for? Ok, over to you.
 </extraction_question>
         """
     },
@@ -135,7 +135,7 @@ I want to understand how the team at {client_name} could improve things for you.
 
 Even small suggestions or ideas you may have are extremely useful and appreciated!
 
-So Fletcher, what’s your number one piece of feedback or improvement opportunity for the team at {client_name}?</extraction_question>
+So {interviewee_name}, what’s your number one piece of feedback or improvement opportunity for the team at {client_name}?</extraction_question>
 
         """
     },
@@ -186,7 +186,7 @@ INTERVIEW SECTION: WIN-BACK
 
 Extraction Question:
 
-<extraction_question>Alright Fletcher. Great job. Just before we wrap up, I’d love to ask just one last thing. I'm wondering, is there anything the team could do immediately that would make you consider coming back to {client_name}. So, tell me, what would it take to get you back?</extraction_question>
+<extraction_question>Alright {interviewee_name}. Great job. Just before we wrap up, I’d love to ask just one last thing. I'm wondering, is there anything the team could do immediately that would make you consider coming back to {client_name}. So, tell me, what would it take to get you back?</extraction_question>
         """
     },
 
@@ -198,7 +198,7 @@ INTERVIEW SECTION: CLOSING
 
 Extraction Question:
 
-<extraction_question>Thank you so much for taking the time to share your thoughts with us today, Fletcher. It’s incredibly valuable and I know the {client_name} team will be really appreciative. I won’t keep you any longer—feel free to hang up whenever you're ready. Thank you again, and take care!</extraction_question>
+<extraction_question>Thank you so much for taking the time to share your thoughts with us today, {interviewee_name}. It’s incredibly valuable and I know the {client_name} team will be really appreciative. I won’t keep you any longer—feel free to hang up whenever you're ready. Thank you again, and take care!</extraction_question>
         """
     },
 
@@ -235,21 +235,6 @@ MOST IMPORTANT - DO NOT ASK ANOTHER QUESTION!!!!
 }
 
 
-GOAL_TARGET_NUMBERS = {
-    # Goal number: [min_questions, target_questions, min_seconds, target_seconds, overall cumulative time]
-    "1": [1, 1, 0, 0, 0],  # Verbatim - Intro
-    "2": [3, 3, 0, 0, 0],  # Exploratory - Cancellation Reasons
-    "3": [1, 1, 0, 0, 0],  # Verbatim - Experience / Value
-    "4": [3, 3, 0, 0, 0],  # Exploratory - Experience / Value
-    "5": [1, 1, 0, 0, 0],  # Verbatim - Improvements
-    "6": [3, 3, 0, 0, 0],  # Exploratory - Improvements
-    "7": [1, 1, 0, 0, 0],  # Verbatim - Win-back
-    "8": [1, 1, 0, 0, 0],  # Verbatim - Closing
-    "9": [1, 1, 0, 0, 0]   # Closing
-}
-
-CLIENT_PRODUCT_SUMMARY = """
-"""
 
 
 

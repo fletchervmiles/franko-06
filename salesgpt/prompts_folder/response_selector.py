@@ -57,6 +57,8 @@ You will also receive the following as inputs to give you the necessary context:
 ```
 Client name: {client_name}
 
+**CURRENT CLIENT - DETAILS SUMMARY: {client_company_description}
+
 Current interview objective: {current_conversation_stage}
 
 Conversation history: {short_conversation_history}

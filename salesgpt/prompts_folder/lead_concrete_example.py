@@ -8,7 +8,7 @@ Your objective is to generate the next response in a customer research interview
 
 The interview is being conducted for our client, {client_name}.
 
-{client_product_summary}. 
+{client_company_description}. 
 
 Below you will find inputs and detailed instructions for your task. 
 
