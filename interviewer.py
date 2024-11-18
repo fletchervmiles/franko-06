@@ -947,17 +947,17 @@ class TextToSpeech:
 
     # Load API key from environment variables
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-    # Define voice ID for the TTS service
-    # VOICE_ID = "OYTbf65OHHFELVut7v2H"  # Alternative voice ID
-    VOICE_ID = "IKne3meq5aSn9XLyUdCD" # Charlie voice ID
+    
+    def __init__(self, voice_id=None):
+        # Initialize with a default voice ID that can be overridden
+        self.voice_id = voice_id or "IKne3meq5aSn9XLyUdCD"  # Default to Charlie voice if none provided
 
     async def generate_speech(self, text):
         # Method to convert text to speech using ElevenLabs API
-        # Record start time for performance monitoring
         start_time = time.time()
         
         # Construct API endpoint URL with voice ID and audio format parameters
-        ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.VOICE_ID}?optimize_streaming_latency=3&output_format=pcm_16000"
+        ELEVENLABS_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{self.voice_id}?optimize_streaming_latency=3&output_format=pcm_16000"
         
         # Set up request headers with API key and content type
         headers = {
@@ -1004,16 +1004,13 @@ class TextToSpeech:
                         # Return None and 0 duration on error
                         return None, 0
                         
-        except aiohttp.ClientError as e:
-            # Handle network-related errors
-            print(f"{datetime.now()} - Network error during ElevenLabs API request: {str(e)}")
         except Exception as e:
             # Handle any other unexpected errors
             print(f"{datetime.now()} - Unexpected error during ElevenLabs API request: {str(e)}")
             print(f"{datetime.now()} - Error type: {type(e).__name__}")
             print(f"{datetime.now()} - Error details:\n{traceback.format_exc()}")
-        # Return None and 0 duration if any exception occurs
-        return None, 0
+            # Return None and 0 duration if any exception occurs
+            return None, 0
 
     def calculate_audio_duration(self, audio_content):
         # PCM 16-bit audio at 16000 Hz
@@ -1117,7 +1114,7 @@ async def make_outgoing_call(call_request: CallRequest):
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://0d24-58-136-120-147.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://8bb3-184-82-31-19.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -1125,7 +1122,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://0d24-58-136-120-147.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://8bb3-184-82-31-19.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -1135,7 +1132,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     ]
                 }
             ],
-            'event_url': [f'https://0d24-58-136-120-147.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://8bb3-184-82-31-19.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -1153,6 +1150,7 @@ async def make_outgoing_call(call_request: CallRequest):
         print(f"Error type: {type(e).__name__}")
         print(f"Error details: {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 
 
@@ -1184,6 +1182,9 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                     # Set the call_completed flag to True
                     shared_data.call_completed = True
 
+                    # Delay the execution by 2 seconds
+                    await asyncio.sleep(60)
+
                     # Get and release the Vonage number used for this call
                     vonage_number = r.hget(f"{call_id}_metadata", "vonage_number")
                     if vonage_number:
@@ -1199,9 +1200,6 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                         print(json.loads(conversation_history.decode('utf-8')))
                     else:
                         print(f"No conversation history found for call_id {call_id}")
-
-                    # Delay the execution by 2 seconds
-                    await asyncio.sleep(60)
 
                     # Clean up the SharedData instance
                     shared_data.reset()
@@ -1244,9 +1242,10 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
 
 
 
+
 async def save_interview_data(supabase: SupabaseClient, interview_data: dict):
     try:
-        response = supabase.table('user_interviews').insert(interview_data).execute()
+        response = supabase.table('interviews').insert(interview_data).execute()
         if response.data:
             print(f"Interview data saved successfully for call_id: {interview_data['call_id']}")
         else:
@@ -1276,6 +1275,11 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
             interviewee_email = dynamic_config.get('interviewee_email', '')
             interviewee_number = dynamic_config.get('interviewee_number', '')
             client_name = dynamic_config.get('client_name', 'Default')
+            client_company_description = dynamic_config.get('client_company_description', '')
+            agent_name = dynamic_config.get('agent_name', '')
+            voice_id = dynamic_config.get('voice_id', '')
+            unique_customer_identifier = dynamic_config.get('unique_customer_identifier', '')
+            use_case = dynamic_config.get('use_case', '')
 
             # Get conversation history from Redis
             conversation_history_str = r.get(f'{call_id}_conversation_history')
@@ -1296,6 +1300,9 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
             else:
                 overall_elapsed_time = time.time() - interview_start_time
 
+            # Calculate interview end time
+            interview_end_time = datetime.now().isoformat()
+
             # Download the recording from Vonage
             vonage_client = VonageClient(
                 application_id=VONAGE_APPLICATION_ID,
@@ -1307,14 +1314,14 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
             # Upload the recording to Supabase
             file_path = f'{client_name}/{call_id}.mp3'
-            upload_response = supabase.storage.from_('recordings').upload(file_path, recording_bytes, {
+            upload_response = supabase.storage.from_('interview_audio_files').upload(file_path, recording_bytes, {
                 "Content-Type": "audio/mpeg"
             })
             if upload_response.status_code != 200:
                 raise Exception(f"Failed to upload recording for call_id {call_id}: {upload_response.text}")
 
             # Construct the Supabase URL for the uploaded file
-            supabase_url = f"https://cedxguhjiaxatqwsccrp.supabase.co/storage/v1/object/public/recordings/{file_path}"
+            supabase_url = f"https://sajeudumjrauymwpbidt.supabase.co/storage/v1/object/public/interview_audio_files/{file_path}"
             
             # Save the Supabase URL to the shared_data instance
             shared_data.recording_url = supabase_url
@@ -1322,17 +1329,24 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
             # Prepare interview data
             interview_data = {
+                "user_id": unique_customer_identifier,
                 "call_id": call_id,
-                "interviewee_name": interviewee_name,
+                "interviewee_first_name": interviewee_name,
                 "interviewee_last_name": interviewee_last_name,
                 "interviewee_email": interviewee_email,
                 "interviewee_number": interviewee_number,
                 "client_name": client_name,
-                "current_date": datetime.now().isoformat(),
+                "date_completed": datetime.now().isoformat(),
                 "interview_start_time": datetime.fromtimestamp(interview_start_time).isoformat(),
-                "overall_elapsed_time": overall_elapsed_time,
-                "conversation_history": json.dumps(conversation_history),
-                "audio_file_link": supabase_url
+                "interview_end_time": interview_end_time,
+                "total_interview_minutes": round(overall_elapsed_time / 60),
+                "conversation_history_raw": json.dumps(conversation_history),
+                "interview_audio_link": supabase_url,
+                "client_company_description": client_company_description,
+                "agent_name": agent_name,
+                "voice_id": voice_id,
+                "unique_customer_identifier": unique_customer_identifier,
+                "use_case": use_case
             }
 
             # Save interview data to Supabase
@@ -1356,18 +1370,28 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 
-# # # PROD CHANGE
-# async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
-#     # Specify the exact file path
-#     audio_folder_path = "/mnt/buffer_audio"
-#     # audio_file_name = "understood_okay_audio.raw"
-#     audio_file_name =  "charlie_voice.raw"
-
-#     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+# # PROD CHANGE
+async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
+    # Get the sales API instance and agent name for this call
+    sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+    agent_name = sales_gpt_api.agent_name.lower()  # Convert to lowercase for consistency
+    
+    # Map agent name to audio file name
+    audio_file_name = f"{agent_name}_voice.raw"
+    
+    # Specify the exact file path
+    audio_folder_path = "/mnt/buffer_audio"
+    audio_file_path = os.path.join(audio_folder_path, audio_file_name)
 
 # # LOCAL
 async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
-    audio_file_name = "charlie_voice.raw"
+    # Get the sales API instance and agent name for this call
+    sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+    agent_name = sales_gpt_api.agent_name.lower()  # Convert to lowercase for consistency
+    
+    # Map agent name to audio file name
+    audio_file_name = f"{agent_name}_voice.raw"
+
     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     chunk_size = 320 * 2
@@ -1413,7 +1437,6 @@ async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: Share
         print(f"Error playing audio file for call_id {call_id}: {e}")
         print(traceback.format_exc())
 
-
 async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversation_history: list, human_response: str, agent_response: str, shared_data: SharedData):
     try:
         # Record the start time for timing calculations
@@ -1425,8 +1448,13 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         results = {}
         # Flag to track if empathy statement has been processed
         empathy_statement_processed = False
-        # Create text-to-speech instance for audio generation
-        tts = TextToSpeech()
+        
+        # Get the sales API instance and voice_id for this call
+        sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+        voice_id = sales_gpt_api.voice_id
+        
+        # Create text-to-speech instance with the configured voice_id
+        tts = TextToSpeech(voice_id=voice_id)
 
         # Check if this is the first turn in the conversation
         is_first_turn = len(conversation_history) == 0

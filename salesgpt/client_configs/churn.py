@@ -1,19 +1,19 @@
 CONVERSATION_STAGES = {
 
     "1": {
-        "category": "verbatim",
+        "category": "one",
         "content": """
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 <extraction_question>
-Hi there, this is Charlie! I'm excited to get chatting with you today! <break time="0.5s" />Ok, so for our short conversation today we’ll cover three main areas: first, what led you to cancel your {client_name} subscription; next, your overall experience with {client_name}; and finally, any suggestions or feedback you might have. Now that's covered... let's get started. So, to kick us off, can you please tell me a bit about why you decided to cancel your {client_name} subscription? And remember, there's no wrong answers here.
+Hi there, this is {agent_name}! I'm excited to get chatting with you! <break time="0.5s" />Ok, so today's chat will have three short sections: first, what led you to cancel your {client_name} subscription; next, what you were hoping to achieve with {client_name}; and finally, any feedback you might have. Short and sharp! So, to kick us off, can you please tell me a bit about why you decided to cancel your {client_name} subscription?
 </extraction_question>
         """
     },
   
 
     "2": {
-        "category": "exploratory",
+        "category": "two",
         "content": """
 ### INTERVIEW SECTION: EXPLORING CANCELLATION REASONS
 
@@ -62,35 +62,36 @@ By the end of this segment of the interview, the agent should have a clear and n
   
 
     "3": {
-        "category": "verbatim",
+        "category": "one",
         "content": """
 Extraction Question
 
 <extraction_question>
-Alright, thanks for sharing, {interviewee_name}! You’re awesome, and I’m really enjoying this conversation. Next up, I’d love to hear your overall thoughts on {client_name}. So, when you think back on your experience, how would you describe the value it brought to you personally? For example, were there specific benefits you found valuable and might miss? Or perhaps there were areas where it didn’t quite live up to what you were hoping for? Ok, over to you.
+Thanks for sharing, {interviewee_name}, let's move to the next section. So, when you think about your experience with {client_name}, can you tell me a bit about what YOU were hoping to achieve by using it? <break time="0.75s" />And to what extent do you feel it helped you move closer to that goal?
 </extraction_question>
         """
     },
 
 
     "4": {
-        "category": "exploratory",
+        "category": "two",
         "content": """
 ### INTERVIEW SECTION: PERCEIVED VALUE
 
 **Context:**
 
-In previous sections, we’ve prompted the interviewee to reflect on their overall experience with {client_name}, specifically in terms of perceived value, including any aspects they found particularly valuable or areas where the service may have fallen short.
+In previous sections, we’ve encouraged the interviewee to reflect on their overall experience with {client_name}. This section now shifts focus to understanding what they were hoping to achieve by using {client_name} and how they perceive its impact in helping them reach their goals.
 
 **As a founder, I now want to:**
 
-- Understand the interviewee’s perspective on the overall value {client_name} brought to them, including both positive and negative aspects.
-- Capture specific stories or examples that illustrate why they feel this way, aiming to reveal what they were hoping to gain versus what they actually experienced.
+- Understand the interviewee’s perspective on the overall value {client_name} brought to them, focusing on how it aligned (or didn’t) with their personal goals and expectations.
+- Capture specific stories or examples that highlight what they were hoping to achieve versus what they experienced, bringing out both positive and negative aspects.
 
 **Focus on:**
 
-- Encouraging a narrative that brings out the “why” behind their perception of value, allowing them to elaborate on factors or experiences that shaped their view.
-- Ensuring they feel comfortable sharing both positive and negative reflections, and using open prompts to explore if there are any value-driven aspects they expected but did not experience.
+- Encouraging a narrative that explores the customer’s goals and expectations, revealing the “why” behind their perception of value.
+- Prompting them to reflect on how well {client_name} helped them progress toward their goals, while creating space for them to share unmet expectations or surprises.
+- Using open prompts to allow them to share detailed examples or stories that illuminate the connection between their expectations and their experience.
 
 **Note:**
 
@@ -98,34 +99,36 @@ In previous sections, we’ve prompted the interviewee to reflect on their overa
 
 **This is because:**
 
-- Gaining an understanding of the customer’s view on value will help reveal any gaps between expectations and actual experience.
+- Understanding how the customer’s goals and expectations shaped their view of {client_name} will help reveal key gaps or successes in its perceived value.
 
 **Focus on:**
 
-- Building on their last response to maintain continuity and depth.
-- Creating a conversation that feels engaging and values the customer’s perspective as central to their experience.
-- Fostering an open atmosphere that invites them to share their story authentically and informally.
+- Building on the interviewee’s previous response to maintain a clear narrative around their goals and experiences.
+- Ensuring the conversation feels natural and engaging, with the interviewee’s perspective driving the narrative.
+- Highlighting both the practical and emotional dimensions of value, rooted in their personal goals and expectations.
 
 **Remember, it’s important to:**
 
-- Keep the conversation flowing naturally, making it concise and focused on the interviewee’s personal experience.
-- Position the interviewee as the “hero” of their narrative; your role is to understand and capture their perspective fully.
+- Keep the conversation fluid, concise, and aligned with the interviewee’s unique experiences.
+- Position the interviewee as central to the discussion, focusing on their perspective and lived experience with {client_name}.
+- Use approachable, goal-oriented language, steering away from overly analytical or corporate phrasing.
 
 **Things to avoid:**
 
-- Avoid asking about improvement suggestions or direct feedback, as these topics are reserved for the next section.
-- Do not delve into specific features or direct challenges unless they bring them up. Instead, focus on understanding the overall value in their words.
+- Avoid directly asking for improvement suggestions or feedback, as this will be addressed in the next section.
+- Do not lead the interviewee into discussing specific features unless they naturally bring it up in relation to their goals or perceived value.
 - Avoid using corporate jargon like “pain points.” Let their story unfold organically, focusing on the real, human aspects of their experience.
+- Refrain from overly structured or formal questions that might disrupt the flow of the conversation.
 
 **Expected Outcome:**
 
-By the end of this segment, the interviewer should have a comprehensive view of how the customer perceives the value of {client_name}, supported by specific anecdotes or narratives. This understanding will provide valuable insights into what drives value for the customer and where there might be room for enhancing that value.
+By the end of this section, the interviewer should have a clear understanding of the customer’s goals and expectations when using {client_name}, as well as how the service or product contributed to—or fell short of—helping them achieve those goals. This insight will be supported by specific examples, providing actionable information about the alignment (or misalignment) between the customer’s expectations and their actual experience.
         """
     },
   
 
     "5": {
-        "category": "verbatim",
+        "category": "one",
         "content": """
 INTERVIEW SECTION: IMPROVEMENT
 
@@ -142,7 +145,7 @@ So {interviewee_name}, what’s your number one piece of feedback or improvement
 
 
     "6": {
-        "category": "exploratory",
+        "category": "two",
         "content": """
 ### INTERVIEW SECTION: IMPROVEMENT SUGGESTIONS
 **Context:**
@@ -180,7 +183,7 @@ By the end of this segment, the interviewer should have gathered actionable insi
   
 
     "7": {
-        "category": "verbatim",
+        "category": "one",
         "content": """
 INTERVIEW SECTION: WIN-BACK
 
@@ -192,7 +195,7 @@ Extraction Question:
 
 
     "8": {
-        "category": "verbatim",
+        "category": "one",
         "content": """
 INTERVIEW SECTION: CLOSING
 
@@ -204,7 +207,7 @@ Extraction Question:
 
 
     "9": {
-        "category": "exploratory",
+        "category": "three",
         "content": """
 INTERVIEW SECTION: INTERVIEW SECTION: CLOSING - CLOSING
 
@@ -233,6 +236,7 @@ MOST IMPORTANT - DO NOT ASK ANOTHER QUESTION!!!!
     }
 
 }
+
 
 
 

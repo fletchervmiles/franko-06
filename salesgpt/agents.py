@@ -180,6 +180,7 @@ class SalesGPT(Chain):
             stage_info['content'] = stage_info['content'].format(
                 client_name=self.client_name,
                 interviewee_name=self.interviewee_name,
+                agent_name=self.agent_name,  
             )
 
     def get_client_module(self, use_case: str):
@@ -389,7 +390,14 @@ class SalesGPT(Chain):
                   f"Turns: {current_turns}")
             
             # Determine max turns based on category
-            max_turns = 2 if current_category == "exploratory" else 1
+            if current_category == "one":
+                max_turns = 1
+            elif current_category == "two":
+                max_turns = 2
+            elif current_category == "three":
+                max_turns = 3
+            else:
+                max_turns = 1  # Default to 1 turn if category not recognized
             print(f"Max turns for this stage: {max_turns}")
             
             # Check if we should progress
@@ -650,17 +658,24 @@ class SalesGPT(Chain):
         prepared_inputs = self._prepare_inputs(inputs)
 
         # Select the appropriate chain based on the category
-        if current_category == "verbatim":
+        if current_category == "one":
             selected_chain = self.verbatim_chain
-        elif current_category == "exploratory":
-            return await self._run_exploratory_chain(prepared_inputs)
-        elif current_category == "concrete_example":
-            selected_chain = self.concrete_example_chain
-        elif current_category == "closing":
-            selected_chain = self.closing_chain
         else:
-            # Default to the general sales conversation chain if category is not recognized
-            selected_chain = self.sales_conversation_utterance_chain
+            # For "two" and "three" categories, run the exploratory chain
+            return await self._run_exploratory_chain(prepared_inputs)
+
+        # # Select the appropriate chain based on the category
+        # if current_category == "verbatim":
+        #     selected_chain = self.verbatim_chain
+        # elif current_category == "exploratory":
+        #     return await self._run_exploratory_chain(prepared_inputs)
+        # elif current_category == "concrete_example":
+        #     selected_chain = self.concrete_example_chain
+        # elif current_category == "closing":
+        #     selected_chain = self.closing_chain
+        # else:
+        #     # Default to the general sales conversation chain if category is not recognized
+        #     selected_chain = self.sales_conversation_utterance_chain
 
         # Generate the response using the selected chain
         ai_message = await selected_chain.ainvoke(prepared_inputs)
@@ -803,6 +818,7 @@ class SalesGPT(Chain):
                 "current_conversation_stage": self.current_conversation_stage,
                 "client_name": self.client_name,
                 "call_id": self.call_id,
+                "client_company_description": self.client_company_description,
                 "lead_exploratory_narrative": response_texts[0],
                 "lead_exploratory_outcome": response_texts[1],
                 "lead_exploratory_product": response_texts[2]
