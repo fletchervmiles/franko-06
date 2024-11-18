@@ -89,7 +89,7 @@ class SalesGPTAPI:
             
             # Handle main conversation chain
             chain_results_task = None
-            if current_category != "verbatim":
+            if current_category != "one":
                 chain_results_task = asyncio.create_task(self.sales_agent.async_chain_runner())
 
             # Process and yield empathy statement

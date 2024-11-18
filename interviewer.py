@@ -658,7 +658,7 @@ class SharedData:
             print(f"{datetime.now()}: Received {self.empty_transcript_count} empty transcripts")
 
     def reset_transcripts(self):
-        self.transcripts = []
+        self.transcript_parts = []
         self.last_word_time = None
         self.last_no_word_time = None
         self.empty_transcript_count = 0
@@ -688,11 +688,11 @@ class SharedData:
         self.reconnection_attempts = 0
         self.call_id = None
         
-        # Reset speech recognition variables
-        self.transcript_parts = []
-        self.last_word_time = None
-        self.last_no_word_time = None
-        self.empty_transcript_count = 0
+        # # Reset speech recognition variables
+        # self.transcript_parts = []
+        # self.last_word_time = None
+        # self.last_no_word_time = None
+        # self.empty_transcript_count = 0
         
         # Reset audio components
         self.audio_queue = Queue()
@@ -781,7 +781,7 @@ class StateMachine:
             agent_response = agent_response.decode("utf-8") if agent_response else "N/A"
 
             # Pass the websocket object and conversation data to the generate_and_send_speech function
-            empathy_statement, extracted_response, audio_state_delay = await generate_and_send_speech(
+            empathy_statement, extracted_response, audio_state_delay, audio_playback_time = await generate_and_send_speech(
                 self.shared_data.get_websocket(), 
                 self.call_id,  # Add this line to pass the call_id
                 conversation_history, 
@@ -791,11 +791,14 @@ class StateMachine:
             )
 
             # Get the current timestamp in minutes since the start of the call
-            current_time = time.time()
+            current_time = time.time() - audio_playback_time
             interview_start_time = self.sales_api.sales_agent.interview_start_time
-            timestamp = f"[{((current_time - interview_start_time) / 60):.2f}]"
-            
-            agent_name = "Franko"
+            elapsed_seconds = current_time - interview_start_time
+            minutes = int(elapsed_seconds // 60)
+            seconds = int(elapsed_seconds % 60)
+            timestamp = f"[{minutes:02d}:{seconds:02d}]"
+                
+            agent_name = self.sales_api.config.get('agent_name', 'Agent')
             ai_message = f"{empathy_statement} {extracted_response}"
 
             # Print the full AI message with breaks
@@ -846,10 +849,13 @@ class StateMachine:
         # This resets the transcripts before checking again
         self.shared_data.reset_transcripts()
     
-        # Get the current timestamp in minutes since the start of the call
+        # Get the current timestamp in minutes:seconds format
         current_time = time.time()
         interview_start_time = self.sales_api.sales_agent.interview_start_time
-        timestamp = f"[{((current_time - interview_start_time) / 60):.2f}]"
+        elapsed_seconds = current_time - interview_start_time
+        minutes = int(elapsed_seconds // 60)
+        seconds = int(elapsed_seconds % 60)
+        timestamp = f"[{minutes:02d}:{seconds:02d}]"
 
         print(f"[{datetime.now()}] Entering Interviewee Response Time Checker Loop")
         while True:
@@ -1488,13 +1494,24 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
             if not is_first_turn and "empathy_statement" in partial_result and not empathy_statement_processed:
                 print(f"{datetime.now()} Empathy Statement Audio Generation Begun for call_id: {call_id}")
                 
-                # Generate audio for empathy statement
-                empathy_audio_data, empathy_duration = await tts.generate_speech(results["empathy_statement"])
-                print(f"{datetime.now()} Empathy Statement Audio Generation Returned for call_id: {call_id}")
+            #     # Generate audio for empathy statement
+            #     empathy_audio_data, empathy_duration = await tts.generate_speech(results["empathy_statement"])
+            #     print(f"{datetime.now()} Empathy Statement Audio Generation Returned for call_id: {call_id}")
                 
-                # Queue the empathy statement audio for sending
-                await send_audio(websocket, empathy_audio_data, empathy_duration, call_id, shared_data)
-                print(f"{datetime.now()} Empathy Statement Audio Queued for call_id: {call_id}")
+            #     # Queue the empathy statement audio for sending
+            #     await send_audio(websocket, empathy_audio_data, empathy_duration, call_id, shared_data)
+            #     print(f"{datetime.now()} Empathy Statement Audio Queued for call_id: {call_id}")
+
+                async def process_empathy_audio():
+                    try:
+                        audio_data, duration = await tts.generate_speech(results["empathy_statement"])
+                        print(f"{datetime.now()} Empathy TTS completed, queueing audio for call_id: {call_id}")
+                        await send_audio(websocket, audio_data, duration, call_id, shared_data)
+                    except Exception as e:
+                        print(f"Error in empathy audio processing for call_id {call_id}: {e}")
+                
+                asyncio.create_task(process_empathy_audio())
+                empathy_statement_processed = True
                 
                 # Mark empathy statement as processed
                 empathy_statement_processed = True
@@ -1545,7 +1562,7 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         print(f"Elapsed time: {elapsed_time:.2f}s, Audio playback time: {audio_playback_time:.2f}s, Audio state delay: {audio_state_delay:.2f}s")
 
         # Return the empathy statement, extracted response, and calculated delay
-        return results.get("empathy_statement", ""), extracted_response, audio_state_delay
+        return results.get("empathy_statement", ""), extracted_response, audio_state_delay, audio_playback_time
 
     except Exception as e:
         print(f"Error in generate_and_send_speech for call_id {call_id}: {e}")

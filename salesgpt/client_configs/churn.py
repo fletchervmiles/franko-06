@@ -6,8 +6,7 @@ CONVERSATION_STAGES = {
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 <extraction_question>
-Hi there, this is {agent_name}! I'm excited to get chatting with you! <break time="0.5s" />Ok, so today's chat will have three short sections: first, what led you to cancel your {client_name} subscription; next, what you were hoping to achieve with {client_name}; and finally, any feedback you might have. Short and sharp! So, to kick us off, can you please tell me a bit about why you decided to cancel your {client_name} subscription?
-</extraction_question>
+Hi there, this is {agent_name}! I'm excited to get chatting with you!</extraction_question>
         """
     },
   
