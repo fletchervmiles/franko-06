@@ -116,6 +116,8 @@ VONAGE_APPLICATION_PRIVATE_KEY_PATH = os.environ.get("VONAGE_APPLICATION_PRIVATE
 # )
 # voice = Voice(vonage_client)
 
+# Add at the top with other global variables
+processed_call_completions = set()
 
 # Define a model for incoming call requests with required fields
 class CallRequest(BaseModel):
@@ -806,8 +808,8 @@ class StateMachine:
 
             clean_ai_message = strip_break_tags(ai_message)
 
-            # Add timestamp to the agent's response
-            timestamped_ai_message = f"{timestamp} {agent_name}: {clean_ai_message}"
+            # Format the agent's response with HTML line breaks
+            timestamped_ai_message = f"**{agent_name}:** {clean_ai_message} **{timestamp}**<br><br>"
 
             # Print the cleaned AI message
             print(f"\nCleaned AI Message:\n{clean_ai_message}\n")
@@ -874,13 +876,12 @@ class StateMachine:
         # Use the interviewee_name from the instance variable
         interviewee_name = self.interviewee_name
 
-        human_input = f"{timestamp} {interviewee_name}: " + full_transcript.strip()
-        # print(f"[{datetime.now()}] Appended Human Input: {human_input}")
+        # Format the human input with HTML line breaks
+        human_input = f"**{interviewee_name}:** {full_transcript.strip()} **{timestamp}**<br><br>"
 
         conversation_history = json.loads(self.r.get(f'{self.call_id}_conversation_history').decode("utf-8"))
         conversation_history.append(human_input)
         self.r.set(f'{self.call_id}_conversation_history', json.dumps(conversation_history))
-        # print(f"Updated Conversation History: {conversation_history}")
         
         # Update the short conversation history (without timestamp)
         self.sales_api.sales_agent.update_short_conversation_history(self.interviewee_name, full_transcript.strip())
@@ -1120,7 +1121,7 @@ async def make_outgoing_call(call_request: CallRequest):
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://8bb3-184-82-31-19.ngrok-free.app/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://04b8-184-82-31-19.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -1128,7 +1129,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://8bb3-184-82-31-19.ngrok-free.app/ws?call_id={call_id}',
+                            'uri': f'wss://04b8-184-82-31-19.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -1138,7 +1139,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     ]
                 }
             ],
-            'event_url': [f'https://8bb3-184-82-31-19.ngrok-free.app/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://04b8-184-82-31-19.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -1159,7 +1160,6 @@ async def make_outgoing_call(call_request: CallRequest):
 
 
 
-
 @app.post("/vonage_call_status")
 async def handle_vonage_call_status(call_id: str = Query(...), call_status: CallStatus = Body(...)):
     try:
@@ -1177,6 +1177,14 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                 print(f"{datetime.now()}: Interview start time set for call_id: {call_id}")
         
         elif call_status.status == 'completed':
+            # Skip if we've already processed this call completion
+            if call_id in processed_call_completions:
+                print(f"{datetime.now()}: Already processed completion for call_id: {call_id}")
+                return {"message": "Already processed"}
+
+            # Mark this call as processed
+            processed_call_completions.add(call_id)
+            
             if call_id in call_instances:
                 try:
                     print(f"{datetime.now()}: Starting termination for call_id: {call_id}")
@@ -1189,7 +1197,7 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                     shared_data.call_completed = True
 
                     # Delay the execution by 2 seconds
-                    await asyncio.sleep(60)
+                    await asyncio.sleep(120)
 
                     # Get and release the Vonage number used for this call
                     vonage_number = r.hget(f"{call_id}_metadata", "vonage_number")
@@ -1224,7 +1232,7 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                     r.delete(f'{call_id}_human_response')
                     r.delete(f'{call_id}_agent_response')
                     r.delete(f'{call_id}_conversation_history')
-                    r.delete(f"{call_id}_metadata")  # Add this line to ensure metadata is cleaned up
+                    r.delete(f"{call_id}_metadata")
                     print(f"{datetime.now()}: Redis history deleted for call_id: {call_id}")
 
                     print(f"Call terminated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} for call_id: {call_id}")
@@ -1232,6 +1240,8 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                 except Exception as e:
                     print(f"{datetime.now()}: Error during call termination for call_id: {call_id}: {e}")
                     print(traceback.format_exc())
+                    # Remove from processed set if handling failed
+                    processed_call_completions.discard(call_id)
             else:
                 print(f"{datetime.now()}: Call instances not found for call_id: {call_id}")
         
@@ -1243,6 +1253,7 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
         print(traceback.format_exc())
     
     return {"message": "Status update received"}
+
 
 
 
@@ -1274,6 +1285,10 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
             shared_data = call_instances[call_id]["shared_data"]
             sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
 
+            # Run post-call analysis
+            print(f"Running post-call analysis for call_id: {call_id}")
+            analysis_results = await sales_gpt_api.run_post_call_analysis()
+            
             # Retrieve additional data
             dynamic_config = sales_gpt_api.config
             interviewee_name = dynamic_config.get('interviewee_name', '')
@@ -1290,11 +1305,14 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
             # Get conversation history from Redis
             conversation_history_str = r.get(f'{call_id}_conversation_history')
             if conversation_history_str:
+                # Parse the JSON array
                 conversation_history = json.loads(conversation_history_str.decode("utf-8"))
+                # Clean and join the array elements without quotes and commas
+                formatted_history = ''.join(clean_transcript_delimiters(msg) for msg in conversation_history)
             else:
-                conversation_history = []
+                formatted_history = ''
 
-            print(f"Raw conversation history for call_id {call_id}: {conversation_history}")
+            print(f"Raw conversation history for call_id {call_id}: {formatted_history}")
 
             
             # Calculate overall elapsed time
@@ -1346,19 +1364,29 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
                 "interview_start_time": datetime.fromtimestamp(interview_start_time).isoformat(),
                 "interview_end_time": interview_end_time,
                 "total_interview_minutes": round(overall_elapsed_time / 60),
-                "conversation_history_raw": json.dumps(conversation_history),
+                "conversation_history_raw": formatted_history,  # Store as formatted string instead of JSON
                 "interview_audio_link": supabase_url,
                 "client_company_description": client_company_description,
                 "agent_name": agent_name,
                 "voice_id": voice_id,
                 "unique_customer_identifier": unique_customer_identifier,
-                "use_case": use_case
+                "use_case": use_case,
+                
+                # Add analysis results
+                "analysis_output": analysis_results.get("analysis_output", ""),
+                "analysis_part01": analysis_results.get("part01_result", ""),
+                "analysis_part02": analysis_results.get("part02_result", ""),
+                "analysis_part03": analysis_results.get("part03_result", ""),
+                "analysis_part04": analysis_results.get("part04_result", ""),
+                "analysis_part05": analysis_results.get("part05_result", ""),
+                "analysis_part06": analysis_results.get("part06_result", ""),
             }
 
             # Save interview data to Supabase
             await save_interview_data(supabase, interview_data)
-
-            print(f"Recording URL and interview data saved to Supabase successfully for call_id {call_id}")
+            
+            print(f"Recording URL, interview data, and analysis results saved to Supabase successfully for call_id {call_id}")
+            
         except Exception as e:
             print(f"Exception occurred while processing recording for call_id {call_id}: {e}")
             print(traceback.format_exc())
@@ -1368,7 +1396,6 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
         raise HTTPException(status_code=400, detail="No recording URL provided")
 
     return {"message": f"Recording processed successfully for call_id {call_id}"}
-
 
 
 
@@ -2154,6 +2181,11 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         except Exception as e:
             print(f"{datetime.now()}: Error closing WebSocket connection for call_id {call_id}: {e}")
             print(traceback.format_exc())
+
+# Add this function near the top with other utility functions
+def clean_transcript_delimiters(text):
+    """Remove any lead response delimiters that might have leaked into the transcript"""
+    return text.replace('<<<LEAD_RESPONSE>>>', '').strip()
 
 if __name__ == "__main__":
     import uvicorn

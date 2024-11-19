@@ -5,8 +5,7 @@ CONVERSATION_STAGES = {
         "content": """
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
-<extraction_question>
-Hi there, this is {agent_name}! I'm excited to get chatting with you!</extraction_question>
+<extraction_question>Hi there, this is {agent_name}! I'm excited to get chatting with you!</extraction_question>
         """
     },
   

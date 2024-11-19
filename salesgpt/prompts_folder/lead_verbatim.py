@@ -24,7 +24,7 @@ Lead Interviewer Response: Restate the entire extraction question verbatim as sh
 <<<LEAD_RESPONSE>>>
 Give your response only with no explanation or other accompanying text, or quotation marks.
 
-Give your response only with no explanation or other accompanying text, or quotation marks.
+It's **EXTREMELY IMPORTANT** that you use the delimited just like above and in the given examples.
 
 **Response:**
 

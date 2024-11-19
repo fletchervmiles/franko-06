@@ -6,6 +6,8 @@ import asyncio
 from salesgpt.agents import SalesGPT
 import re
 from datetime import datetime
+from typing import Dict, Optional
+import traceback
 
 # Model selection - currently set to GPT-4
 # Multiple model options are commented out for easy switching
@@ -136,6 +138,38 @@ class SalesGPTAPI:
         })
 
         return ai_log["text"]
+
+    async def run_post_call_analysis(self) -> Dict[str, str]:
+        """
+        Run post-call analysis chains to generate enriched data about the interview.
+        Should be called after the call is completed.
+        
+        Returns:
+            Dict[str, str]: Dictionary containing all analysis results
+        """
+        try:
+            print(f"[{datetime.now()}] Starting post-call analysis for call_id: {self.call_id}")
+            
+            # Run the analysis chains through the sales agent
+            analysis_results = await self.sales_agent.run_analysis_chains(max_retries=3)
+            
+            print(f"[{datetime.now()}] Post-call analysis completed successfully")
+            return analysis_results
+            
+        except Exception as e:
+            error_msg = f"Error in run_post_call_analysis: {str(e)}"
+            print(error_msg)
+            print(traceback.format_exc())
+            # Return empty results on error
+            return {
+                "analysis_output": f"Error: {str(e)}",
+                "part01_result": "",
+                "part02_result": "",
+                "part03_result": "",
+                "part04_result": "",
+                "part05_result": "",
+                "part06_result": ""
+            }
 
 
 

@@ -43,6 +43,23 @@ from salesgpt.chains import (
     GoalReviewProductChain,
 )
 
+# Add these imports at the top with other chain imports
+from .analysis_chains import (
+    AnalysisOutputChain,
+    Part01OutputParserChain,
+    Part02OutputParserChain,
+    Part03OutputParserChain,
+    Part04OutputParserChain,
+    Part05OutputParserChain,
+    Part06OutputParserChain,
+)
+
+# Add these imports at the top if not already present
+from typing import Dict, Optional
+import asyncio
+import backoff
+from openai import OpenAIError
+
 
 
 # from salesgpt.custom_invoke import CustomAgentExecutor
@@ -119,6 +136,19 @@ class SalesGPT(Chain):
     exploratory_chain2: ExploratoryChain2 = Field(...)
     exploratory_chain3: ExploratoryChain3 = Field(...)
     selector_chain: SelectorChain = Field(...)
+
+    # Add new analysis chain attributes
+    analysis_output_chain: AnalysisOutputChain = Field(...)
+    part01_parser_chain: Part01OutputParserChain = Field(...)
+    part02_parser_chain: Part02OutputParserChain = Field(...)
+    part03_parser_chain: Part03OutputParserChain = Field(...)
+    part04_parser_chain: Part04OutputParserChain = Field(...)
+    part05_parser_chain: Part05OutputParserChain = Field(...)
+    part06_parser_chain: Part06OutputParserChain = Field(...)
+
+    # Add these attributes to store analysis results
+    analysis_output: str = Field(default="")
+    parsed_outputs: Dict[str, str] = Field(default_factory=dict)
 
     # Attributes that may change per conversation (initialized in __init__)
     call_id: str = Field(default="")
@@ -844,14 +874,14 @@ class SalesGPT(Chain):
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False, call_id: str = None, **kwargs) -> "SalesGPT":
 
-        max_tokens = 8192  # You can adjust this value as needed
+        max_completion_tokens = 10000  # You can adjust this value as needed
 
         # Create a new LLM instance with the standard context length
-        llm_with_context = ChatLiteLLM(
+        llm = ChatLiteLLM(
             temperature=llm.temperature,
             model_name="gpt-4o",
             api_key=os.getenv("OPENAI_API_KEY", ""),
-            max_tokens=max_tokens
+            max_completion_tokens=max_completion_tokens
         )
 
         question_count_chain = QuestionCountChain.from_llm(llm, verbose=verbose)
@@ -882,6 +912,15 @@ class SalesGPT(Chain):
         goal_review_outcome_chain = GoalReviewOutcomeChain.from_llm(llm, verbose=verbose)
         goal_review_product_chain = GoalReviewProductChain.from_llm(llm, verbose=verbose)
 
+        # Initialize new analysis chains
+        analysis_output_chain = AnalysisOutputChain.from_llm(llm, verbose=verbose)
+        part01_parser_chain = Part01OutputParserChain.from_llm(llm, verbose=verbose)
+        part02_parser_chain = Part02OutputParserChain.from_llm(llm, verbose=verbose)
+        part03_parser_chain = Part03OutputParserChain.from_llm(llm, verbose=verbose)
+        part04_parser_chain = Part04OutputParserChain.from_llm(llm, verbose=verbose)
+        part05_parser_chain = Part05OutputParserChain.from_llm(llm, verbose=verbose)
+        part06_parser_chain = Part06OutputParserChain.from_llm(llm, verbose=verbose)
+
         sales_gpt_instance = cls(
             question_count_chain=question_count_chain,
             goal_completeness_chain=goal_completeness_chain,
@@ -904,6 +943,13 @@ class SalesGPT(Chain):
             exploratory_chain2=exploratory_chain2,
             exploratory_chain3=exploratory_chain3,
             selector_chain=selector_chain,
+            analysis_output_chain=analysis_output_chain,
+            part01_parser_chain=part01_parser_chain,
+            part02_parser_chain=part02_parser_chain,
+            part03_parser_chain=part03_parser_chain,
+            part04_parser_chain=part04_parser_chain,
+            part05_parser_chain=part05_parser_chain,
+            part06_parser_chain=part06_parser_chain,
             **kwargs,
         )
 
@@ -924,3 +970,108 @@ class SalesGPT(Chain):
             sales_gpt_instance.conversation_stage_dict[stage_name] = formatted_stage
 
         return sales_gpt_instance
+
+    async def run_analysis_chains(self, max_retries: int = 3) -> Dict[str, str]:
+        """
+        Runs the analysis chains in sequence, with retries for the main analysis.
+        First runs the AnalysisOutputChain, then runs all parser chains once analysis is successful.
+        
+        Args:
+            max_retries (int): Maximum number of retries for the analysis chain
+            
+        Returns:
+            Dict[str, str]: Dictionary containing all analysis results
+        """
+        try:
+            print(f"[{datetime.now()}] Starting analysis chains")
+            
+            # Prepare inputs for analysis chain
+            analysis_inputs = {
+                "conversation_history_raw": "\n".join(self.conversation_history),
+                "client_company_description": self.client_company_description,
+                "agent_name": self.agent_name,
+                "interviewee_name": self.interviewee_name,
+                "unique_customer_identifier": self.unique_customer_identifier,
+                "interview_first_name": self.interviewee_name.split()[0],
+                "client_name": self.client_name,
+                "call_id": self.call_id
+            }
+            
+            # Run analysis with retries
+            self.analysis_output = await self._run_analysis_with_retries(analysis_inputs, max_retries)
+            
+            if not self.analysis_output:
+                raise Exception("Failed to generate analysis output after retries")
+            
+            # Prepare parser inputs
+            parser_input = {"analysis_output": self.analysis_output, "call_id": self.call_id}
+            
+            # Run all parser chains
+            parser_results = await self._run_parser_chains(parser_input)
+            
+            # Store results
+            self.parsed_outputs = parser_results
+            
+            # Combine all results
+            all_results = {
+                "analysis_output": self.analysis_output,
+                **parser_results
+            }
+            
+            print(f"[{datetime.now()}] Analysis chains completed successfully")
+            return all_results
+            
+        except Exception as e:
+            error_msg = f"Error in run_analysis_chains: {str(e)}"
+            print(error_msg)
+            logging.error(error_msg)
+            raise
+
+    @backoff.on_exception(
+        backoff.expo,
+        (OpenAIError, Exception),
+        max_tries=5,
+        max_time=500  # 5 minutes max total time
+    )
+    async def _run_analysis_with_retries(self, inputs: Dict[str, str], max_retries: int) -> Optional[str]:
+        """
+        Runs the analysis chain with exponential backoff retries.
+        """
+        try:
+            result = await self.analysis_output_chain.ainvoke(inputs)
+            return result["text"]
+        except Exception as e:
+            print(f"Analysis attempt failed: {str(e)}")
+            raise
+
+    async def _run_parser_chains(self, parser_input: Dict[str, str]) -> Dict[str, str]:
+        """
+        Runs all parser chains sequentially.
+        """
+        try:
+            # Define parser chains and their result keys
+            parser_chains = [
+                (self.part01_parser_chain, "part01_result"),
+                (self.part02_parser_chain, "part02_result"),
+                (self.part03_parser_chain, "part03_result"),
+                (self.part04_parser_chain, "part04_result"),
+                (self.part05_parser_chain, "part05_result"),
+                (self.part06_parser_chain, "part06_result"),
+            ]
+            
+            results = {}
+            
+            # Run chains sequentially
+            for chain, key in parser_chains:
+                try:
+                    result = await chain.ainvoke(parser_input)
+                    results[key] = result["text"]
+                except Exception as e:
+                    print(f"Parser chain {key} failed: {str(e)}")
+                    results[key] = f"Error: {str(e)}"
+            
+            return results
+            
+        except Exception as e:
+            print(f"Error in _run_parser_chains: {str(e)}")
+            raise
