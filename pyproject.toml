@@ -1,40 +1,21 @@
 [tool.poetry]
 name = "SalesGPT"
-version = "0.1.1"  
-description = "SalesGPT - Your Context-Aware AI Sales Assistant"
-authors = ["Filip Michalsky "]
-license = "Apache-2.0"
-readme = "README.md"
-homepage = "https://github.com/filip-michalsky/SalesGPT"
-repository = "https://github.com/filip-michalsky/SalesGPT"
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-]
-keywords = ["openai", "sales", "gpt", "autonomous", "agi"]
-
+version = "0.1.1"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
-langchain = "0.1.12"
-openai = "^1.37.0"
+langchain = ">=0.2.0"
+openai = "^1.12.0"
 chromadb = "^0.4.18"
-tiktoken = "^0.5.2"
+tiktoken = ">=0.7.0"  # Updated to be compatible with langchain-openai
 pydantic = "^2.5.2"
-litellm = "1.31.16"
+litellm = "^1.52.10"
 ipykernel = "^6.27.1"
 pytest = "^7.4.3"
 pytest-cov = "^4.1.0"
 pytest-asyncio = "^0.23.1"
-langchain-openai = "0.0.2"
+langchain-openai = "^0.2.9"
 fastapi = "^0.110.0"
 uvicorn = "^0.28.0"
 python-dotenv = "^1.0.1"
@@ -48,6 +29,7 @@ replicate = "^0.25.2"
 aiohttp = "^3.9.5"
 langfuse = "^2.39.2"
 pytz = "^2024.1"
+langchain-community = "^0.3.7"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.11.0"

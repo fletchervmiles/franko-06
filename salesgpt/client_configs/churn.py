@@ -5,7 +5,19 @@ CONVERSATION_STAGES = {
         "content": """
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
-<extraction_question>Hi there, this is {agent_name}! I'm excited to get chatting with you!</extraction_question>
+<extraction_question>
+Hi there, this is {agent_name}! I'm excited to get chatting with you! <break time="0.5s" />
+
+Ok, so today's call will have three short sections: first, what led you to cancel your {client_name} subscription; next, what you were hoping to achieve with {client_name}; and finally, any feedback you might have. Short and sharp! 
+
+<break time="0.5s" />
+
+And just a quick explanation of how the conversation will work: I'll ask you a question, and you can take your time to start your response. Once you've finished speaking, I'll pause for a moment to make sure you're done before asking the next question. Think of it like an interactive survey. 
+
+<break time="0.5s" />
+
+So, to kick us off, can you please tell me a bit about why you decided to cancel your {client_name} subscription?</extraction_question>
+</extraction_question>
         """
     },
   

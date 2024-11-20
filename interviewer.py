@@ -1233,6 +1233,7 @@ async def handle_vonage_call_status(call_id: str = Query(...), call_status: Call
                     r.delete(f'{call_id}_agent_response')
                     r.delete(f'{call_id}_conversation_history')
                     r.delete(f"{call_id}_metadata")
+                    r.delete(f'{call_id}_recording_processing')
                     print(f"{datetime.now()}: Redis history deleted for call_id: {call_id}")
 
                     print(f"Call terminated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} for call_id: {call_id}")
@@ -1279,6 +1280,16 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
     if recording_url:
         try:
+            # Use Redis SETNX (Set if Not eXists) to implement a lock
+            # Returns 1 if key was set (first attempt), 0 if key already exists
+            lock_acquired = r.setnx(f'{call_id}_recording_processing', 'true')
+            
+            if lock_acquired:
+                print(f"Call Recording and Post Analysis Starting - call_id: {call_id}")
+            else:
+                print(f"Second Endpoint Hit on vonage_recording - ignored: {call_id}")
+                return {"message": "Recording already being processed"}
+
             if call_id not in call_instances:
                 raise Exception(f"No call instance found for call_id: {call_id}")
 
@@ -1396,7 +1407,6 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
         raise HTTPException(status_code=400, detail="No recording URL provided")
 
     return {"message": f"Recording processed successfully for call_id {call_id}"}
-
 
 
 
@@ -1603,22 +1613,23 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
 def extract_desired_response(response):
     print(f"[extract_desired_response input] Full text received:\n{response}")
 
-    marker = "<<<LEAD_RESPONSE>>>"
+    start_marker = "<!-- START_OF_RESPONSE -->"
+    end_marker = "<!-- END_OF_RESPONSE -->"
     
-    start = response.find(marker)
+    start = response.find(start_marker)
     print(f"Start marker position: {start}")
     
     if start != -1:
-        # Look for the next occurrence of the marker
-        end = response.find(marker, start + len(marker))
+        # Look for the end marker after the start marker
+        end = response.find(end_marker, start + len(start_marker))
         
         if end != -1:
             # Extract the content between the markers
-            extracted = response[start + len(marker):end].strip()
+            extracted = response[start + len(start_marker):end].strip()
         else:
             print("Could not find end marker, returning everything after start marker")
-            # If no end marker is not found, return everything after the start marker
-            extracted = response[start + len(marker):].strip()
+            # If end marker is not found, return everything after the start marker
+            extracted = response[start + len(start_marker):].strip()
     else:
         print("Could not find start marker")
         # If the start marker is not found, return the original response
@@ -2184,8 +2195,10 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
 
 # Add this function near the top with other utility functions
 def clean_transcript_delimiters(text):
-    """Remove any lead response delimiters that might have leaked into the transcript"""
-    return text.replace('<<<LEAD_RESPONSE>>>', '').strip()
+    """Remove any response delimiters that might have leaked into the transcript"""
+    text = text.replace('<!-- START_OF_RESPONSE -->', '').strip()
+    text = text.replace('<!-- END_OF_RESPONSE -->', '').strip()
+    return text
 
 if __name__ == "__main__":
     import uvicorn

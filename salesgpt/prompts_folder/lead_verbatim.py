@@ -19,9 +19,9 @@ Your response should consist of one part, clearly labeled:
 
 Lead Interviewer Response: Restate the entire extraction question verbatim as shared earlier, enclosed with the delimiter shown below.
 
-<<<LEAD_RESPONSE>>>
+<!-- START_OF_RESPONSE -->
 [insert entire extraction question here verbatim]
-<<<LEAD_RESPONSE>>>
+<!-- END_OF_RESPONSE -->
 Give your response only with no explanation or other accompanying text, or quotation marks.
 
 It's **EXTREMELY IMPORTANT** that you use the delimited just like above and in the given examples.
@@ -32,20 +32,20 @@ It's **EXTREMELY IMPORTANT** that you use the delimited just like above and in t
 
 ### EXAMPLE RESPONSE 1
 
-<<<LEAD_RESPONSE>>>
+<!-- START_OF_RESPONSE -->
 Alright, you’ve done it Fletcher! We’re at the end. Congratulations on your hard work. <break time="0.5s" />So, before we end the call, I want to open it up to you to give any final thoughts. <break time="0.5s" />Often this is where participants really give their best insights. <break time="0.5s" />So, any final words of wisdom for the Cursor team?
-<<<LEAD_RESPONSE>>>
+<!-- END_OF_RESPONSE -->
 
 ### EXAMPLE RESPONSE 2
 
-<<<LEAD_RESPONSE>>>
+<!-- START_OF_RESPONSE -->
 You mentioned that you'd been looking for a similar tool even before coming across the Twitter demo. <break time="0.75s" />. Do you remember the particular problem you were hoping Cursor would fulfill when you first discovered it? Like, if you were searching for a similar tool, you must have had something in mind, right?
-<<<LEAD_RESPONSE>>>
+<!-- END_OF_RESPONSE -->
 
 ### EXAMPLE RESPONSE 3
 
-<<<LEAD_RESPONSE>>>
+<!-- START_OF_RESPONSE -->
 You mentioned how quickly adding logging and rewriting methods with Cursor improved your debugging process. I’d love to hear about the practical implications of this on your day to day work. For example, maybe you've observed some changes in the way you work as a result of using Cursor?
-<<<LEAD_RESPONSE>>>
+<!-- END_OF_RESPONSE -->
 
 """
