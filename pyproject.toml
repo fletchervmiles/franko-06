@@ -2,7 +2,7 @@
 name = "SalesGPT"
 version = "0.1.1"
 description = "AI Customer Interviews "
-authors = ["Fletcher Miles - fletcher@franko.ai"]  
+authors = ["Fletcher Miles <fletcher@franko.ai>"]  
 
 [tool.poetry.dependencies]
 python = "^3.10"
