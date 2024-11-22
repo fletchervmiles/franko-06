@@ -63,17 +63,17 @@ d. Offer choices or collaborative problem-solving (e.g., "We could either... or.
 ## Step 3. Craft an Empathetic Statement Based on the Last Responses in Step 2.
 Based on the last responses:
 1) Craft 1 response sentence that each conveys empathy and understanding. 
-2) SUPER IMPORTANT: Ensure the response logically connects to the interviewee’s most recent message but uses mostly generic and new language, don’t repeat verbatim what the interviewee has said. Reason: This is because the follow-up question that will be appended to this empathy statement will have contextually relevant information, i.e. repeat words from the last response so it’s not needed in this response.
+2) SUPER IMPORTANT: Ensure the response logically connects to the interviewee’s most recent message.
 3) Keep the response concise: Aim for 20 to 30 words.
 4) Only return the response text. Do not return any explanatory text or quotations, just the text response.
 5) DO NOT ASK A FOLLOW UP QUESTION OR HINT AT AN INQUIRY. STATEMENT ONLY.
 6) DO NOT USE THE INTERVIEWEE’S NAME.
 7) Verify the accuracy of mentioned tools, names, or terminologies against commonly known industry standards or common sense. Automatically correct any recognizable yet mistyped or mispronounced terms.
 8) Enhance Transcript Accuracy and Contextual Coherence and avoid potential using mistyped or mispronounced terms in your response. 
-Contextual Verification: Examine each term and phrase for contextual appropriateness, especially focusing on words that sound similar but have different meanings. Ensure that the transcription makes sense within the flow and subject of the conversation.
-Common Misinterpretations: Pay special attention to common transcription errors, such as numbers that might have been misheard, homophones, or industry-specific jargon that may be prone to misinterpretation.
-Logical Consistency: Confirm that the transcribed text is logically consistent with the broader discussion topics. This includes checking that transitions between sentences and ideas are smooth and make sense.
-Plausibility Check: Consider the likelihood of the spoken words based on the context of the conversation. If a phrase seems out of place or unlikely given the subject matter, it may be worth avoiding.
+- Contextual Verification: Examine each term and phrase for contextual appropriateness, especially focusing on words that sound similar but have different meanings. Ensure that the transcription makes sense within the flow and subject of the conversation.
+- Common Misinterpretations: Pay special attention to common transcription errors, such as numbers that might have been misheard, homophones, or industry-specific jargon that may be prone to misinterpretation.
+- Logical Consistency: Confirm that the transcribed text is logically consistent with the broader discussion topics. This includes checking that transitions between sentences and ideas are smooth and make sense.
+- Plausibility Check: Consider the likelihood of the spoken words based on the context of the conversation. If a phrase seems out of place or unlikely given the subject matter, it may be worth avoiding.
 
 
 **Response:**
@@ -232,6 +232,119 @@ Interviewee’s last response: Yeah, I guess one thing is the playground area of
 
 ^^^
 Empathy Statement: I can see how that would be frustrating—that latency data is important! Not having it readily available must make testing less straightforward than it could be.
+^^^
+
+
+
+### EXAMPLE 9
+
+EXAMPLE INPUT - THE INTERVIEWER’S (YOU) LAST QUESTION, THE INTERVIEWEE’S LAST RESPONSE AND THE EMPATHY STATEMENT:
+
+~~~
+Interviewer’s (you) Last Question: It's understandable to feel disappointed when expected benefits don't materialize. You mentioned that the product didn't provide an energy boost but did make you feel lighter, which you appreciated. Could you share more about how this lightness and peace of mind affected your daily life or wellness goals, even without the energy boost?
+~~~
+
+!!!
+Interviewee’s last response: I just wasn’t really enjoying it, and it's quite expensive, so I decided to cancel. I thought I’d have more energy, but I didn’t feel that. Some people on the website said you'd feel more energy, and I didn’t. It just didn’t feel worth the investment if it wasn’t delivering as intended. It did make me feel a bit lighter, and I liked the peace of mind it gave, but that wasn't enough to justify the price.
+
+!!!
+
+^^^
+Empathy Statement: That's interesting - so even though you felt lighter and got some peace of mind, those benefits didn’t quite feel worth the price for you.
+^^^
+
+
+
+### EXAMPLE 10
+
+EXAMPLE INPUT - THE INTERVIEWER’S (YOU) LAST QUESTION, THE INTERVIEWEE’S LAST RESPONSE AND THE EMPATHY STATEMENT:
+
+~~~
+Interviewer’s (you) Last Question: Alright, thanks for sharing, Fletcher! You’re awesome, and I’m really enjoying this conversation. Next up, I’d love to hear your overall thoughts on Langfuse. So, when you think back on your experience, how would you describe the value it brought to you personally? For example, were there specific benefits you found valuable and might miss? Or perhaps there were areas where it didn’t quite live up to what you were hoping for? Ok, over to you.
+~~~
+
+!!!
+Interviewee’s last response: Um… I did really like how easy it was to set up and then I have been using it to. look through kind of results and different prompts and I think yeah, the way the sessions are set up is really good So I will miss that data particularly around like latency was one thing that I was really focused on and having all of my prompts with the latency and the cost in one place in the dashboard has actually been pretty awesome. So. I'll definitely miss that data. But I’ve moved because i need better way to setup evals and Langfuse just isn’t quite as sosphisticated as other companies. 
+
+!!!
+
+^^^
+Empathy Statement: It's awesome to hear that Langfuse's setup and data accessibility were spot-on for you! But I hear you on the evaluations functionality lacking a little bit, that's not ideal.
+^^^
+
+
+
+### EXAMPLE 11
+
+EXAMPLE INPUT - THE INTERVIEWER’S (YOU) LAST QUESTION, THE INTERVIEWEE’S LAST RESPONSE AND THE EMPATHY STATEMENT:
+
+~~~
+Interviewer’s (you) Last Question: Got it, that makes sense. So if the AI handled those large files more smoothly, I’m curious—how would that change things day-to-day? Would it speed up specific workflows or ease up other challenges?
+~~~
+
+!!!
+Interviewee’s last response: Absolutely, it’d be a big win. We’d save a lot of time and reduce frustration, especially during big pushes, letting us focus more on actual development work instead of waiting around.
+
+!!!
+
+^^^
+Empathy Statement: That's a really helpful insight, thank you! It's clear saving time and reducing frustrations important, especially during busy periods!
+^^^
+
+
+
+### EXAMPLE 12
+
+EXAMPLE INPUT - THE INTERVIEWER’S (YOU) LAST QUESTION, THE INTERVIEWEE’S LAST RESPONSE AND THE EMPATHY STATEMENT:
+
+~~~
+Interviewer’s (you) Last Question: It's understandable to feel disappointed when expected benefits don't materialize. You mentioned that the product didn't provide an energy boost but did make you feel lighter, which you appreciated. Could you share more about how this lightness and peace of mind affected your daily life or wellness goals, even without the energy boost?
+~~~
+
+!!!
+Interviewee’s last response: I just wasn’t really enjoying it, and it's quite expensive, so I decided to cancel. I thought I’d have more energy, but I didn’t feel that. Some people on the website said you'd feel more energy, and I didn’t. It just didn’t feel worth the investment if it wasn’t delivering as intended. It did make me feel a bit lighter, and I liked the peace of mind it gave, but that wasn't enough to justify the price.
+!!!
+
+^^^
+Empathy Statement: So, you mentioned the product didn’t give you the energy boost you were expecting, which is understandably a big part of feeling it’s worth the price.
+^^^
+
+
+
+### EXAMPLE 13
+
+EXAMPLE INPUT - THE INTERVIEWER’S (YOU) LAST QUESTION, THE INTERVIEWEE’S LAST RESPONSE AND THE EMPATHY STATEMENT:
+
+~~~
+Interviewer’s (you) Last Question: Alright, thanks for sharing, Fletcher! You’re awesome, and I’m really enjoying this conversation. Next up, I’d love to hear your overall thoughts on Langfuse. So, when you think back on your experience, how would you describe the value it brought to you personally? For example, were there specific benefits you found valuable and might miss? Or perhaps there were areas where it didn’t quite live up to what you were hoping for? Ok, over to you.
+~~~
+
+!!!
+Interviewee’s last response: Um… I did really like how easy it was to set up and then I have been using it to. look through kind of results and different prompts and I think yeah, the way the sessions are set up is really good So I will miss that data particularly around like latency was one thing that I was really focused on and having all of my prompts with the latency and the cost in one place in the dashboard has actually been pretty awesome. So. I'll definitely miss that data. But I’ve moved because i need better way to setup evals and Langfuse just isn’t quite as sosphisticated as other companies. 
+
+!!!
+
+^^^
+Empathy Statement: It's great to hear the setup was simple and the session data was useful. But I totally get needing a better setup for evaluations—it sounds like that’s really important for your business.
+^^^
+
+
+
+### EXAMPLE 14
+
+EXAMPLE INPUT - THE INTERVIEWER’S (YOU) LAST QUESTION, THE INTERVIEWEE’S LAST RESPONSE AND THE EMPATHY STATEMENT:
+
+~~~
+Interviewer’s (you) Last Question: Got it, that makes sense. So if the AI handled those large files more smoothly, I’m curious—how would that change things day-to-day? Would it speed up specific workflows or ease up other challenges?
+~~~
+
+!!!
+Interviewee’s last response: Absolutely, it’d be a big win. We’d save a lot of time and reduce frustration, especially during big pushes, letting us focus more on actual development work instead of waiting around.
+
+!!!
+
+^^^
+Empathy Statement: Got it—those big productivity wins really depend on cutting down the time your team spends waiting. Thanks for that great insight. These details help us pinpoint exactly where improvements are needed.
 ^^^
 
 """

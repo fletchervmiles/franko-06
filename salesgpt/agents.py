@@ -322,7 +322,54 @@ class SalesGPT(Chain):
         return []
  
 
+    # Without any 5 second functionality
+    # async def async_chain_runner(self):
+    #     try:
+    #         print(f"[{datetime.now()}] Async Chain Runner Begun (goal reviews)")
 
+    #         # Prepare common inputs once
+    #         common_inputs = {
+    #             "conversation_history": "\n".join(self.conversation_history) if self.conversation_history else "N/A",
+    #             "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
+    #             "current_conversation_stage": self.current_conversation_stage,
+    #             "client_name": self.client_name,
+    #             "call_id": self.call_id,
+    #             "interviewee_name": self.interviewee_name,
+    #             "goal_completeness_status": self.goal_completeness_status if hasattr(self, 'goal_completeness_status') else "N/A",
+    #             "customer_type": self.customer_type,
+    #             "has_progressed": self.has_progressed,
+    #             "agent_response": self.agent_response,
+    #             "human_response": self.human_response,
+    #             "client_company_description": self.client_company_description,
+    #         }
+
+    #         # Run all chains concurrently
+    #         narrative_result, outcome_result, product_result = await asyncio.gather(
+    #             self.goal_review_narrative_chain.ainvoke(common_inputs),
+    #             self.goal_review_outcome_chain.ainvoke(common_inputs),
+    #             self.goal_review_product_chain.ainvoke(common_inputs)
+    #         )
+
+    #         # Store results
+    #         self.current_goal_review_narrative = narrative_result["text"]
+    #         self.current_goal_review_outcome = outcome_result["text"]
+    #         self.current_goal_review_product = product_result["text"]
+
+    #         print(f"[{datetime.now()}] Async Chain Runner Returned (goal reviews)")
+
+    #         return {
+    #             "current_goal_review_narrative": self.current_goal_review_narrative,
+    #             "current_goal_review_outcome": self.current_goal_review_outcome,
+    #             "current_goal_review_product": self.current_goal_review_product,
+    #         }
+
+    #     except Exception as e:
+    #         print(f"Error in async_chain_runner: {e}")
+    #         print(f"Error in async_chain_runner: {type(e).__name__}: {e}")
+    #         print(traceback.format_exc())
+    #         raise
+
+    # with 5 second functionality
     async def async_chain_runner(self):
         try:
             print(f"[{datetime.now()}] Async Chain Runner Begun (goal reviews)")
@@ -343,17 +390,39 @@ class SalesGPT(Chain):
                 "client_company_description": self.client_company_description,
             }
 
-            # Run all chains concurrently
-            narrative_result, outcome_result, product_result = await asyncio.gather(
-                self.goal_review_narrative_chain.ainvoke(common_inputs),
-                self.goal_review_outcome_chain.ainvoke(common_inputs),
-                self.goal_review_product_chain.ainvoke(common_inputs)
-            )
+            # Start all tasks
+            tasks = {
+                'narrative': asyncio.create_task(self.goal_review_narrative_chain.ainvoke(common_inputs)),
+                'outcome': asyncio.create_task(self.goal_review_outcome_chain.ainvoke(common_inputs)),
+                'product': asyncio.create_task(self.goal_review_product_chain.ainvoke(common_inputs)),
+            }
+
+            # Wait for tasks to complete or timeout after 5 seconds
+            done, pending = await asyncio.wait(tasks.values(), timeout=5)
+
+            if len(done) == len(tasks):
+                # All tasks completed
+                results = {name: task.result() for name, task in tasks.items()}
+            elif len(done) >= 1:
+                # At least one task completed
+                results = {}
+                for name, task in tasks.items():
+                    if task in done:
+                        results[name] = task.result()
+                    else:
+                        # Assign default value for pending tasks
+                        results[name] = {
+                            "text": "The analysis was unable to be completed. Please progress with your follow up question using the conversation goal and conversation history."
+                        }
+            else:
+                # None of the tasks completed after 5 seconds, wait for all to finish
+                await asyncio.gather(*tasks.values())
+                results = {name: task.result() for name, task in tasks.items()}
 
             # Store results
-            self.current_goal_review_narrative = narrative_result["text"]
-            self.current_goal_review_outcome = outcome_result["text"]
-            self.current_goal_review_product = product_result["text"]
+            self.current_goal_review_narrative = results['narrative']["text"]
+            self.current_goal_review_outcome = results['outcome']["text"]
+            self.current_goal_review_product = results['product']["text"]
 
             print(f"[{datetime.now()}] Async Chain Runner Returned (goal reviews)")
 
@@ -746,26 +815,46 @@ class SalesGPT(Chain):
         }
 
 
+    # # without 5 second functionality
     # async def _run_exploratory_chain(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    #     """
+    #     Run exploratory chains concurrently and select the best response.
+    #     """
     #     try:
-    #         # Generate 3 responses
-    #         tasks = [
+    #         print(f"[{datetime.now()}] Running exploratory chains...")
+
+    #         # Run all three exploratory chains concurrently
+    #         responses = await asyncio.gather(
     #             self.exploratory_chain1.ainvoke(inputs),
     #             self.exploratory_chain2.ainvoke(inputs),
-    #             self.exploratory_chain3.ainvoke(inputs)
-    #         ]
-    #         responses = await asyncio.gather(*tasks)
+    #             self.exploratory_chain3.ainvoke(inputs),
+    #             return_exceptions=True  # This prevents one failure from stopping all chains
+    #         )
 
-    #         # Extract the text from each response
-    #         response_texts = [response["text"] for response in responses]
+    #         # Process responses and handle any exceptions
+    #         response_texts = []
+    #         for i, response in enumerate(responses, 1):
+    #             if isinstance(response, Exception):
+    #                 print(f"Chain {i} failed: {str(response)}")
+    #                 continue
+    #             if isinstance(response, dict) and "text" in response:
+    #                 print(f"Chain {i} completed successfully")
+    #                 response_texts.append(response["text"])
 
-    #         # Prepare inputs for the selector chain
+    #         # If no responses succeeded, return default
+    #         if not response_texts:
+    #             return {"text": "I apologize, but I encountered an error. Could you please rephrase your question?"}
+
+    #         # Pad with copies of the first response if needed
+    #         while len(response_texts) < 3:
+    #             response_texts.append(response_texts[0])
+
+    #         # Prepare selector inputs
     #         selector_inputs = {
     #             "response1": response_texts[0],
     #             "response2": response_texts[1],
     #             "response3": response_texts[2],
     #             "context": inputs,
-    #             # Add the missing keys
     #             "human_response": self.human_response,
     #             "short_conversation_history": "\n".join(self.short_conversation_history) if self.short_conversation_history else "N/A",
     #             "empathy_statement": self.empathy_statement,
@@ -773,33 +862,27 @@ class SalesGPT(Chain):
     #             "current_conversation_stage": self.current_conversation_stage,
     #             "client_name": self.client_name,
     #             "call_id": self.call_id,
-    #             # Add the missing exploratory responses
+    #             "client_company_description": self.client_company_description,
     #             "lead_exploratory_narrative": response_texts[0],
     #             "lead_exploratory_outcome": response_texts[1],
     #             "lead_exploratory_product": response_texts[2]
     #         }
 
-    #         # Run the selector chain
-    #         selection_result = await self.selector_chain.ainvoke(selector_inputs)
-
-    #         # Get the selected response number, defaulting to 1 if invalid
+    #         # Run selector chain
     #         try:
+    #             selection_result = await self.selector_chain.ainvoke(selector_inputs)
     #             selected_number = int(selection_result["text"].strip())
     #             if selected_number not in [1, 2, 3]:
-    #                 print(f"Warning: Invalid selection number {selected_number}. Defaulting to 1.")
     #                 selected_number = 1
-    #         except ValueError:
-    #             print(f"Warning: Could not convert '{selection_result['text']}' to an integer. Defaulting to 1.")
-    #             selected_number = 1
-
-    #         # Return the selected response
-    #         return {"text": response_texts[selected_number - 1]}
+    #             return {"text": response_texts[selected_number - 1]}
+    #         except Exception as e:
+    #             print(f"Selector chain failed: {e}, defaulting to first response")
+    #             return {"text": response_texts[0]}
 
     #     except Exception as e:
     #         print(f"Error in _run_exploratory_chain: {e}")
-    #         # If an error occurs, return the first response or a default message
-    #         default_response = responses[0]["text"] if responses else "I apologize, but I encountered an error while processing the response. Could you please rephrase your question or statement?"
-    #         return {"text": default_response}
+    #         return {"text": "I apologize, but I encountered an error. Could you please rephrase your question?"}
+
 
 
     async def _run_exploratory_chain(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
@@ -809,31 +892,48 @@ class SalesGPT(Chain):
         try:
             print(f"[{datetime.now()}] Running exploratory chains...")
 
-            # Run all three exploratory chains concurrently
-            responses = await asyncio.gather(
-                self.exploratory_chain1.ainvoke(inputs),
-                self.exploratory_chain2.ainvoke(inputs),
-                self.exploratory_chain3.ainvoke(inputs),
-                return_exceptions=True  # This prevents one failure from stopping all chains
-            )
+            # Start all three exploratory chains concurrently
+            tasks = {
+                'chain1': asyncio.create_task(self.exploratory_chain1.ainvoke(inputs)),
+                'chain2': asyncio.create_task(self.exploratory_chain2.ainvoke(inputs)),
+                'chain3': asyncio.create_task(self.exploratory_chain3.ainvoke(inputs)),
+            }
+
+            # Wait for tasks to complete or timeout after 5 seconds
+            done, pending = await asyncio.wait(tasks.values(), timeout=5)
+
+            if len(done) == len(tasks):
+                # All tasks completed within 5 seconds
+                responses = {name: task.result() for name, task in tasks.items()}
+            elif len(done) >= 1:
+                # At least one task completed within 5 seconds
+                responses = {}
+                for name, task in tasks.items():
+                    if task in done:
+                        responses[name] = task.result()
+                    else:
+                        # Assign default value for pending tasks
+                        responses[name] = {
+                            "text": "Response unavailable. Do not select this response. Select one of the other response values."
+                        }
+            else:
+                # None of the tasks completed after 5 seconds, wait for all to finish
+                await asyncio.gather(*tasks.values())
+                responses = {name: task.result() for name, task in tasks.items()}
 
             # Process responses and handle any exceptions
             response_texts = []
-            for i, response in enumerate(responses, 1):
+            for i, name in enumerate(['chain1', 'chain2', 'chain3'], 1):
+                response = responses[name]
                 if isinstance(response, Exception):
                     print(f"Chain {i} failed: {str(response)}")
+                    response_texts.append("Response unavailable. Do not select this response. Select one of the other response values.")
                     continue
                 if isinstance(response, dict) and "text" in response:
                     print(f"Chain {i} completed successfully")
                     response_texts.append(response["text"])
-
-            # If no responses succeeded, return default
-            if not response_texts:
-                return {"text": "I apologize, but I encountered an error. Could you please rephrase your question?"}
-
-            # Pad with copies of the first response if needed
-            while len(response_texts) < 3:
-                response_texts.append(response_texts[0])
+                else:
+                    response_texts.append("Response unavailable. Do not select this response. Select one of the other response values.")
 
             # Prepare selector inputs
             selector_inputs = {
@@ -851,7 +951,7 @@ class SalesGPT(Chain):
                 "client_company_description": self.client_company_description,
                 "lead_exploratory_narrative": response_texts[0],
                 "lead_exploratory_outcome": response_texts[1],
-                "lead_exploratory_product": response_texts[2]
+                "lead_exploratory_product": response_texts[2],
             }
 
             # Run selector chain
@@ -859,15 +959,36 @@ class SalesGPT(Chain):
                 selection_result = await self.selector_chain.ainvoke(selector_inputs)
                 selected_number = int(selection_result["text"].strip())
                 if selected_number not in [1, 2, 3]:
-                    selected_number = 1
-                return {"text": response_texts[selected_number - 1]}
+                    # If the selector returns an invalid selection, default to the first available response
+                    for response_text in response_texts:
+                        if response_text != "Response unavailable. Do not select this response. Select one of the other response values.":
+                            return {"text": response_text}
+                    # If none are available, return an error message
+                    return {"text": "I apologize, but I encountered an error. Could you please rephrase your question?"}
+                else:
+                    selected_response = response_texts[selected_number - 1]
+                    if selected_response == "Response unavailable. Do not select this response. Select one of the other response values.":
+                        # Selector selected an unavailable response, default to first available response
+                        for response_text in response_texts:
+                            if response_text != "Response unavailable. Do not select this response. Select one of the other response values.":
+                                return {"text": response_text}
+                        # If none are available, return an error message
+                        return {"text": "I apologize, but I encountered an error. Could you please rephrase your response?"}
+                    else:
+                        return {"text": selected_response}
             except Exception as e:
-                print(f"Selector chain failed: {e}, defaulting to first response")
-                return {"text": response_texts[0]}
+                print(f"Selector chain failed: {e}, defaulting to first available response")
+                # Return the first available response
+                for response_text in response_texts:
+                    if response_text != "Response unavailable. Do not select this response. Select one of the other response values.":
+                        return {"text": response_text}
+                # If none are available, return an error message
+                return {"text": "I apologize, but I encountered an error. Could you please rephrase your response?"}
 
         except Exception as e:
             print(f"Error in _run_exploratory_chain: {e}")
-            return {"text": "I apologize, but I encountered an error. Could you please rephrase your question?"}
+            return {"text": "I apologize, but I encountered an error. Could you please rephrase your response?"}
+
 
 
 

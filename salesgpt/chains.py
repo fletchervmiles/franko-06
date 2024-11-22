@@ -34,7 +34,7 @@ from .prompts_folder.goal_review_narrative import GOAL_REVIEW_NARRATIVE_PROMPT
 from .prompts_folder.goal_review_outcome import GOAL_REVIEW_OUTCOME_PROMPT 
 from .prompts_folder.goal_review_product import GOAL_REVIEW_PRODUCT_PROMPT
 
-ChatLiteLLM.set_verbose = True
+# ChatLiteLLM.set_verbose = True
 
 from langchain.chains import LLMChain
 
@@ -520,7 +520,7 @@ class SelectorChain(TracedLLMChain):
 
     @classmethod
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
-        llm_alt = ChatLiteLLM(temperature=1, model_name="gpt-4o-2024-08-06", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
+        llm_alt = ChatLiteLLM(temperature=1, model_name="o1-mini", api_key=os.getenv("OPENAI_API_KEY", ""), max_tokens=2000)
 
         prompt = PromptTemplate(
             template=RESPONSE_SELECTOR_PROMPT,

@@ -1121,7 +1121,7 @@ async def make_outgoing_call(call_request: CallRequest):
             'ncco': [
                 {
                     'action': 'record',
-                    'eventUrl': [f'https://franko-06.onrender.com/vonage_recording?call_id={call_id}'],
+                    'eventUrl': [f'https://1461-58-136-114-10.ngrok-free.app/vonage_recording?call_id={call_id}'],
                     'format': 'mp3'
                 },
                 {
@@ -1129,7 +1129,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     'endpoint': [
                         {
                             'type': 'websocket',
-                            'uri': f'wss://franko-06.onrender.com/ws?call_id={call_id}',
+                            'uri': f'wss://1461-58-136-114-10.ngrok-free.app/ws?call_id={call_id}',
                             'content-type': 'audio/l16;rate=16000',
                             'headers': {
                                 'language': 'en-GB',
@@ -1139,7 +1139,7 @@ async def make_outgoing_call(call_request: CallRequest):
                     ]
                 }
             ],
-            'event_url': [f'https://franko-06.onrender.com/vonage_call_status?call_id={call_id}'],
+            'event_url': [f'https://1461-58-136-114-10.ngrok-free.app/vonage_call_status?call_id={call_id}'],
             'event_method': 'POST'
         })
 
@@ -1414,19 +1414,6 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
 
 
 # # PROD CHANGE
-async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
-    # Get the sales API instance and agent name for this call
-    sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
-    agent_name = sales_gpt_api.agent_name.lower()  # Convert to lowercase for consistency
-    
-    # Map agent name to audio file name
-    audio_file_name = f"{agent_name}_voice.raw"
-    
-    # Specify the exact file path
-    audio_folder_path = "/mnt/buffer_audio"
-    audio_file_path = os.path.join(audio_folder_path, audio_file_name)
-
-# # LOCAL
 # async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
 #     # Get the sales API instance and agent name for this call
 #     sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
@@ -1434,9 +1421,22 @@ async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: Share
     
 #     # Map agent name to audio file name
 #     audio_file_name = f"{agent_name}_voice.raw"
-
-#     audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
+    
+#     # Specify the exact file path
+#     audio_folder_path = "/mnt/buffer_audio"
 #     audio_file_path = os.path.join(audio_folder_path, audio_file_name)
+
+# LOCAL
+async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: SharedData):
+    # Get the sales API instance and agent name for this call
+    sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+    agent_name = sales_gpt_api.agent_name.lower()  # Convert to lowercase for consistency
+    
+    # Map agent name to audio file name
+    audio_file_name = f"{agent_name}_voice.raw"
+
+    audio_folder_path = r"C:\Users\fletc\Desktop\Franko - 06\SalesGPT\buffer_audio"
+    audio_file_path = os.path.join(audio_folder_path, audio_file_name)
     
     
     chunk_size = 320 * 2
@@ -1618,7 +1618,7 @@ def extract_desired_response(response):
     start_marker = "<!-- START_OF_RESPONSE -->"
     end_marker = "<!-- END_OF_RESPONSE -->"
     
-    start = response.find(start_marker)
+    start = response.find(start_marker) 
     print(f"Start marker position: {start}")
     
     if start != -1:
@@ -1644,68 +1644,117 @@ def extract_desired_response(response):
     
     return extracted
 
-# Seems to be working from an audio quality
+
+
+# # With lock
+# async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str, shared_data: SharedData):
+#     try:
+#         # Acquire lock before starting new audio segment
+#         async with shared_data.audio_lock:
+#             print(f"{datetime.now()} Queueing Audio Stream - Begun for call_id: {call_id}")
+            
+#             if not audio_data:
+#                 print(f"{datetime.now()} Warning: Empty audio data received for call_id: {call_id}")
+#                 return
+                
+#             # Reset completion flag before starting new audio
+#             shared_data.audio_sending_completed.clear()
+            
+#             samples = bytearray(audio_data)
+#             chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
+            
+#             # Process full chunks
+#             while len(samples) >= chunk_size:
+#                 chunk = samples[:chunk_size]
+#                 samples = samples[chunk_size:]
+#                 await shared_data.audio_queue.enqueue(chunk)
+
+#             # Handle remaining samples with padding
+#             if samples:
+#                 padding_size = chunk_size - len(samples)
+#                 padded_chunk = samples + bytearray(padding_size)
+#                 await shared_data.audio_queue.enqueue(padded_chunk)
+
+#             print(f"{datetime.now()} Queueing Audio Stream - Finished for call_id: {call_id}")
+#             shared_data.audio_sending_completed.set()
+
+#             # Wait for current audio to finish before releasing lock
+#             while not await shared_data.audio_queue.is_empty():
+#                 await asyncio.sleep(0.1)
+
+#     except Exception as e:
+#         print(f"{datetime.now()} Error in send_audio: {e}")
+#         print(traceback.format_exc())
+
+
 # async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
 #     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
 #     chunk_duration = 0.02  # 20ms per chunk
-#     initial_buffer_duration = 0.5   # Buffer 0.5 seconds of audio
+#     initial_buffer_duration = 1.5   # Buffer 0.5 seconds of audio
 #     initial_buffer_chunks = int(initial_buffer_duration / chunk_duration)
 #     buffer = []
-#     buffering_timeout = 1.0
+#     buffering_timeout = 3.0
 #     buffering_start_time = time.time()
 
 #     try:
-#         # Accumulate initial buffer
-#         print(f"{datetime.now()} Starting initial buffer accumulation...")
-#         while len(buffer) < initial_buffer_chunks:
-#             audio_chunk = await shared_data.audio_queue.dequeue()
-#             if audio_chunk is not None:
-#                 buffer.append(audio_chunk)
-#             else:
-#                 if time.time() - buffering_start_time > buffering_timeout:
-#                     print(f"{datetime.now()} Buffering timeout reached with {len(buffer)} chunks")
-#                     break
-#                 await asyncio.sleep(0.001)
-
-#         print(f"{datetime.now()} Initial buffer accumulated with {len(buffer)} chunks")
-
-#         # Record the start time
-#         start_time = time.time()
-#         next_send_time = start_time
-
-#         # Send the initial buffer
-#         for chunk in buffer:
-#             if vonage_websocket.client_state == WebSocketState.DISCONNECTED:
-#                 print(f"{datetime.now()} WebSocket disconnected during initial buffer send")
-#                 return
-#             await vonage_websocket.send_bytes(chunk)
-#             next_send_time += chunk_duration
-
-#         buffer.clear()
-
-#         # Continue sending audio chunks in real-time
 #         while not shared_data.call_completed:
-#             audio_chunk = await shared_data.audio_queue.dequeue()
-#             if audio_chunk is not None:
-#                 now = time.time()
-#                 sleep_time = next_send_time - now
+#             # Reset buffer for new audio segment
+#             buffer = []
+#             buffering_start_time = time.time()
 
-#                 if sleep_time > 0:
-#                     await asyncio.sleep(sleep_time)
-#                 elif sleep_time < -0.1:  # Only log significant delays
-#                     print(f"{datetime.now()} Audio playback delayed by {-sleep_time:.3f}s")
+#             # Accumulate initial buffer
+#             print(f"{datetime.now()} Starting initial buffer accumulation...")
+#             while len(buffer) < initial_buffer_chunks:
+#                 audio_chunk = await shared_data.audio_queue.dequeue()
+#                 if audio_chunk is not None:
+#                     buffer.append(audio_chunk)
+#                 else:
+#                     if time.time() - buffering_start_time > buffering_timeout:
+#                         if not buffer:  # If buffer is empty, wait for next audio
+#                             await asyncio.sleep(0.1)
+#                             break
+#                         print(f"{datetime.now()} Buffering timeout reached with {len(buffer)} chunks")
+#                         break
+#                     await asyncio.sleep(0.001)
 
-#                 if vonage_websocket.client_state == WebSocketState.DISCONNECTED:
-#                     print(f"{datetime.now()} WebSocket disconnected during streaming")
-#                     return
+#             if buffer:  # Only process if we have audio to send
+#                 print(f"{datetime.now()} Initial buffer accumulated with {len(buffer)} chunks")
 
-#                 await vonage_websocket.send_bytes(audio_chunk)
-#                 next_send_time += chunk_duration
-#             else:
-#                 if shared_data.audio_sending_completed.is_set() and await shared_data.audio_queue.is_empty():
-#                     print(f"{datetime.now()} All audio data has been sent")
-#                     break
-#                 await asyncio.sleep(0.001)
+#                 # Record the start time
+#                 start_time = time.time()
+#                 next_send_time = start_time
+
+#                 # Send the initial buffer
+#                 for chunk in buffer:
+#                     if vonage_websocket.client_state == WebSocketState.DISCONNECTED:
+#                         print(f"{datetime.now()} WebSocket disconnected during initial buffer send")
+#                         return
+#                     await vonage_websocket.send_bytes(chunk)
+#                     next_send_time += chunk_duration
+
+#                 buffer.clear()
+
+#                 # Continue sending audio chunks in real-time
+#                 while True:
+#                     audio_chunk = await shared_data.audio_queue.dequeue()
+#                     if audio_chunk is not None:
+#                         now = time.time()
+#                         sleep_time = next_send_time - now
+
+#                         if sleep_time > 0:
+#                             await asyncio.sleep(sleep_time)
+
+#                         if vonage_websocket.client_state == WebSocketState.DISCONNECTED:
+#                             print(f"{datetime.now()} WebSocket disconnected during streaming")
+#                             return
+
+#                         await vonage_websocket.send_bytes(audio_chunk)
+#                         next_send_time += chunk_duration
+#                     else:
+#                         if shared_data.audio_sending_completed.is_set() and await shared_data.audio_queue.is_empty():
+#                             print(f"{datetime.now()} Audio segment completed")
+#                             break  # Break inner loop to start new segment
+#                         await asyncio.sleep(0.001)
 
 #     except WebSocketDisconnect:
 #         print(f"{datetime.now()} WebSocket disconnected")
@@ -1713,51 +1762,9 @@ def extract_desired_response(response):
 #         print(f"{datetime.now()} Error in send_queued_audio: {e}")
 #         print(traceback.format_exc())
 
-# Seems to be working from audio quality
-# async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str, shared_data: SharedData):
-#     try:
-#         print(f"{datetime.now()} Queueing Audio Stream - Begun for call_id: {call_id}")
-        
-#         if not audio_data:
-#             print(f"{datetime.now()} Warning: Empty audio data received for call_id: {call_id}")
-#             return
-            
-#         samples = bytearray(audio_data)
-#         chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
-#         total_chunks = len(samples) // chunk_size
-        
-#         print(f"{datetime.now()} Processing {total_chunks} chunks for call_id: {call_id}")
-        
-#         # Process full chunks
-#         chunks_processed = 0
-#         while len(samples) >= chunk_size:
-#             chunk = samples[:chunk_size]
-#             samples = samples[chunk_size:]
-#             await shared_data.audio_queue.enqueue(chunk)
-#             chunks_processed += 1
-            
-#             # Optional: Add progress logging for long audio streams
-#             if chunks_processed % 100 == 0:
-#                 print(f"{datetime.now()} Processed {chunks_processed}/{total_chunks} chunks")
 
-#         # Handle remaining samples with padding
-#         if samples:
-#             padding_size = chunk_size - len(samples)
-#             padded_chunk = samples + bytearray(padding_size)
-#             await shared_data.audio_queue.enqueue(padded_chunk)
-#             print(f"{datetime.now()} Added final padded chunk of size: {len(padded_chunk)}")
-
-#         print(f"{datetime.now()} Queueing Audio Stream - Finished for call_id: {call_id}")
-#         shared_data.audio_sending_completed.set()
-
-#     except Exception as e:
-#         print(f"{datetime.now()} Error in send_audio: {e}")
-#         print(traceback.format_exc())
-
-# With lock
 async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str, shared_data: SharedData):
     try:
-        # Acquire lock before starting new audio segment
         async with shared_data.audio_lock:
             print(f"{datetime.now()} Queueing Audio Stream - Begun for call_id: {call_id}")
             
@@ -1784,63 +1791,32 @@ async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id:
                 await shared_data.audio_queue.enqueue(padded_chunk)
 
             print(f"{datetime.now()} Queueing Audio Stream - Finished for call_id: {call_id}")
+            
+            # Move this after all chunks are queued
             shared_data.audio_sending_completed.set()
 
-            # Wait for current audio to finish before releasing lock
-            while not await shared_data.audio_queue.is_empty():
-                await asyncio.sleep(0.1)
+            # Remove this wait - it's causing premature lock release
+            # while not await shared_data.audio_queue.is_empty():
+            #     await asyncio.sleep(0.1)
 
     except Exception as e:
         print(f"{datetime.now()} Error in send_audio: {e}")
         print(traceback.format_exc())
 
-# async def send_audio(vonage_websocket: WebSocket, audio_data, duration, call_id: str, shared_data: SharedData):
-#     try:
-#         print(f"{datetime.now()} Queueing Audio Stream - Begun for call_id: {call_id}")
-        
-#         if not audio_data:
-#             print(f"{datetime.now()} Warning: Empty audio data received for call_id: {call_id}")
-#             return
-            
-#         # Reset completion flag before starting new audio
-#         shared_data.audio_sending_completed.clear()
-        
-#         samples = bytearray(audio_data)
-#         chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
-        
-#         # Process full chunks
-#         while len(samples) >= chunk_size:
-#             chunk = samples[:chunk_size]
-#             samples = samples[chunk_size:]
-#             await shared_data.audio_queue.enqueue(chunk)
-
-#         # Handle remaining samples with padding
-#         if samples:
-#             padding_size = chunk_size - len(samples)
-#             padded_chunk = samples + bytearray(padding_size)
-#             await shared_data.audio_queue.enqueue(padded_chunk)
-
-#         print(f"{datetime.now()} Queueing Audio Stream - Finished for call_id: {call_id}")
-#         shared_data.audio_sending_completed.set()
-
-#     except Exception as e:
-#         print(f"{datetime.now()} Error in send_audio: {e}")
-#         print(traceback.format_exc())
-
 async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData):
     chunk_size = 320 * 2  # 20ms of audio at 16kHz, 16-bit
     chunk_duration = 0.02  # 20ms per chunk
-    initial_buffer_duration = 1.5   # Buffer 0.5 seconds of audio
+    initial_buffer_duration = 1.5   # Buffer 1.5 seconds of audio
     initial_buffer_chunks = int(initial_buffer_duration / chunk_duration)
     buffer = []
     buffering_timeout = 3.0
-    buffering_start_time = time.time()
+    last_chunk_time = None
 
     try:
         while not shared_data.call_completed:
-            # Reset buffer for new audio segment
             buffer = []
             buffering_start_time = time.time()
+            last_chunk_time = None  # Reset timing for new segment
 
             # Accumulate initial buffer
             print(f"{datetime.now()} Starting initial buffer accumulation...")
@@ -1848,23 +1824,22 @@ async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData
                 audio_chunk = await shared_data.audio_queue.dequeue()
                 if audio_chunk is not None:
                     buffer.append(audio_chunk)
+                    last_chunk_time = time.time()  # Track last received chunk
                 else:
                     if time.time() - buffering_start_time > buffering_timeout:
-                        if not buffer:  # If buffer is empty, wait for next audio
+                        if not buffer:
                             await asyncio.sleep(0.1)
                             break
                         print(f"{datetime.now()} Buffering timeout reached with {len(buffer)} chunks")
                         break
                     await asyncio.sleep(0.001)
 
-            if buffer:  # Only process if we have audio to send
+            if buffer:
                 print(f"{datetime.now()} Initial buffer accumulated with {len(buffer)} chunks")
-
-                # Record the start time
                 start_time = time.time()
                 next_send_time = start_time
 
-                # Send the initial buffer
+                # Send initial buffer
                 for chunk in buffer:
                     if vonage_websocket.client_state == WebSocketState.DISCONNECTED:
                         print(f"{datetime.now()} WebSocket disconnected during initial buffer send")
@@ -1878,6 +1853,7 @@ async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData
                 while True:
                     audio_chunk = await shared_data.audio_queue.dequeue()
                     if audio_chunk is not None:
+                        last_chunk_time = time.time()
                         now = time.time()
                         sleep_time = next_send_time - now
 
@@ -1891,9 +1867,11 @@ async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData
                         await vonage_websocket.send_bytes(audio_chunk)
                         next_send_time += chunk_duration
                     else:
-                        if shared_data.audio_sending_completed.is_set() and await shared_data.audio_queue.is_empty():
-                            print(f"{datetime.now()} Audio segment completed")
-                            break  # Break inner loop to start new segment
+                        # Wait longer before breaking to ensure all audio is played
+                        if shared_data.audio_sending_completed.is_set():
+                            if last_chunk_time and time.time() - last_chunk_time > 0.2:  # Wait 500ms after last chunk
+                                print(f"{datetime.now()} Audio segment completed")
+                                break
                         await asyncio.sleep(0.001)
 
     except WebSocketDisconnect:
@@ -1901,6 +1879,7 @@ async def send_queued_audio(vonage_websocket: WebSocket, shared_data: SharedData
     except Exception as e:
         print(f"{datetime.now()} Error in send_queued_audio: {e}")
         print(traceback.format_exc())
+
 
 
 

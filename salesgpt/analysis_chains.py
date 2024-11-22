@@ -3,7 +3,7 @@ from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatLiteLLM
 import litellm  # Add this import
-litellm.drop_params = True  # Add this line near the top of the file
+# litellm.drop_params = True  # Add this line near the top of the file
 import os
 
 from .churn_analysis_prompts.analysis_output import ANALYSIS_OUTPUT_PROMPT
@@ -73,6 +73,7 @@ class AnalysisOutputChain(TracedLLMChain):
         llm_analysis = ChatLiteLLM(
             temperature=0, 
             model_name="o1-preview", #o1-preview
+            # model_name="gpt-4o-2024-08-06", #o1-preview
             api_key=os.getenv("OPENAI_API_KEY", ""), 
             max_completion_tokens=10000
         )
