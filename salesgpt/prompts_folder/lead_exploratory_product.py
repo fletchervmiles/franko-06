@@ -207,4 +207,11 @@ I’m curious, what sort of improvements in the evaluation setup were you hoping
 Hmm, could you describe a recent project where these AI limitations particularly got in the way, and what the impact was on your development timeline?
 <!-- END_OF_RESPONSE -->
 ```
+
+### EXAMPLE 4 
+```
+<!-- START_OF_RESPONSE -->
+I'm interested in hearing more about how the documentation's sparseness, especially around streaming into WebSockets, affected your learning curve while integrating ElevenLabs into your workflow. So thinking back, were there any particular resources or examples that you believe would have made the process easier or faster?
+<!-- END_OF_RESPONSE -->
+
 """

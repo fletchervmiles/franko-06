@@ -217,4 +217,11 @@ I’d love to hear more about how the lack of information on results and pricing
 <!-- END_OF_RESPONSE -->
 ```
 
+### EXAMPLE 5
+```
+<!-- START_OF_RESPONSE -->
+I'd love to hear more about the application you were building and how ElevenLabs was originally intended to fit into it?
+<!-- END_OF_RESPONSE -->
+```
+
 """
