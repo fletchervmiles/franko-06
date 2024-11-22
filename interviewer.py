@@ -809,7 +809,7 @@ class StateMachine:
             clean_ai_message = strip_break_tags(ai_message)
 
             # Format the agent's response with HTML line breaks
-            timestamped_ai_message = f"**{agent_name}:** {clean_ai_message} **{timestamp}**<br><br>"
+            timestamped_ai_message = f"**{agent_name}:** {clean_ai_message} **{timestamp}**\n\n"
 
             # Print the cleaned AI message
             print(f"\nCleaned AI Message:\n{clean_ai_message}\n")
@@ -877,7 +877,7 @@ class StateMachine:
         interviewee_name = self.interviewee_name
 
         # Format the human input with HTML line breaks
-        human_input = f"**{interviewee_name}:** {full_transcript.strip()} **{timestamp}**<br><br>"
+        human_input = f"**{interviewee_name}:** {full_transcript.strip()} **{timestamp}**\n\n"
 
         conversation_history = json.loads(self.r.get(f'{self.call_id}_conversation_history').decode("utf-8"))
         conversation_history.append(human_input)
