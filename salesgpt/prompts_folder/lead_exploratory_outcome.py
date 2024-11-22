@@ -203,6 +203,16 @@ So I wonder, could you talk me through any specific improvements in the evaluati
 Hmm, can you describe a specific time when the AI's file handling really slowed things down for you? And, in particular, how did that experience compare to what you were expecting?
 <!-- END_OF_RESPONSE -->
 ```
+
+### EXAMPLE 4
+
+```
+<!-- START_OF_RESPONSE -->
+Ok, let's double down a bit here. Could you share more about what you were hoping to achieve with more afternoon energy? I’d love to understand your thought process and how you hoped Alpha Brain might help with this.
+<!-- END_OF_RESPONSE -->
+```
+
+
 """
 
 

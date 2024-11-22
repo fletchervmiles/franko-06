@@ -3,7 +3,7 @@ from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatLiteLLM
 import litellm  # Add this import
-# litellm.drop_params = True  # Add this line near the top of the file
+litellm.drop_params = True  # Add this line near the top of the file
 import os
 
 from .churn_analysis_prompts.analysis_output import ANALYSIS_OUTPUT_PROMPT

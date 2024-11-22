@@ -210,4 +210,11 @@ So, thinking about improving how the AI handles large files—can you share an e
 <!-- END_OF_RESPONSE -->
 ```
 
+### EXAMPLE 4
+```
+<!-- START_OF_RESPONSE -->
+I’d love to hear more about how the lack of information on results and pricing shaped your view of Alpha Brain’s value. I’m curious—was there a moment when those things made you stop and second-guess or rethink your choice?
+<!-- END_OF_RESPONSE -->
+```
+
 """
