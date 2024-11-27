@@ -809,7 +809,7 @@ class StateMachine:
             clean_ai_message = strip_break_tags(ai_message)
 
             # Format the agent's response with HTML line breaks
-            timestamped_ai_message = f"**{agent_name}:** {clean_ai_message} **{timestamp}**\n\n"
+            timestamped_ai_message = f"{agent_name}: {clean_ai_message} {timestamp}"
 
             # Print the cleaned AI message
             print(f"\nCleaned AI Message:\n{clean_ai_message}\n")
@@ -877,7 +877,7 @@ class StateMachine:
         interviewee_name = self.interviewee_name
 
         # Format the human input with HTML line breaks
-        human_input = f"**{interviewee_name}:** {full_transcript.strip()} **{timestamp}**\n\n"
+        human_input = f"{interviewee_name}: {full_transcript.strip()} {timestamp}"
 
         conversation_history = json.loads(self.r.get(f'{self.call_id}_conversation_history').decode("utf-8"))
         conversation_history.append(human_input)
@@ -2176,9 +2176,11 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
 
 # Add this function near the top with other utility functions
 def clean_transcript_delimiters(text):
-    """Remove any response delimiters that might have leaked into the transcript"""
+    """Remove any response delimiters and extraction question tags that might have leaked into the transcript"""
     text = text.replace('<!-- START_OF_RESPONSE -->', '').strip()
     text = text.replace('<!-- END_OF_RESPONSE -->', '').strip()
+    text = text.replace('</extraction_question>', '').strip()
+    text = text.replace('<extraction_question>', '').strip()
     return text
 
 if __name__ == "__main__":

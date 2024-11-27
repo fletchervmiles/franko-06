@@ -6,17 +6,7 @@ CONVERSATION_STAGES = {
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 <extraction_question>
-Hi there, this is {agent_name}! I'm excited to get chatting with you! <break time="0.5s" />
-
-Ok, so today's call will have three short sections: first, what led you to cancel your {client_name} subscription; next, what you were hoping to achieve with {client_name}; and finally, any feedback you might have. Short and sharp! 
-
-<break time="0.5s" />
-
-And just a quick explanation of how the conversation will work: I'll ask you a question, and you can take your time to start your response. Once you've finished speaking, I'll pause for a moment to make sure you're done before asking the next question. Think of it like an interactive survey. 
-
-<break time="0.5s" />
-
-So, to kick us off, can you please tell me a bit about why you decided to cancel your {client_name} subscription?</extraction_question>
+Hi there, this is {agent_name}! I'm excited to get chatting with you! <break time="0.5s" /> Ok, so today's call will have three short sections: first, what led you to cancel your {client_name} subscription; next, what you were hoping to achieve with {client_name}; and finally, any feedback you might have. Short and sharp! <break time="0.5s" /> And just a quick explanation of how the conversation will work: I'll ask you a question, and you can take your time to start your response. Once you've finished speaking, I'll pause for a moment to make sure you're done before asking the next question. Think of it like an interactive survey. <break time="0.5s" /> So, to kick us off, can you please tell me a bit about why you decided to cancel your {client_name} subscription?</extraction_question>
 </extraction_question>
         """
     },
@@ -142,14 +132,8 @@ By the end of this section, the interviewer should have a clear understanding of
         "content": """
 INTERVIEW SECTION: IMPROVEMENT
 
-<extraction_question>Ok, we’re making really great progress. Now let's move to the last main section of our conversation.
-
-I want to understand how the team at {client_name} could improve things for you.
-
-Even small suggestions or ideas you may have are extremely useful and appreciated!
-
-So {interviewee_name}, what’s your number one piece of feedback or improvement opportunity for the team at {client_name}?</extraction_question>
-
+<extraction_question>
+Ok, we’re making really great progress. Now let's move to the last main section of our conversation. I want to understand how the team at {client_name} could improve things for you.Even small suggestions or ideas you may have are extremely useful and appreciated! So {interviewee_name}, what’s your number one piece of feedback or improvement opportunity for the team at {client_name}?</extraction_question>
         """
     },
 
