@@ -44,22 +44,38 @@ class SalesGPTAPI:
 
     def initialize_agent(self):
         """Create and configure a new sales agent instance."""
+        # Store all config values
+        initial_config = {
+            'client_name': self.client_name,
+            'interviewee_name': self.interviewee_name,
+            'interviewee_last_name': self.interviewee_last_name,
+            'interviewee_email': self.interviewee_email,
+            'interviewee_number': self.interviewee_number,
+            'client_company_description': self.client_company_description,
+            'agent_name': self.agent_name,
+            'voice_id': self.voice_id,
+            'unique_customer_identifier': self.unique_customer_identifier,
+            'use_case': self.use_case,
+            'call_id': self.call_id
+        }
+        
         self.sales_agent = SalesGPT.from_llm(
             self.llm,
             verbose=False,
-            call_id=self.call_id,
-            client_name=self.client_name,
-            interviewee_name=self.interviewee_name,
-            interviewee_last_name=self.interviewee_last_name,
-            interviewee_email=self.interviewee_email,
-            interviewee_number=self.interviewee_number,
-            client_company_description=self.client_company_description,  # Updated from client_product_summary
-            agent_name=self.agent_name,
-            voice_id=self.voice_id,
-            unique_customer_identifier=self.unique_customer_identifier,
-            use_case=self.use_case,  # Add use_case to agent initialization
+            **initial_config  # Pass all stored values
         )
+        
+        # Validate values before and after seeding
+        print(f"Pre-seed values: {initial_config}")
         self.sales_agent.seed_agent()
+        
+        # Verify values weren't changed
+        for key, value in initial_config.items():
+            current_value = getattr(self.sales_agent, key)
+            if current_value != value:
+                print(f"Warning: {key} changed from {value} to {current_value}")
+                setattr(self.sales_agent, key, value)  # Restore original value
+        
         return self.sales_agent
 
     # Record the start time of the interview
@@ -170,6 +186,5 @@ class SalesGPTAPI:
                 "part05_result": "",
                 "part06_result": ""
             }
-
 
 

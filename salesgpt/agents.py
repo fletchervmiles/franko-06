@@ -192,26 +192,58 @@ class SalesGPT(Chain):
     voice_id: str = Field(default="")
     unique_customer_identifier: str = Field(default="")
     use_case: str = Field(default="churn")
+    interviewee_number: str = Field(default="")
 
     # def __init__(self, **data):
     #     super().__init__(**data)
     #     self.update_conversation_specific_data()
 
     def update_conversation_specific_data(self):
+        """Update conversation stages while preserving config values."""
         print(f"Loading configuration for use case: {self.use_case}")
+        
+        # Store all config values
+        preserved_config = {
+            'client_name': self.client_name,
+            'interviewee_name': self.interviewee_name,
+            'interviewee_last_name': self.interviewee_last_name,
+            'agent_name': self.agent_name,
+            'client_company_description': self.client_company_description
+        }
+        
+        # Load client module
         client_module = self.get_client_module(self.use_case)
         print(f"Loaded module: {client_module.__name__}")
         
-        # Only load conversation stages
-        self.conversation_stage_dict = getattr(client_module, 'CONVERSATION_STAGES')
+        # Create a deep copy of conversation stages to avoid modifying the original
+        import copy
+        self.conversation_stage_dict = copy.deepcopy(getattr(client_module, 'CONVERSATION_STAGES'))
         
-        # Format the content strings
-        for key, stage_info in self.conversation_stage_dict.items():
-            stage_info['content'] = stage_info['content'].format(
-                client_name=self.client_name,
-                interviewee_name=self.interviewee_name,
-                agent_name=self.agent_name,  
-            )
+        # Format each stage's content with the current values
+        for stage_id, stage_info in self.conversation_stage_dict.items():
+            # Store original format string if not already stored
+            if 'original_content' not in stage_info:
+                stage_info['original_content'] = stage_info['content']
+            
+            # Format content using preserved values
+            try:
+                stage_info['content'] = stage_info['original_content'].format(
+                    client_name=preserved_config['client_name'],
+                    interviewee_name=preserved_config['interviewee_name'],
+                    interviewee_last_name=preserved_config['interviewee_last_name'],
+                    agent_name=preserved_config['agent_name'],
+                    client_company_description=preserved_config['client_company_description']
+                )
+                print(f"Successfully formatted stage {stage_id} content with values: {preserved_config}")
+            except KeyError as e:
+                print(f"Error formatting stage {stage_id}: Missing key {e}")
+            except Exception as e:
+                print(f"Error formatting stage {stage_id}: {e}")
+        
+        # Verify the formatting
+        for stage_id, stage_info in self.conversation_stage_dict.items():
+            print(f"\nStage {stage_id} formatted content:")
+            print(stage_info['content'][:200] + "...")  # Print first 200 chars
 
     def get_client_module(self, use_case: str):
         try:
@@ -401,28 +433,28 @@ class SalesGPT(Chain):
             done, pending = await asyncio.wait(tasks.values(), timeout=5)
 
             if len(done) == len(tasks):
-                # All tasks completed
-                results = {name: task.result() for name, task in tasks.items()}
+                # All tasks completed within 5 seconds
+                responses = {name: task.result() for name, task in tasks.items()}
             elif len(done) >= 1:
-                # At least one task completed
-                results = {}
+                # At least one task completed within 5 seconds
+                responses = {}
                 for name, task in tasks.items():
                     if task in done:
-                        results[name] = task.result()
+                        responses[name] = task.result()
                     else:
                         # Assign default value for pending tasks
-                        results[name] = {
-                            "text": "The analysis was unable to be completed. Please progress with your follow up question using the conversation goal and conversation history."
+                        responses[name] = {
+                            "text": "Response unavailable. Do not select this response. Select one of the other response values."
                         }
             else:
                 # None of the tasks completed after 5 seconds, wait for all to finish
                 await asyncio.gather(*tasks.values())
-                results = {name: task.result() for name, task in tasks.items()}
+                responses = {name: task.result() for name, task in tasks.items()}
 
             # Store results
-            self.current_goal_review_narrative = results['narrative']["text"]
-            self.current_goal_review_outcome = results['outcome']["text"]
-            self.current_goal_review_product = results['product']["text"]
+            self.current_goal_review_narrative = responses['narrative']["text"]
+            self.current_goal_review_outcome = responses['outcome']["text"]
+            self.current_goal_review_product = responses['product']["text"]
 
             print(f"[{datetime.now()}] Async Chain Runner Returned (goal reviews)")
 

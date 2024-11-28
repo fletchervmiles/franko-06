@@ -72,8 +72,8 @@ class AnalysisOutputChain(TracedLLMChain):
     def from_llm(cls, llm: ChatLiteLLM, verbose: bool = False) -> LLMChain:
         llm_analysis = ChatLiteLLM(
             temperature=0, 
-            model_name="o1-preview", #o1-preview
-            # model_name="gpt-4o-2024-08-06", #o1-preview
+            # model_name="o1-preview", #o1-preview
+            model_name="gpt-4o-2024-08-06", 
             api_key=os.getenv("OPENAI_API_KEY", ""), 
             max_completion_tokens=10000
         )
