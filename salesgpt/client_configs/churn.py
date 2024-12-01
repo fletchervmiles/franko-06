@@ -13,7 +13,7 @@ Hi there, this is {agent_name}! I'm excited to get chatting with you! <break tim
   
 
     "2": {
-        "category": "two",
+        "category": "one",
         "content": """
 ### INTERVIEW SECTION: EXPLORING CANCELLATION REASONS
 
@@ -74,7 +74,7 @@ Thanks for sharing, {interviewee_name}, let's move to the next section. So, when
 
 
     "4": {
-        "category": "two",
+        "category": "one",
         "content": """
 ### INTERVIEW SECTION: PERCEIVED VALUE
 
@@ -139,7 +139,7 @@ Ok, we’re making really great progress. Now let's move to the last main sectio
 
 
     "6": {
-        "category": "two",
+        "category": "one",
         "content": """
 ### INTERVIEW SECTION: IMPROVEMENT SUGGESTIONS
 **Context:**
