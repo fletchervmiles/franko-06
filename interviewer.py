@@ -1535,6 +1535,7 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         
         # Get the sales API instance and configuration
         sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+        sales_gpt = call_instances[call_id]["sales_gpt"]  # Get the actual SalesGPT instance
         voice_id = sales_gpt_api.voice_id
         current_category = sales_gpt_api.get_current_stage_category().lower()
         
