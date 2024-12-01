@@ -523,8 +523,8 @@ class SalesGPT(Chain):
             # Determine max turns based on category
             if current_category == "one":
                 max_turns = 1
-            elif current_category == "two":
-                max_turns = 2
+            elif current_category == "exploratory":
+                max_turns = 1
             elif current_category == "three":
                 max_turns = 3
             else:

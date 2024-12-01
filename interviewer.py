@@ -1482,47 +1482,85 @@ async def play_audio_file(websocket: WebSocket, call_id: str, shared_data: Share
         print(f"Error playing audio file for call_id {call_id}: {e}")
         print(traceback.format_exc())
 
+# async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversation_history: list, human_response: str, agent_response: str, shared_data: SharedData):
+#     try:
+#         # Record the start time for timing calculations
+#         start_time = time.time()
+#         # Log the beginning of speech generation
+#         print(f"{datetime.now()} Generate and Send Speech Begun for call_id: {call_id}")
+        
+#         # Initialize empty dictionary to store results from the language model
+#         results = {}
+#         # Flag to track if empathy statement has been processed
+#         empathy_statement_processed = False
+        
+#         # Get the sales API instance and voice_id for this call
+#         sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+#         voice_id = sales_gpt_api.voice_id
+        
+#         # Create text-to-speech instance with the configured voice_id
+#         tts = TextToSpeech(voice_id=voice_id)
+
+#         # Check if this is the first turn in the conversation
+#         is_first_turn = len(conversation_history) == 0
+
+#         # Set duration for buffer audio file (5.2s if not first turn, 0 if first turn)
+#         play_audio_file_duration = 5.2 if not is_first_turn else 0  # seconds
+#         # Initialize duration trackers for different audio components
+
+#         # Clear any existing audio in the queue
+#         if hasattr(shared_data.audio_queue, 'clear'):
+#             await shared_data.audio_queue.clear()
+
+#         empathy_duration = 0
+#         sales_utterance_duration = 0
+
+#         # Play buffer audio file if not the first turn
+#         if not is_first_turn:
+#             asyncio.create_task(play_audio_file(websocket, call_id, shared_data))
+#         else:
+#             play_audio_file_duration = 0
+        
+#         # Get the sales API instance for this call
+#         sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+
 async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversation_history: list, human_response: str, agent_response: str, shared_data: SharedData):
     try:
-        # Record the start time for timing calculations
         start_time = time.time()
-        # Log the beginning of speech generation
         print(f"{datetime.now()} Generate and Send Speech Begun for call_id: {call_id}")
         
-        # Initialize empty dictionary to store results from the language model
+        # Initialize results and flags
         results = {}
-        # Flag to track if empathy statement has been processed
         empathy_statement_processed = False
         
-        # Get the sales API instance and voice_id for this call
+        # Get the sales API instance and configuration
         sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
         voice_id = sales_gpt_api.voice_id
+        current_category = sales_gpt_api.get_current_stage_category().lower()
         
-        # Create text-to-speech instance with the configured voice_id
+        # Create text-to-speech instance
         tts = TextToSpeech(voice_id=voice_id)
 
-        # Check if this is the first turn in the conversation
+        # Check if this is the first turn
         is_first_turn = len(conversation_history) == 0
 
-        # Set duration for buffer audio file (5.2s if not first turn, 0 if first turn)
-        play_audio_file_duration = 5.2 if not is_first_turn else 0  # seconds
-        # Initialize duration trackers for different audio components
-
-        # Clear any existing audio in the queue
+        # Clear existing audio queue
         if hasattr(shared_data.audio_queue, 'clear'):
             await shared_data.audio_queue.clear()
 
+        # Initialize duration trackers
         empathy_duration = 0
         sales_utterance_duration = 0
+        play_audio_file_duration = 0  # Default to 0
 
-        # Play buffer audio file if not the first turn
-        if not is_first_turn:
+        # Determine if buffer audio should play based on category
+        if not is_first_turn and current_category == "exploratory":
+            print(f"{datetime.now()} Playing buffer audio for exploratory category, call_id: {call_id}")
             asyncio.create_task(play_audio_file(websocket, call_id, shared_data))
+            play_audio_file_duration = 5.2  # Set duration after deciding to play
         else:
-            play_audio_file_duration = 0
-        
-        # Get the sales API instance for this call
-        sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
+            print(f"{datetime.now()} Skipping buffer audio for category: {current_category}, call_id: {call_id}")
+
         
         # Process each partial result from the language model
         async for partial_result in sales_gpt_api.run_chains(conversation_history, human_response, agent_response):

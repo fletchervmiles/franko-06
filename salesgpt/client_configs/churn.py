@@ -6,14 +6,14 @@ CONVERSATION_STAGES = {
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 <extraction_question>
-Hi there, this is {agent_name}! I'm excited to get chatting with you! <break time="0.5s" /> Ok, so today's call will have three short sections: first, what led you to cancel your {client_name} subscription; next, what you were hoping to achieve with {client_name}; and finally, any feedback you might have. Short and sharp! <break time="0.5s" /> And just a quick explanation of how the conversation will work: I'll ask you a question, and you can take your time to start your response. Once you've finished speaking, I'll pause for a moment to make sure you're done before asking the next question. Think of it like an interactive survey. <break time="0.5s" /> So, to kick us off, can you please tell me a bit about why you decided to cancel your {client_name} subscription?</extraction_question>
+Hi there, this is {agent_name}! I'm excited to get chatting with you! Ok, so today's call will have three short sections: first, what led you to cancel your {client_name} subscription; next, what you were hoping to achieve with {client_name}; and finally, any feedback you might have. Short and sharp! So, to kick us off, can you please tell me the number one reason why you decided to stop using {client_name}? And please do be as specific and as detailed as possible. It'll really help.
 </extraction_question>
         """
     },
   
 
     "2": {
-        "category": "one",
+        "category": "exploratory",
         "content": """
 ### INTERVIEW SECTION: EXPLORING CANCELLATION REASONS
 
@@ -67,14 +67,14 @@ By the end of this segment of the interview, the agent should have a clear and n
 Extraction Question
 
 <extraction_question>
-Thanks for sharing, {interviewee_name}, let's move to the next section. So, when you think about your experience with {client_name}, can you tell me a bit about what YOU were hoping to achieve by using it? <break time="0.75s" />And to what extent do you feel it helped you move closer to that goal?
+Thanks for sharing, {interviewee_name}, let's move to the next section. So, thinking back, can you tell me the main reason why you actually started using {client_name} in the first place? What was it that you were hoping to achieve? And please be as specific as possible, every little bit of feedback is useful.
 </extraction_question>
         """
     },
 
 
     "4": {
-        "category": "one",
+        "category": "exploratory",
         "content": """
 ### INTERVIEW SECTION: PERCEIVED VALUE
 
@@ -139,7 +139,7 @@ Ok, we’re making really great progress. Now let's move to the last main sectio
 
 
     "6": {
-        "category": "one",
+        "category": "exploratory",
         "content": """
 ### INTERVIEW SECTION: IMPROVEMENT SUGGESTIONS
 **Context:**
