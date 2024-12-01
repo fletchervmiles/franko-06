@@ -1537,7 +1537,7 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         sales_gpt_api = call_instances[call_id]["sales_gpt_api"]
         sales_gpt = call_instances[call_id]["sales_gpt"]  # Get the actual SalesGPT instance
         voice_id = sales_gpt_api.voice_id
-        current_category = sales_gpt_api.get_current_stage_category().lower()
+        current_category = sales_gpt.get_current_stage_category().lower()
         
         # Create text-to-speech instance
         tts = TextToSpeech(voice_id=voice_id)
@@ -1647,7 +1647,7 @@ async def generate_and_send_speech(websocket: WebSocket, call_id: str, conversat
         print(f"Error in generate_and_send_speech: {type(e).__name__}: {str(e)}")
         print(traceback.format_exc())
         # Return default values in case of error, maintaining the same structure as the success case
-        return "", "", 0
+        return "", "", 0, 0
 
 
 
