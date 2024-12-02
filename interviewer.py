@@ -1333,7 +1333,7 @@ async def handle_recording(request: Request, call_id: str = Query(...)):
                 interview_start_time = time.time()
                 overall_elapsed_time = 0
             else:
-                overall_elapsed_time = time.time() - interview_start_time
+                overall_elapsed_time = max(0, (time.time() - interview_start_time) - 60)
 
             # Calculate interview end time
             interview_end_time = datetime.now().isoformat()
