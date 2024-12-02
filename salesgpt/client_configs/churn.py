@@ -133,7 +133,7 @@ By the end of this section, the interviewer should have a clear understanding of
 INTERVIEW SECTION: IMPROVEMENT
 
 <extraction_question>
-Ok, we’re making really great progress. Now let's move to the last main section of our conversation. I want to understand how the team at {client_name} could improve things for you.Even small suggestions or ideas you may have are extremely useful and appreciated! So {interviewee_name}, what’s your number one piece of feedback or improvement opportunity for the team at {client_name}?</extraction_question>
+Ok, we’re making really great progress. Now let's move to the last main section of our conversation. I want to understand how the team at {client_name} could improve things for you. Even small suggestions or ideas you may have are extremely useful and appreciated! So {interviewee_name}, what’s your number one piece of feedback or improvement opportunity for the team at {client_name}?</extraction_question>
         """
     },
 
