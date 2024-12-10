@@ -928,7 +928,7 @@ def check_for_silence(last_word_time, last_no_word_time):
     if last_word_time:  # If we've received words before
         if last_no_word_time and last_no_word_time > last_word_time:  # And we're getting empty transcripts
             time_diff = last_no_word_time - last_word_time
-            empty_transcript_duration = time_diff > timedelta(seconds=2.0)
+            empty_transcript_duration = time_diff > timedelta(seconds=2.5)
             if empty_transcript_duration:
                 print(f"{datetime.now()}: Empty transcripts detected for {time_diff.total_seconds()} seconds")
             return empty_transcript_duration
