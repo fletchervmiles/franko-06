@@ -6,13 +6,81 @@ CONVERSATION_STAGES = {
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 <extraction_question>
-Hi there, this is {agent_name}! I'm excited to get chatting with you! Ok, so today's call will have three short sections: first, what led you to cancel your {client_name} subscription; next, what you were hoping to achieve with {client_name}; and finally, any feedback you might have. Short and sharp! So, to kick us off, can you please tell me the number one reason why you decided to stop using {client_name}? And please do be as specific and as detailed as possible. It'll really help.
+Hi there, this is {agent_name}! I'm excited to get chatting with you! Ok, so today's call will have three short sections: first, what led you to cancel your {client_name} subscription. Next, what you were hoping to achieve with {client_name}. And finally, any feedback you might have. Short and sharp! So, to kick us off, can you tell me the main reason why you actually started using {client_name} in the first place? What was it that you were hoping to achieve? And please be as specific as possible, every little bit of feedback is useful.
 </extraction_question>
         """
     },
-  
+
 
     "2": {
+        "category": "exploratory",
+        "content": """
+### INTERVIEW SECTION: PERCEIVED VALUE
+
+**Context:**
+
+This section focuses on understanding what they were hoping to achieve by using {client_name} and how they perceive its impact in helping them reach their goals.
+
+**As a founder, I now want to:**
+
+- Understand the interviewee’s perspective on the overall value {client_name} brought to them, focusing on how it aligned (or didn’t) with their personal goals and expectations.
+- Capture specific stories or examples that highlight what they were hoping to achieve versus what they experienced, bringing out both positive and negative aspects.
+
+**Focus on:**
+
+- Encouraging a narrative that explores the customer’s goals and expectations, revealing the “why” behind their perception of value.
+- Prompting them to reflect on how well {client_name} helped them progress toward their goals, while creating space for them to share unmet expectations or surprises.
+- Using open prompts to allow them to share detailed examples or stories that illuminate the connection between their expectations and their experience.
+
+**Note:**
+
+- If the conversation does not yield detailed insights, consider gently shifting focus to any areas or stories related to value that they haven’t mentioned yet. For instance, if their response is vague or generalized, use this opportunity to explore other aspects of value that may be important to them.
+
+**This is because:**
+
+- Understanding how the customer’s goals and expectations shaped their view of {client_name} will help reveal key gaps or successes in its perceived value.
+
+**Focus on:**
+
+- Building on the interviewee’s previous response to maintain a clear narrative around their goals and experiences.
+- Ensuring the conversation feels natural and engaging, with the interviewee’s perspective driving the narrative.
+- Highlighting both the practical and emotional dimensions of value, rooted in their personal goals and expectations.
+
+**Remember, it’s important to:**
+
+- Keep the conversation fluid, concise, and aligned with the interviewee’s unique experiences.
+- Position the interviewee as central to the discussion, focusing on their perspective and lived experience with {client_name}.
+- Use approachable, goal-oriented language, steering away from overly analytical or corporate phrasing.
+
+**Things to avoid:**
+
+- Avoid directly asking for improvement suggestions or feedback, as this will be addressed in the next section.
+- Do not lead the interviewee into discussing specific features unless they naturally bring it up in relation to their goals or perceived value.
+- Avoid using corporate jargon like “pain points.” Let their story unfold organically, focusing on the real, human aspects of their experience.
+- Refrain from overly structured or formal questions that might disrupt the flow of the conversation.
+
+**Expected Outcome:**
+
+By the end of this section, the interviewer should have a clear understanding of the customer’s goals and expectations when using {client_name}, as well as how the service or product contributed to—or fell short of—helping them achieve those goals. This insight will be supported by specific examples, providing actionable information about the alignment (or misalignment) between the customer’s expectations and their actual experience.
+        """
+    },
+
+
+
+    "3": {
+        "category": "one",
+        "content": """
+Extraction Question
+
+<extraction_question>
+Thanks for sharing, {interviewee_name}. Now that we've discussed your initial reasons for using {client_name}, let's shift our focus to your decision to cancel. <break time="0.75s" /> So, can you please tell me the number one reason why you decided to stop using {client_name}?
+</extraction_question>
+        """
+    },
+
+
+
+    "4": {
         "category": "exploratory",
         "content": """
 ### INTERVIEW SECTION: EXPLORING CANCELLATION REASONS
@@ -61,71 +129,6 @@ By the end of this segment of the interview, the agent should have a clear and n
     },
   
 
-    "3": {
-        "category": "one",
-        "content": """
-Extraction Question
-
-<extraction_question>
-Thanks for sharing, {interviewee_name}, let's move to the next section. So, thinking back, can you tell me the main reason why you actually started using {client_name} in the first place? What was it that you were hoping to achieve? And please be as specific as possible, every little bit of feedback is useful.
-</extraction_question>
-        """
-    },
-
-
-    "4": {
-        "category": "exploratory",
-        "content": """
-### INTERVIEW SECTION: PERCEIVED VALUE
-
-**Context:**
-
-In previous sections, we’ve encouraged the interviewee to reflect on their overall experience with {client_name}. This section now shifts focus to understanding what they were hoping to achieve by using {client_name} and how they perceive its impact in helping them reach their goals.
-
-**As a founder, I now want to:**
-
-- Understand the interviewee’s perspective on the overall value {client_name} brought to them, focusing on how it aligned (or didn’t) with their personal goals and expectations.
-- Capture specific stories or examples that highlight what they were hoping to achieve versus what they experienced, bringing out both positive and negative aspects.
-
-**Focus on:**
-
-- Encouraging a narrative that explores the customer’s goals and expectations, revealing the “why” behind their perception of value.
-- Prompting them to reflect on how well {client_name} helped them progress toward their goals, while creating space for them to share unmet expectations or surprises.
-- Using open prompts to allow them to share detailed examples or stories that illuminate the connection between their expectations and their experience.
-
-**Note:**
-
-- If the conversation does not yield detailed insights, consider gently shifting focus to any areas or stories related to value that they haven’t mentioned yet. For instance, if their response is vague or generalized, use this opportunity to explore other aspects of value that may be important to them.
-
-**This is because:**
-
-- Understanding how the customer’s goals and expectations shaped their view of {client_name} will help reveal key gaps or successes in its perceived value.
-
-**Focus on:**
-
-- Building on the interviewee’s previous response to maintain a clear narrative around their goals and experiences.
-- Ensuring the conversation feels natural and engaging, with the interviewee’s perspective driving the narrative.
-- Highlighting both the practical and emotional dimensions of value, rooted in their personal goals and expectations.
-
-**Remember, it’s important to:**
-
-- Keep the conversation fluid, concise, and aligned with the interviewee’s unique experiences.
-- Position the interviewee as central to the discussion, focusing on their perspective and lived experience with {client_name}.
-- Use approachable, goal-oriented language, steering away from overly analytical or corporate phrasing.
-
-**Things to avoid:**
-
-- Avoid directly asking for improvement suggestions or feedback, as this will be addressed in the next section.
-- Do not lead the interviewee into discussing specific features unless they naturally bring it up in relation to their goals or perceived value.
-- Avoid using corporate jargon like “pain points.” Let their story unfold organically, focusing on the real, human aspects of their experience.
-- Refrain from overly structured or formal questions that might disrupt the flow of the conversation.
-
-**Expected Outcome:**
-
-By the end of this section, the interviewer should have a clear understanding of the customer’s goals and expectations when using {client_name}, as well as how the service or product contributed to—or fell short of—helping them achieve those goals. This insight will be supported by specific examples, providing actionable information about the alignment (or misalignment) between the customer’s expectations and their actual experience.
-        """
-    },
-  
 
     "5": {
         "category": "one",
@@ -133,7 +136,7 @@ By the end of this section, the interviewer should have a clear understanding of
 INTERVIEW SECTION: IMPROVEMENT
 
 <extraction_question>
-Ok, we’re making really great progress. Now let's move to the last main section of our conversation. I want to understand how the team at {client_name} could improve things for you. Even small suggestions or ideas you may have are extremely useful and appreciated! So {interviewee_name}, what’s your number one piece of feedback or improvement opportunity for the team at {client_name}?</extraction_question>
+Ok, we’re making really great progress. Now let's move to the last main section of our conversation. I want to understand how the team at {client_name} could improve things for you. And specifically, think about what would need to change to help you reach your ideal outcome. So {interviewee_name}, what’s your number one piece of feedback or improvement opportunity for the team at {client_name}?
         """
     },
 
