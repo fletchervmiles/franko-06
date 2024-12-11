@@ -1275,6 +1275,7 @@ async def save_interview_data(supabase: SupabaseClient, interview_data: dict):
 
 
 
+
 @app.post("/vonage_recording")
 async def handle_recording(request: Request, call_id: str = Query(...)):
     data = await request.json()
@@ -2149,9 +2150,6 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
 
     # Create a background task for sending queued audio
     audio_send_task = asyncio.create_task(send_queued_audio(websocket_manager.websocket, shared_data))
-
-    # Set up AssemblyAI connection details
-    URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
 
     # Get the API key from environment variables
     auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
