@@ -67,7 +67,7 @@ CONFIG_PATH = "examples/example_agent_setup.json"
 # print(f"Config path: {CONFIG_PATH}")
 
 # AssemblyAI endpoint URL
-URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&encoding=linear16&disfluencies=true"
+URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&disfluencies=true"
 
 # Retrieve the AssemblyAI API key from environment variables
 auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
@@ -1273,9 +1273,6 @@ async def save_interview_data(supabase: SupabaseClient, interview_data: dict):
         raise
 
 
-
-
-
 @app.post("/vonage_recording")
 async def handle_recording(request: Request, call_id: str = Query(...)):
     data = await request.json()
@@ -1963,16 +1960,24 @@ async def receive_from_assembly(assembly_ws, shared_data, call_id):
     """Receive transcriptions from AssemblyAI WebSocket and handle them."""
     while True:
         try:
+            # Wait for messages from AssemblyAI
             result_str = await assembly_ws.recv()
+            # print(f"{datetime.now()}: Received message from AssemblyAI for call_id {call_id}: {result_str}")
             result = json.loads(result_str)
             if 'text' in result:
-                # Now includes filler words in both partial and final transcripts
+                # Update timestamps based on whether text was received
+                if result['text'].strip():
+                    shared_data.update_word_timestamp()
+                else:
+                    shared_data.update_no_word_timestamp()
+
+                # Handle different types of transcripts
                 if result['message_type'] == 'FinalTranscript' and result['text'].strip():
-                    # Final transcripts will include filler words like "um", "uh", etc.
+                    # Save final transcripts
                     shared_data.add_part(result['text'])
                     print(f"{datetime.now()}: Appending final transcript - {result['text']}")
                 elif result['message_type'] == 'PartialTranscript' and result['text'].strip():
-                    # Partial transcripts will also include filler words
+                    # Log partial transcripts
                     print(f"{datetime.now()}: Partial transcript - {result['text']}")
         except Exception as e:
             # Log any errors and break the loop
@@ -2151,6 +2156,9 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     # Create a background task for sending queued audio
     audio_send_task = asyncio.create_task(send_queued_audio(websocket_manager.websocket, shared_data))
 
+    # Set up AssemblyAI connection details
+    URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&disfluencies=true"
+
     # Get the API key from environment variables
     auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
 
@@ -2174,7 +2182,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         ) as assembly_ws:
             print(f"{datetime.now()}: Connected to AssemblyAI WebSocket for call_id {call_id}")
 
-            # Proceed directly to send/receive tasks without sending config
+            # Run send_to_assembly and receive_from_assembly functions concurrently
             send_task = asyncio.create_task(send_to_assembly(assembly_ws, websocket_manager.websocket, shared_data, call_id))
             receive_task = asyncio.create_task(receive_from_assembly(assembly_ws, shared_data, call_id))
 
