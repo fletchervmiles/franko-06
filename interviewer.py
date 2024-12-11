@@ -67,7 +67,7 @@ CONFIG_PATH = "examples/example_agent_setup.json"
 # print(f"Config path: {CONFIG_PATH}")
 
 # AssemblyAI endpoint URL
-URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&disfluencies=true"
+URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
 
 # Retrieve the AssemblyAI API key from environment variables
 auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
@@ -2157,7 +2157,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
     audio_send_task = asyncio.create_task(send_queued_audio(websocket_manager.websocket, shared_data))
 
     # Set up AssemblyAI connection details
-    URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&disfluencies=true"
+    URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
 
     # Get the API key from environment variables
     auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
