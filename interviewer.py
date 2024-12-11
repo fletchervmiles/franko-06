@@ -67,7 +67,7 @@ CONFIG_PATH = "examples/example_agent_setup.json"
 # print(f"Config path: {CONFIG_PATH}")
 
 # AssemblyAI endpoint URL
-URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&disfluencies=true"
+URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&encoding=linear16&disfluencies=true"
 
 # Retrieve the AssemblyAI API key from environment variables
 auth_key = os.environ.get("ASSEMBLYAI_API_KEY")
@@ -1274,6 +1274,7 @@ async def save_interview_data(supabase: SupabaseClient, interview_data: dict):
 
 
 
+
 @app.post("/vonage_recording")
 async def handle_recording(request: Request, call_id: str = Query(...)):
     data = await request.json()
@@ -2175,16 +2176,7 @@ async def websocket_endpoint(websocket: WebSocket, call_id: str = Query(...)):
         ) as assembly_ws:
             print(f"{datetime.now()}: Connected to AssemblyAI WebSocket for call_id {call_id}")
 
-            # Send configuration message after connection
-            config_message = {
-                "sample_rate": 16000,
-                "disfluencies": True,
-                "format_text": False  # This ensures we get raw text with filler words
-            }
-            await assembly_ws.send(json.dumps(config_message))
-            print(f"{datetime.now()}: Sent configuration to AssemblyAI WebSocket for call_id {call_id}")
-
-            # Run send_to_assembly and receive_from_assembly functions concurrently
+            # Proceed directly to send/receive tasks without sending config
             send_task = asyncio.create_task(send_to_assembly(assembly_ws, websocket_manager.websocket, shared_data, call_id))
             receive_task = asyncio.create_task(receive_from_assembly(assembly_ws, shared_data, call_id))
 
