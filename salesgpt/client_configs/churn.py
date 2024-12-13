@@ -6,7 +6,7 @@ CONVERSATION_STAGES = {
 GOAL 1: INTERVIEW SECTION: INTRODUCING THE INTERVIEW - VERBATIM
 
 <extraction_question>
-Hi there, this is {agent_name}! I'm excited to get chatting with you! Ok, so today's call will have three short sections: first, what led you to cancel your {client_name} subscription. Next, what you were hoping to achieve with {client_name}. And finally, any feedback you might have. Short and sharp! So, to kick us off, can you tell me the main reason why you actually started using {client_name} in the first place? What was it that you were hoping to achieve? And please be as specific as possible, every little bit of feedback is useful.
+Hi there, this is {agent_name}! I'm excited to get chatting with you! Ok, so today's call will have three short sections. First, what led you to cancel your {client_name} subscription. Next, what you were hoping to achieve with {client_name}. And finally, any feedback you might have. Short and sharp! So, to kick us off, can you tell me the main reason why you actually started using {client_name} in the first place? What was it that you were hoping to achieve? And please be as specific as possible, every little bit of feedback is useful.
 </extraction_question>
         """
     },
